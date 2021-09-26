@@ -367,7 +367,7 @@ end
 -- @param player The player to add to the game.
 -- @param gameId The id of the game to add the player to.
 function MatchmakingService:AddPlayerToGame(player, gameId, updateJoinable)
-	self:AddPlayerFromQueueId(player.UserId, gameId, updateJoinable)
+	self:AddPlayerToGameId(player.UserId, gameId, updateJoinable)
 end
 
 --- Adds a table of player ids to a specific existing game.
@@ -391,7 +391,7 @@ end
 -- @param players The players to add to the game.
 -- @param gameId The id of the game to add the players to.
 function MatchmakingService:AddPlayersToGame(players, gameId, updateJoinable)
-	self:AddPlayerFromQueueId(tableSelect(players, "UserId"), gameId, updateJoinable)
+	self:AddPlayersToGameId(tableSelect(players, "UserId"), gameId, updateJoinable)
 end
 
 --- Removes a specific player id from an existing game.
@@ -420,7 +420,7 @@ end
 -- @param player The player to remove from the game.
 -- @param gameId The id of the game to remove the player from.
 function MatchmakingService:RemovePlayerFromGame(player, gameId, updateJoinable)
-	self:RemovePlayerFromQueueId(player.UserId, gameId, updateJoinable)
+	self:RemovePlayerFromGameId(player.UserId, gameId, updateJoinable)
 end
 
 --function MatchmakingService:GetPlayerPartyId(player)
