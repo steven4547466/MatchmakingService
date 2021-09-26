@@ -350,6 +350,7 @@ end
 --- Adds a player id to a specific existing game.
 -- @param player The player id to add to the game.
 -- @param gameId The id of the game to add the player to.
+-- @param updateJoinable Whether or not to update the games joinability
 function MatchmakingService:AddPlayerToGameId(player, gameId, updateJoinable)
 	if updateJoinable == nil then updateJoinable = true end
 	local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
@@ -366,6 +367,7 @@ end
 --- Adds a player to a specific existing game.
 -- @param player The player to add to the game.
 -- @param gameId The id of the game to add the player to.
+-- @param updateJoinable Whether or not to update the games joinability
 function MatchmakingService:AddPlayerToGame(player, gameId, updateJoinable)
 	self:AddPlayerToGameId(player.UserId, gameId, updateJoinable)
 end
@@ -373,6 +375,7 @@ end
 --- Adds a table of player ids to a specific existing game.
 -- @param players The player ids to add to the game.
 -- @param gameId The id of the game to add the players to.
+-- @param updateJoinable Whether or not to update the games joinability
 function MatchmakingService:AddPlayersToGameId(players, gameId, updateJoinable)
 	local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
 	memory:UpdateAsync("RunningGames", function(old)
@@ -390,6 +393,7 @@ end
 --- Adds a table of players to a specific existing game.
 -- @param players The players to add to the game.
 -- @param gameId The id of the game to add the players to.
+-- @param updateJoinable Whether or not to update the games joinability
 function MatchmakingService:AddPlayersToGame(players, gameId, updateJoinable)
 	self:AddPlayersToGameId(tableSelect(players, "UserId"), gameId, updateJoinable)
 end
@@ -397,6 +401,7 @@ end
 --- Removes a specific player id from an existing game.
 -- @param player The player id to remove from the game.
 -- @param gameId The id of the game to remove the player from.
+-- @param updateJoinable Whether or not to update the games joinability
 function MatchmakingService:RemovePlayerFromGameId(player, gameId, updateJoinable)
 	local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
 	memory:UpdateAsync("RunningGames", function(old)
@@ -419,6 +424,7 @@ end
 --- Removes a specific player from an existing game.
 -- @param player The player to remove from the game.
 -- @param gameId The id of the game to remove the player from.
+-- @param updateJoinable Whether or not to update the games joinability
 function MatchmakingService:RemovePlayerFromGame(player, gameId, updateJoinable)
 	self:RemovePlayerFromGameId(player.UserId, gameId, updateJoinable)
 end
