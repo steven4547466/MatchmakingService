@@ -344,7 +344,7 @@ end
 -- @param player The player to remove from queue.
 -- @param skillLevel The skill level of the player.
 function MatchmakingService:RemovePlayerFromQueue(player, skillLevel)
-	self:RemovePlayerFromQueueId(player.UserId)
+	self:RemovePlayerFromQueueId(player.UserId, skillLevel)
 end
 
 --- Adds a player id to a specific existing game.
