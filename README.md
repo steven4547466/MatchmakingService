@@ -1,4 +1,5 @@
 # MatchmakingService
+Current Version: V1.0.0-beta
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 MatchmakingService is a way to easily make games that involve matchmaking. It utilizes the new MemoryStoreService for blazing fast execution speed. Memory store is as easy to use as:
@@ -83,13 +84,6 @@ This makes it easy to stay up to date, but it isn't necessary.
 
 ### Changing settings
 You can choose to change the properties themselves, or you can use the setters. It doesn't matter which you use, but the setters are documented as follows:
-
-#### Setting the max queue time
-Unfortunately we can't keep users in the queue forever. The max queue time exists to purge players from queue after a specific amount of time, in seconds. It's defaulted to 10 minutes and can be changed like so:
-```lua
-local MatchmakingService = require(7567983240).GetSingleton()
-MatchmakingService:SetMaxQueueTime(300) -- Sets the max queue time to 5 minutes
-```
 
 #### Registering skill levels
 Currently, MatchmakingService will only match users of the same skill level. It is planned to broaden searches over time but that is not yet possible in this version. You must have at least one skill level registered and users **must** be queued with a skill level. If your game doesn't have skill levels, then register a single skill level and default queue players with it. Skill levels is a table of anything, but you should keep it either strings or numbers (this may change in the future).
@@ -242,3 +236,6 @@ If you put this script in your game server in ServerScriptService, it will handl
 - Not requiring skill levels at all
 - Switch to MemoryQueues if/when we get more ways to manage it
 - Fully random access management that doesn't use a central server.
+
+# Updates
+I do plan to update this to fix bugs and add features when I have free time. I don't get a lot of free time these days because of college and the game that I'm currently working on, but updates/fixes will release periodically.

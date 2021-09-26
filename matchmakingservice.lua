@@ -60,12 +60,6 @@ function MatchmakingService.GetSingleton()
 	return MatchmakingService.Singleton
 end
 
---- Sets the max queue time in seconds.
--- @param newMax The new maximum queue time in seconds.
-function MatchmakingService:SetMaxQueueTime(newMax)
-	self.MaxQueueTime = newMax
-end
-
 --- Sets the skill levels.
 -- @param newSkillLevels The new skill levels.
 function MatchmakingService:SetSkillLevels(newSkillLevels)
@@ -103,7 +97,6 @@ end
 function MatchmakingService.new()
 	local Service = {}
 	setmetatable(Service, MatchmakingService)
-	Service.MaxQueueTime = 600
 	Service.SkillLevels = {}
 	Service.MatchmakingInterval = 0.5
 	Service.PlayerRange = NumberRange.new(6, 10)
