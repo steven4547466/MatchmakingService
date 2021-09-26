@@ -14,15 +14,15 @@ MatchmakingService:SetSkillLevels({1})
 MatchmakingService:SetGamePlace(placeToTeleportTo)
 
 game.Players.PlayerAdded:Connect(function(p)
-	MatchmakingService:QueuePlayer(p, 1)
+  MatchmakingService:QueuePlayer(p, 1)
 end)
 
 game.Players.PlayerRemoving:Connect(function(p)
-	MatchmakingService:RemovePlayerFromQueue(p, 1)
+  MatchmakingService:RemovePlayerFromQueue(p, 1)
 end)
 
 for i, p in ipairs(game.Players:GetPlayers()) do
-	MatchmakingService:QueuePlayer(p, 1)
+  MatchmakingService:QueuePlayer(p, 1)
 end
 ```
 
@@ -35,27 +35,27 @@ MatchmakingService:SetIsGameServer(true)
 
 -- Basic start function
 function Start()
-	MatchmakingService:StartGame(_G.gameId)
+  MatchmakingService:StartGame(_G.gameId)
 end
 
 game.Players.PlayerAdded:Connect(function(player)
-	local joinData = player:GetJoinData()
-	if _G.gameId == nil and joinData then
+  local joinData = player:GetJoinData()
+  if _G.gameId == nil and joinData then
     -- Global so its accessible from other scripts if it needs to be.
-		_G.gameId = joinData.TeleportData.gameCode
-	end
-	if #game.Players:GetPlayers() >= 2 then
-		Start()
-	end
+    _G.gameId = joinData.TeleportData.gameCode
+  end
+  if #game.Players:GetPlayers() >= 2 then
+    Start()
+  end
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-	MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
+  MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
 end)
 
 -- THIS IS EXTREMELY IMPORTANT
 game:BindToClose(function()
-	MatchmakingService:RemoveGame(_G.gameId)
+  MatchmakingService:RemoveGame(_G.gameId)
 end)
 ```
 
@@ -197,7 +197,7 @@ MatchmakingService:StartGame(gameId, false) -- Starts the game and locks players
 You can remove a game easily as well when the game server closes:
 ```lua
 game:BindToClose(function()
-	MatchmakingService:RemoveGame(gameId)
+  MatchmakingService:RemoveGame(gameId)
 end)
 ```
 
@@ -210,27 +210,27 @@ MatchmakingService:SetIsGameServer(true)
 
 -- Basic start function
 function Start()
-	MatchmakingService:StartGame(_G.gameId)
+  MatchmakingService:StartGame(_G.gameId)
 end
 
 game.Players.PlayerAdded:Connect(function(player)
-	local joinData = player:GetJoinData()
-	if _G.gameId == nil and joinData then
-		-- Global so its accessible from other scripts if it needs to be.
-		_G.gameId = joinData.TeleportData.gameCode
-	end
-	if #game.Players:GetPlayers() >= minPlayersToStart then
-		Start()
-	end
+  local joinData = player:GetJoinData()
+  if _G.gameId == nil and joinData then
+    -- Global so its accessible from other scripts if it needs to be.
+    _G.gameId = joinData.TeleportData.gameCode
+  end
+  if #game.Players:GetPlayers() >= minPlayersToStart then
+    Start()
+  end
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-	MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
+  MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
 end)
 
 -- THIS IS EXTREMELY IMPORTANT
 game:BindToClose(function()
-	MatchmakingService:RemoveGame(_G.gameId)
+  MatchmakingService:RemoveGame(_G.gameId)
 end)
 ```
 If you put this script in your game server in ServerScriptService, it will handle setting game id and removing players from the game on disconnect and removing the game itself on close.

@@ -110,12 +110,12 @@ function MatchmakingService.new()
 	Service.GamePlaceId = -1
 	Service.IsGameServer = false
 	local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
-	
+
 	-- Clears the store in studio 
 	if RunService:IsStudio() then 
 		memory:SetAsync("RunningGames", {}, 1)
 	end
-	
+
 	coroutine.wrap(function()
 		while not Service.IsGameServer do
 			task.wait(Service.MatchmakingInterval)
@@ -129,7 +129,7 @@ function MatchmakingService.new()
 					return nil
 				end, 86400)
 			elseif mainJobId == game.JobId then
-				
+
 				-- Check all games for open slots
 				local runningGames = memory:GetAsync("RunningGames")
 				if runningGames ~= nil then
@@ -140,33 +140,33 @@ function MatchmakingService.new()
 							local values = first(queue, Service.PlayerRange.Max - #mem.players)
 							if values ~= nil and #values > 0 then
 								local plrs = {}
-								
+
 								for _, v in ipairs(values) do
 									table.insert(plrs, v[1])
 									Service:SetPlayerInfo(v[1], code)
 								end
-								
+
 								Service:AddPlayersToGameId(plrs, code)
-								
+
 								Service:RemovePlayersFromQueueId(tableSelect(values, 1), mem.skillLevel)
 							end
 						end
 					end
 				end	
-				
+
 				-- Main matchmaking
 				for _, skillLevel in ipairs(Service.SkillLevels)  do
-					
+
 					local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 					local queue = memoryQueue:GetAsync(tostring(skillLevel))
 					local values = first(queue, Service.PlayerRange.Max)
-					
+
 					for i = #values, 1, -1 do
 						if values[i][2] >= now - Service.MatchmakingInterval*1000 then
 							table.remove(values, i)
 						end
 					end
-					
+
 					-- If there aren't enough players than skip this skill level
 					if values == nil or #values < Service.PlayerRange.Min then
 						continue
@@ -205,7 +205,7 @@ function MatchmakingService.new()
 					end
 				end
 			end
-			
+
 			-- Teleport any players to their respective games
 			local playersToTeleport = {}
 			for _, v  in ipairs(Players:GetPlayers()) do
@@ -223,7 +223,7 @@ function MatchmakingService.new()
 					end
 				end
 			end
-			
+
 			for code, players in pairs(playersToTeleport) do
 				if code ~= "TEST" then 
 					TeleportService:TeleportToPrivateServer(Service.GamePlaceId, code, players, nil, {gameCode=code})
