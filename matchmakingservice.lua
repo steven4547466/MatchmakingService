@@ -321,11 +321,7 @@ end
 -- @param players The players to remove from queue.
 -- @param skillLevel The skill level of the players.
 function MatchmakingService:RemovePlayersFromQueue(players, skillLevel)
-	local playerIds = {}
-	for _, p in ipairs(players) do
-		table.insert(playerIds, p.UserId)
-	end
-	self:RemovePlayersFromQueueId(playerIds, skillLevel)
+	self:RemovePlayersFromQueueId(tableSelect(players, "UserId"), skillLevel)
 end
 
 --- Removes a specific player id from the queue.
