@@ -153,7 +153,8 @@ function MatchmakingService.new()
 					local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 					local queue = memoryQueue:GetAsync(tostring(skillLevel))
 					local values = first(queue, Service.PlayerRange.Max)
-
+					
+					if values == nil then continue end
 					for i = #values, 1, -1 do
 						if values[i][2] >= now - Service.MatchmakingInterval*1000 then
 							table.remove(values, i)
