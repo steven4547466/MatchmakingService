@@ -153,7 +153,7 @@ function MatchmakingService.new()
 					local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 					local queue = memoryQueue:GetAsync(tostring(skillLevel))
 					local values = first(queue, Service.PlayerRange.Max)
-					
+
 					if values == nil then continue end
 					for i = #values, 1, -1 do
 						if values[i][2] >= now - Service.MatchmakingInterval*1000 then
@@ -162,7 +162,7 @@ function MatchmakingService.new()
 					end
 
 					-- If there aren't enough players than skip this skill level
-					if values == nil or #values < Service.PlayerRange.Min then
+					if #values < Service.PlayerRange.Min then
 						continue
 					else
 						-- Otherwise reserve a server and tell all servers the player is ready to join
@@ -247,7 +247,7 @@ function MatchmakingService:QueuePlayerId(player, skillLevel)
 	local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 	local now = DateTime.now().UnixTimestampMillis
 	local new = memoryQueue:UpdateAsync(tostring(skillLevel), function(old)
-		if old == nil then return {{player.UserId}, now} end
+		if old == nil then return {{player.UserId, now}} end
 		if find(old, function(entry)
 				return entry[1] == player.UserId
 			end) ~= nil then return old end
