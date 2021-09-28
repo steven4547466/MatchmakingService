@@ -1,62 +1,78 @@
 # MatchmakingService
-Current Version: V1.0.1-beta
+Current Version: V2.0.0-beta
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 MatchmakingService is a way to easily make games that involve matchmaking. It utilizes the new MemoryStoreService for blazing fast execution speed. MatchmakingService is as easy to use as:
 
 (On your hub server where players queue from)
 ```lua
+-- Obtain the service
 local MatchmakingService = require(7567983240).GetSingleton()
 
--- Register the number 1 as a skill level. Skill levels can be numbers or strings reliably.
-MatchmakingService:SetSkillLevels({1})
+-- Set the game place
+MatchmakingService:SetGamePlace(7584483307)
 
--- Set the game place that players will be teleported to.
-MatchmakingService:SetGamePlace(placeToTeleportTo)
-
+-- Queue players (you can call QueuePlayer from anywhere)
 game.Players.PlayerAdded:Connect(function(p)
-  MatchmakingService:QueuePlayer(p, 1)
+	MatchmakingService:QueuePlayer(p, "ranked")
 end)
 
 game.Players.PlayerRemoving:Connect(function(p)
-  MatchmakingService:RemovePlayerFromQueue(p, 1)
+	MatchmakingService:RemovePlayerFromQueue(p)
 end)
 
 for i, p in ipairs(game.Players:GetPlayers()) do
-  MatchmakingService:QueuePlayer(p, 1)
+	MatchmakingService:QueuePlayer(p, "ranked")
 end
 ```
 
 On the game where players are teleported to:
 ```lua
-local MatchmakingService = require(7567983240).GetSingleton()
+local MatchmakingService = require(game.ServerStorage.MainModule).GetSingleton()
 
 -- Tell the service this is a game server
 MatchmakingService:SetIsGameServer(true)
 
+local t1 = {}
+local t2 = {}
 -- Basic start function
 function Start()
-  MatchmakingService:StartGame(_G.gameId)
+	print("Started")
+	MatchmakingService:StartGame(_G.gameId)
+	-- Simple teams.
+	local p = game.Players:GetPlayers()
+	table.insert(t1, p[1])
+	table.insert(t2, p[2])
+end
+
+-- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!
+function EndGame(winner)
+	MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
+	for i, v in ipairs(game.Players:GetPlayers()) do
+		-- You can teleport them back to the hub here, I just kick them
+		v:Kick()
+	end
 end
 
 game.Players.PlayerAdded:Connect(function(player)
-  local joinData = player:GetJoinData()
-  if _G.gameId == nil and joinData then
-    -- Global so its accessible from other scripts if it needs to be.
-    _G.gameId = joinData.TeleportData.gameCode
-  end
-  if #game.Players:GetPlayers() >= 2 then
-    Start()
-  end
+	local joinData = player:GetJoinData()
+	if _G.gameId == nil and joinData then
+		-- Global so its accessible from other scripts if it needs to be.
+		_G.gameId = joinData.TeleportData.gameCode
+		_G.ratingType = joinData.TeleportData.ratingType
+	end
+	if #game.Players:GetPlayers() >= 2 then
+		Start()
+	end
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-  MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
+	MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
 end)
 
 -- THIS IS EXTREMELY IMPORTANT
 game:BindToClose(function()
-  MatchmakingService:RemoveGame(_G.gameId)
+	MatchmakingService:RemoveGame(_G.gameId)
 end)
 ```
 
@@ -85,18 +101,6 @@ This makes it easy to stay up to date, but it isn't necessary.
 ### Changing settings
 You can choose to change the properties themselves, or you can use the setters. It doesn't matter which you use, but the setters are documented as follows:
 
-#### Registering skill levels
-Currently, MatchmakingService will only match users of the same skill level. It is planned to broaden searches over time but that is not yet possible in this version. You must have at least one skill level registered and users **must** be queued with a skill level. If your game doesn't have skill levels, then register a single skill level and default queue players with it. Skill levels is a table of anything, but you should keep it either strings or numbers (this may change in the future).
-
-You can set the registered skill levels like so:
-```lua
-local MatchmakingService = require(7567983240).GetSingleton()
-MatchmakingService:SetSkillLevels({1,2,3,4,5,6}) -- Registers the skill levels as 1, 2, 3, 4, 5, and 6.
-```
-
-##### Dynamic skill levels
-Dynamic skill levels will register skill levels on queue if it doesn't exist. **THIS IS CURRENTLY NOT IMPLEMENTED.**
-
 ### Setting the update interval
 By default, MatchmakingService will try to find matches or teleport players to their matches every half second. You can change this for any number of reasons like performance, but I recommend the 0.5-3 second range. Changing it is simple:
 ```lua
@@ -122,8 +126,72 @@ MatchmakingService:SetGamePlace(7563846691) -- Sets the game place to 7563846691
 You will need to require the MatchmakingService in your game servers as well. You don't want your game servers running the matchmaking loop unnecessarily so denoting them as a game server will prevent the matchmaking from running. This is a simple boolean value and defaults to false:
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()
-MatchmakingService:SetIsGameServer(true) -- Denoates this server as a game server
+MatchmakingService:SetIsGameServer(true) -- Denotes this server as a game server.
 ```
+
+### Setting the starting rating
+As of `v2.0.0-beta`, MatchmakingService uses [an implementation](https://devforum.roblox.com/t/a-lua-implementation-of-the-glicko-2-rating-algorithm-for-skill-based-matchmaking/1442673) of glicko-2 for rating purposes. You can set the starting rating like so (default is 0, negative rating does exist):
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+MatchmakingService:SetStartingRating(1000) -- Sets the starting rating to 1000.
+```
+
+### Two additional glicko-2 initalizers
+I won't go into detail what these two initializers do as you shouldn't modify them unless you know how glicko-2 works and want to set up very specific starting conditions.
+
+The first one is starting rating deviation:
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+MatchmakingService:SetStartingDeviation(0.08314) -- Sets the starting deviation to 0.08314.
+```
+
+The next is volatility:
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+MatchmakingService:SetStartingVolatility(0.6) -- Sets the starting volatility to 0.6.
+```
+
+I do not recommend changing them from their default values.
+
+# Getting/Setting ratings
+While I do not recommend ever setting ratings directly, you may want to get ratings for any number of reasons. MatchmakingService exposes both operations.
+
+### How glicko-2 objects work
+A glicko-2 object is guaranteed to have these three properies: `Rating`, `RD` (Rating deviation), and `Vol` (Volatility). The main thing you would ever access is the `Rating` property. This object may also contain a `Score` property, but that has to do with how ratings are updated and it's unlikely you will ever see it.
+
+### Getting a glicko-2 object
+One of a player's glicko-2 object(s) can be retrieved like so (if it does not exist it will be created and defaulted): 
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+local g = MatchmakingService:GetPlayerGlicko(player, "ranked") -- Gets the player's ranked glicko-2 object.
+print(g.Rating)
+```
+You can access the properties described above when you retrieve the object. Changing these values will have no effect.
+
+### Setting a player's glicko-2 object
+As I stated above I do not recommend using this, but if you want to set specific ratings the option is available for you. This must be a glicko-2 object.
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+ MatchmakingService:GetPlayerGlicko(player, "ranked", glicko2Object) -- Sets the player's ranked glicko-2 object.
+```
+
+# Updating a player's rating after a game
+Currently MatchmakingService supports games that have 2 teams with any number of players on each team. As described in the example handler script, you must update the players' ratings before the game is closed. It must execute before `BindToClose`, this means that it cannot be put in `BindToClose`. A simple way to handle this is make a basic game ender:
+```lua
+-- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!
+function EndGame()
+	MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
+	for i, v in ipairs(game.Players:GetPlayers()) do
+		-- You can teleport them back to the hub here, I just kick them
+		v:Kick()
+	end
+end
+``` 
+
+To break this down I will go over the parameters of this method:
+`MatchmakingService:UpdateRatings(t1, t2, ratingType, winner)` takes the two teams (t1 and t2), these are tables of players. Following the second team is the rating type, this is passed in the teleport data of players, in the example script it's set to `_G.ratingType`. Finally we have the winner. This is either 0, 1, or 2. If the game is a draw, the value should be 0, if team one won then you should pass 1. And obviously if team 2 won you pass 2. 
+
+This method update, and then save player ratings for that specific rating type.
 
 # Managing the queue
 Most of the functions of MatchmakingService are for internal use, but are exposed if you want to directly manage the queue yourself. All of the methods shown here have an equivalent id variant that accepts player ids instead of player objects. These exist for convenience. For example `QueuePlayer` is the same as `QueuePlayerId`, except `QueuePlayer` takes a player and `QueuePlayerId` takes a user id.
@@ -134,22 +202,22 @@ Enough with that though here's all the methods that MatchmakingService provides 
 Queuing a player is simple:
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()
-MatchmakingService:QueuePlayer(player, 1) -- Queues the player with a skill level of 1.
+MatchmakingService:QueuePlayer(player, "ranked") -- Queues the player in the ranked queue pool. Ranked can be any string you want. Think of them as different game modes or queue types. For example in League of Legends you have blind, draft, and ranked. All 3 of these game types use a separate rating behind the scenes.
 ```
-If no skill level is provided, or the skill level is not registered and dynamic skill levels is disabled this method will error.
+For now, a rating type must be provided, but in future versions the default will be "none" which will have no rating nor will it have skill-based match making.
 
 ### Removing a player from queue
-Same as adding a player just with removing. Skill level is required because the memory stores are separated by skill level.
+Removing a player is also incredibly simple:
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()
-MatchmakingService:RemovePlayerFromQueue(player, 1) -- Removes the player from the queue. Skill level is also required here.
+MatchmakingService:RemovePlayerFromQueue(player) -- Removes the player from the queue.
 ```
 
 ### Removing multiple players from the queue
-If you handle your own matchmaking you may want to remove multiple users from the queue at the same thime which is more efficient than running 10 update operations. This method does that for you and takes a table of players:
+If you handle your own matchmaking you may want to remove multiple users from the queue at the same time which is more efficient than running 10 update operations. This method does that for you and takes a table of players:
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()
-MatchmakingService:RemovePlayersFromQueue(players, 1) -- Removes the players from the queue. Skill level is also required here.
+MatchmakingService:RemovePlayersFromQueue(players) -- Removes the players from the queue.
 ```
 
 ### Adding a player to a game
