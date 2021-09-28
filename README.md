@@ -172,7 +172,7 @@ You can access the properties described above when you retrieve the object. Chan
 As I stated above I do not recommend using this, but if you want to set specific ratings the option is available for you. This must be a glicko-2 object.
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()
- MatchmakingService:GetPlayerGlicko(player, "ranked", glicko2Object) -- Sets the player's ranked glicko-2 object.
+ MatchmakingService:SetPlayerGlicko(player, "ranked", glicko2Object) -- Sets the player's ranked glicko-2 object.
 ```
 
 # Updating a player's rating after a game
@@ -191,7 +191,7 @@ end
 To break this down I will go over the parameters of this method:
 `MatchmakingService:UpdateRatings(t1, t2, ratingType, winner)` takes the two teams (t1 and t2), these are tables of players. Following the second team is the rating type, this is passed in the teleport data of players, in the example script it's set to `_G.ratingType`. Finally we have the winner. This is either 0, 1, or 2. If the game is a draw, the value should be 0, if team one won then you should pass 1. And obviously if team 2 won you pass 2. 
 
-This method update, and then save player ratings for that specific rating type.
+This method updates, and then saves player ratings for that specific rating type.
 
 # Managing the queue
 Most of the functions of MatchmakingService are for internal use, but are exposed if you want to directly manage the queue yourself. All of the methods shown here have an equivalent id variant that accepts player ids instead of player objects. These exist for convenience. For example `QueuePlayer` is the same as `QueuePlayerId`, except `QueuePlayer` takes a player and `QueuePlayerId` takes a user id.
