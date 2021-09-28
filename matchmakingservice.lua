@@ -521,6 +521,83 @@ function MatchmakingService:QueuePlayer(player, ratingType)
   return self:QueuePlayerId(player.UserId, ratingType)
 end
 
+--- Removes a specific player id from the queue.
+-- @param player The player id to remove from queue.
+-- @return true if there was no error.
+function MatchmakingService:RemovePlayerFromQueueId(player)
+  local empty = {}
+  local hasErrors = false
+  local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
+  local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
+  local success, errorMessage
+
+  local queuedSkillLevels = memory:GetAsync("QueuedSkillLevels")
+  if queuedSkillLevels == nil then return end
+  for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
+    for i, skillLevelTable in ipairs(skillLevelQueue) do
+      local skillLevel = skillLevelTable[1]
+      success, errorMessage = pcall(function()
+        memoryQueue:UpdateAsync(ratingType, function(old)
+          if old == nil then return nil end
+          if old[tostring(skillLevel)] == nil then old[tostring(skillLevel)] = {} end
+          local index = find(old[tostring(skillLevel)], function(entry)
+            return entry[1] == player
+          end)
+          if index == nil then return nil end
+          table.remove(old[tostring(skillLevel)], index)
+          if empty[ratingType] == nil then empty[ratingType] = {} end
+          empty[ratingType][skillLevel] = #old[tostring(skillLevel)] == 0	
+          return old
+        end, 86400)
+      end)
+
+      if not success then
+        hasErrors = true
+        print("Unable to remove player from queue:")
+        print(errorMessage)
+      end
+    end
+  end
+
+
+  for ratingType, tbl in pairs(empty) do
+    for skillLevel, isEmpty in pairs(tbl) do
+      if not isEmpty then continue end
+      success, errorMessage = pcall(function()
+        memory:UpdateAsync("QueuedSkillLevels", function(old)
+          if old == nil then return nil end
+          if old[ratingType] == nil then old[ratingType] = {} end
+          local index = find(old[ratingType], function(entry)
+            return entry[1] == skillLevel
+          end)
+          if index ~= nil then return nil end
+          table.remove(old[ratingType], index)
+          table.sort(old[ratingType], function(a, b)
+            return b[1] > a[1]
+          end)
+          return old
+        end, 86400)			
+      end)
+
+      if not success then
+        hasErrors = true
+        print("Unable to update Queued Skill Levels:")
+        print(errorMessage)
+      end
+    end
+  end
+
+  return hasErrors
+end
+
+--- Removes a specific player from the queue.
+-- @param player The player to remove from queue.
+-- @return true if there was no error.
+function MatchmakingService:RemovePlayerFromQueue(player)
+  return self:RemovePlayerFromQueueId(player.UserId)
+end
+
+
 --- Removes a table of player ids from the queue.
 -- @param players The player ids to remove from queue.
 -- @return true if there was no error.
@@ -599,82 +676,6 @@ end
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayersFromQueue(players)
   return self:RemovePlayersFromQueueId(tableSelect(players, "UserId"))
-end
-
---- Removes a specific player id from the queue.
--- @param player The player id to remove from queue.
--- @return true if there was no error.
-function MatchmakingService:RemovePlayerFromQueueId(player)
-  local empty = {}
-  local hasErrors = false
-  local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
-  local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
-  local success, errorMessage
-
-  local queuedSkillLevels = memory:GetAsync("QueuedSkillLevels")
-  if queuedSkillLevels == nil then return end
-  for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
-    for i, skillLevelTable in ipairs(skillLevelQueue) do
-      local skillLevel = skillLevelTable[1]
-      success, errorMessage = pcall(function()
-        memoryQueue:UpdateAsync(ratingType, function(old)
-          if old == nil then return nil end
-          if old[tostring(skillLevel)] == nil then old[tostring(skillLevel)] = {} end
-          local index = find(old[tostring(skillLevel)], function(entry)
-            return entry[1] == player
-          end)
-          if index == nil then return nil end
-          table.remove(old[tostring(skillLevel)], index)
-          if empty[ratingType] == nil then empty[ratingType] = {} end
-          empty[ratingType][skillLevel] = #old[tostring(skillLevel)] == 0	
-          return old
-        end, 86400)
-      end)
-
-      if not success then
-        hasErrors = true
-        print("Unable to remove player from queue:")
-        print(errorMessage)
-      end
-    end
-  end
-
-
-  for ratingType, tbl in pairs(empty) do
-    for skillLevel, isEmpty in pairs(tbl) do
-      if not isEmpty then continue end
-      success, errorMessage = pcall(function()
-        memory:UpdateAsync("QueuedSkillLevels", function(old)
-          if old == nil then return nil end
-          if old[ratingType] == nil then old[ratingType] = {} end
-          local index = find(old[ratingType], function(entry)
-            return entry[1] == skillLevel
-          end)
-          if index ~= nil then return nil end
-          table.remove(old[ratingType], index)
-          table.sort(old[ratingType], function(a, b)
-            return b[1] > a[1]
-          end)
-          return old
-        end, 86400)			
-      end)
-
-      if not success then
-        hasErrors = true
-        print("Unable to update Queued Skill Levels:")
-        print(errorMessage)
-      end
-    end
-  end
-
-  return hasErrors
-end
-
---- Removes a specific player from the queue.
--- @param player The player to remove from queue.
--- @return true if there was no error.
-function MatchmakingService:RemovePlayerFromQueue(player)
-  return self:RemovePlayerFromQueueId(player.UserId)
 end
 
 --- Adds a player id to a specific existing game.
