@@ -318,7 +318,7 @@ function MatchmakingService.new()
                 end
               end, 86400)
               for _, v in ipairs(values) do
-                Service:SetPlayerInfoId(v[1], reservedCode)
+                Service:SetPlayerInfoId(v[1], reservedCode, ratingType)
               end
               Service:RemoveExpansions(ratingType, skillLevel)
               Service:RemovePlayersFromQueueId(tableSelect(values, 1), skillLevel)
@@ -329,12 +329,14 @@ function MatchmakingService.new()
 
       -- Teleport any players to their respective games
       local playersToTeleport = {}
+      local playersToRatings = {}
       for _, v  in ipairs(Players:GetPlayers()) do
         local playerData = memory:GetAsync(v.UserId)
         if playerData ~= nil then
           if not playerData.teleported then
             if playersToTeleport[playerData.curGame] == nil then playersToTeleport[playerData.curGame] = {} end
             table.insert(playersToTeleport[playerData.curGame], v)
+            playersToRatings[v.UserId] = playerData.ratingType
             local new = memory:UpdateAsync(v.UserId, function(old)
               if old then
                 old.teleported = true
@@ -347,7 +349,7 @@ function MatchmakingService.new()
 
       for code, players in pairs(playersToTeleport) do
         if code ~= "TEST" then 
-          TeleportService:TeleportToPrivateServer(Service.GamePlaceId, code, players, nil, {gameCode=code})
+          TeleportService:TeleportToPrivateServer(Service.GamePlaceId, code, players, nil, {gameCode=code, ratingType=playersToRatings[players[1].UserId]})
         end
       end
     end
@@ -446,9 +448,9 @@ end
 --- Sets the player info.
 -- @param playerId The player id to update.
 -- @param code The game id that the player will teleport to.
-function MatchmakingService:SetPlayerInfoId(playerId, code)
+function MatchmakingService:SetPlayerInfoId(playerId, code, ratingType)
   local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
-  memory:SetAsync(playerId, {curGame=code,teleported=false}, 7200)
+  memory:SetAsync(playerId, {curGame=code,teleported=false,ratingType=ratingType}, 7200)
 end
 
 --- Sets the player info.
