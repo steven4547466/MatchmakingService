@@ -28,7 +28,7 @@ end
 
 On the game where players are teleported to:
 ```lua
-local MatchmakingService = require(game.ServerStorage.MainModule).GetSingleton()
+local MatchmakingService = require(7567983240).GetSingleton()
 
 -- Tell the service this is a game server
 MatchmakingService:SetIsGameServer(true)
@@ -270,29 +270,46 @@ local MatchmakingService = require(7567983240).GetSingleton()
 -- Tell the service this is a game server
 MatchmakingService:SetIsGameServer(true)
 
+local t1 = {}
+local t2 = {}
 -- Basic start function
 function Start()
-  MatchmakingService:StartGame(_G.gameId)
+	print("Started")
+	MatchmakingService:StartGame(_G.gameId)
+	-- Simple teams.
+	local p = game.Players:GetPlayers()
+	table.insert(t1, p[1])
+	table.insert(t2, p[2])
+end
+
+-- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!
+function EndGame(winner)
+	MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
+	for i, v in ipairs(game.Players:GetPlayers()) do
+		-- You can teleport them back to the hub here, I just kick them
+		v:Kick()
+	end
 end
 
 game.Players.PlayerAdded:Connect(function(player)
-  local joinData = player:GetJoinData()
-  if _G.gameId == nil and joinData then
-    -- Global so its accessible from other scripts if it needs to be.
-    _G.gameId = joinData.TeleportData.gameCode
-  end
-  if #game.Players:GetPlayers() >= minPlayersToStart then
-    Start()
-  end
+	local joinData = player:GetJoinData()
+	if _G.gameId == nil and joinData then
+		-- Global so its accessible from other scripts if it needs to be.
+		_G.gameId = joinData.TeleportData.gameCode
+		_G.ratingType = joinData.TeleportData.ratingType
+	end
+	if #game.Players:GetPlayers() >= 2 then
+		Start()
+	end
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-  MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
+	MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
 end)
 
 -- THIS IS EXTREMELY IMPORTANT
 game:BindToClose(function()
-  MatchmakingService:RemoveGame(_G.gameId)
+	MatchmakingService:RemoveGame(_G.gameId)
 end)
 ```
 If you put this script in your game server in ServerScriptService, it will handle setting game id and removing players from the game on disconnect and removing the game itself on close.
