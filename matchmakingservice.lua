@@ -383,10 +383,6 @@ function MatchmakingService:GetPlayerGlickoId(player, ratingType)
     profile.Data[ratingType] = Glicko2.g2(self.StartingRating, self.StartingDeviation, self.StartingVolatility):serialize()
   end
 
-  for i, v in ipairs(profile.Data[ratingType]) do
-    print(tostring(i)..") "..tostring(v))
-  end
-
   return Glicko2.deserialize(profile.Data[ratingType], 2)
 end
 
