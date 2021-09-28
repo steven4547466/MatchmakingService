@@ -361,44 +361,28 @@ end
 -- @param player The player id to get the glicko object of
 -- @param ratingType The rating type to get.
 -- @return The deserialzed glicko object.
-function MatchmakingService:GetPlayerGlickoId(player, ratingType, force)
+function MatchmakingService:GetPlayerGlickoId(player, ratingType)
   local i = 0
   local profile = nil
-  local neededFetch = false
-  if not force then
-    while Profiles[player] == nil do
-      task.wait(0.1)
-      i += 0.1
-      if i > 3 then 
-        error("Unable to get player profile: Wait time exceeded")
-        return 
-      end
-    end
-    profile = Profiles[player]
-  else
-    if Profiles[player] then
-      profile = Profiles[player]
-    else
-      neededFetch = true
-      local p = ProfileStore:LoadProfileAsync("Player_" .. player)
-      if p ~= nil then
-        p:AddUserId(player.UserId)
-        p:Reconcile() -- In case we add anything to defaults in the future
-        profile = p
-      end
+  while Profiles[player] == nil do
+    task.wait(0.1)
+    i += 0.1
+    if i > 3 then 
+      error("Unable to get player profile: Wait time exceeded")
+      return 
     end
   end
-  
+
+  profile = Profiles[player]
+
   local playerRatingSerialized = profile.Data[ratingType]
 
   if playerRatingSerialized == nil then
     profile.Data[ratingType] = Glicko2.g2(self.StartingRating, self.StartingDeviation, self.StartingVolatility):serialize()
   end
-  
-  if force then
-    local deserialized = Glicko2.deserialize(profile.Data[ratingType], 2) 
-    if neededFetch then profile:Release() end
-    return deserialized
+
+  for i, v in ipairs(profile.Data[ratingType]) do
+    print(tostring(i)..") "..tostring(v))
   end
 
   return Glicko2.deserialize(profile.Data[ratingType], 2)
@@ -410,8 +394,8 @@ end
 -- @param player The player to get the glicko object of
 -- @param ratingType The rating type to get.
 -- @return The deserialzed glicko object.
-function MatchmakingService:GetPlayerGlicko(player, ratingType, force)
-  return self:GetPlayerGlickoId(player.UserId, ratingType, force)
+function MatchmakingService:GetPlayerGlicko(player, ratingType)
+  return self:GetPlayerGlickoId(player.UserId, ratingType)
 end
 
 --- Sets a players rating.
@@ -420,37 +404,20 @@ end
 -- @param player The player id to get the glicko object of
 -- @param ratingType The rating type to get.
 -- @param glicko The new glicko object
-function MatchmakingService:SetPlayerGlickoId(player, ratingType, glicko, force)
+function MatchmakingService:SetPlayerGlickoId(player, ratingType, glicko)
   local i = 0
   local profile = nil
-  local neededFetch = false
-  if not force then
-    while Profiles[player] == nil do
-      task.wait(0.1)
-      i += 0.1
-      if i > 3 then 
-        error("Unable to get player profile: Wait time exceeded")
-        return 
-      end
-    end
-    profile = Profiles[player]
-  else
-    if Profiles[player] then
-      profile = Profiles[player]
-    else
-      neededFetch = true
-      local p = ProfileStore:LoadProfileAsync("Player_" .. player)
-      if p ~= nil then
-        p:AddUserId(player.UserId)
-        p:Reconcile() -- In case we add anything to defaults in the future
-        profile = p
-      end
+  while Profiles[player] == nil do
+    task.wait(0.1)
+    i += 0.1
+    if i > 3 then 
+      error("Unable to get player profile: Wait time exceeded")
+      return 
     end
   end
+  profile = Profiles[player]
+
   profile.Data[ratingType] = glicko:serialize()
-  if force and neededFetch then
-    profile:Release()
-  end
 end
 
 --- Sets a players rating.
@@ -459,8 +426,8 @@ end
 -- @param player The player to get the glicko object of
 -- @param ratingType The rating type to get.
 -- @param glicko The new glicko object
-function MatchmakingService:SetPlayerGlicko(player, ratingType, glicko, force)
-  self:SetPlayerGlickoId(player.UserId, ratingType, glicko, force)
+function MatchmakingService:SetPlayerGlicko(player, ratingType, glicko)
+  self:SetPlayerGlickoId(player.UserId, ratingType, glicko)
 end
 
 --- Clears the player info.
@@ -852,9 +819,10 @@ end
 --- Update player ratings after a game is over.
 -- @param team1 Team 1's player id's.
 -- @param team1 Team 2's player id's.
+-- @param ratingType The rating type of the game.
 -- @param winner The winner of the game (0 - Draw, 1 - Team 1 win, 2 - Team 2 win).
 -- @return true if there was no error.
-function MatchmakingService:UpdateRatingsId(team1, team2, winner)
+function MatchmakingService:UpdateRatingsId(team1, team2, ratingType, winner)
   local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
   local success, errorMessage = pcall(function()
     local team1Scored = {}
@@ -867,23 +835,25 @@ function MatchmakingService:UpdateRatingsId(team1, team2, winner)
     for _, id in ipairs(team1) do
       -- Update with the opposite score because they're opponents
       -- basically if they win score them with 0 as that means team 2 lost against them when we update
-      local glicko = self:GetPlayerGlickoId(id, true):score(t2Score)
+      local glicko = self:GetPlayerGlickoId(id, ratingType):score(t2Score)
       table.insert(team1Scored, glicko)
     end
 
     for _, id in ipairs(team2) do
-      local glicko = self:GetPlayerGlickoId(id, true):score(t1Score)
+      local glicko = self:GetPlayerGlickoId(id, ratingType):score(t1Score)
       table.insert(team2Scored, glicko)
     end
-    
+
     for _, id in ipairs(team1) do
-      local glicko = self:GetPlayerGlickoId(id, true):update(team2Scored) -- Update them against the scored glickos of team 2
-      self:SetPlayerGlickoId(id, glicko, true)
+      local glicko = self:GetPlayerGlickoId(id, ratingType):update(team2Scored) -- Update them against the scored glickos of team 2
+      self:SetPlayerGlickoId(id, ratingType, glicko)
+      self:GetPlayerGlickoId(id, ratingType)
     end
 
     for _, id in ipairs(team2) do
-      local glicko = self:GetPlayerGlickoId(id):update(team1Scored) -- Update them against the scored glickos of team 1
-      self:SetPlayerGlickoId(id, glicko, true)
+      local glicko = self:GetPlayerGlickoId(id, ratingType):update(team1Scored) -- Update them against the scored glickos of team 1
+      self:SetPlayerGlickoId(id, ratingType, glicko)
+      self:GetPlayerGlickoId(id, ratingType)
     end
   end)
   if not success then
@@ -896,10 +866,11 @@ end
 --- Update player ratings after a game is over.
 -- @param team1 Team 1's players.
 -- @param team1 Team 2's player.
+-- @param ratingType The rating type of the game.
 -- @param winner The winner of the game (0 - Draw, 1 - Team 1 win, 2 - Team 2 win).
 -- @return true if there was no error.
-function MatchmakingService:UpdateRatings(team1, team2, winner)
-  return self:UpdateRatingsId(tableSelect(team1, "UserId"), tableSelect(team1, "UserId"), winner)
+function MatchmakingService:UpdateRatings(team1, team2, ratingType, winner)
+  return self:UpdateRatingsId(tableSelect(team1, "UserId"), tableSelect(team2, "UserId"), ratingType, winner)
 end
 
 --- Removes a game from memory.
