@@ -300,11 +300,9 @@ If you put this script in your game server in ServerScriptService, it will handl
 # Future Plans
 
 - A party system
-- Dynamic skill level creation
-- Not requiring skill levels at all
+- A "none" rating type
 - Switch to MemoryQueues if/when we get more ways to manage it
 - Fully random access management that doesn't use a central server
-- Proper skill level algorithmic matchmaking
 
 # Updates
 I do plan to update this to fix bugs and add features when I have free time. I don't get a lot of free time these days because of college and the game that I'm currently working on, but updates/fixes will release periodically.
