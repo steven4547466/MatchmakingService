@@ -198,6 +198,15 @@ Most of the functions of MatchmakingService are for internal use, but are expose
 
 Enough with that though here's all the methods that MatchmakingService provides to manage your queue.
 
+### Getting queue counts
+You may want to get a count of players in the queue. This can be accomplished like so:
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+local perRating, totalCount = MatchmakingService:GetQueueCounts()
+```
+
+`perRating` is a table of `{ratingType=count}` and `totalCount` is the sum of those.
+
 ### Adding a player to the queue
 Queuing a player is simple:
 ```lua
