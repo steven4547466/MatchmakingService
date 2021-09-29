@@ -38,6 +38,46 @@ function find(haystack, needle)
   return nil
 end
 
+function dictlen(dict)
+  local counter = 0
+  for _ in pairs(dict) do
+    counter += 1
+  end
+  return counter
+end
+
+function any(haystack, cond)
+  if haystack == nil or cond == nil then return false end
+  for i, v in pairs(haystack) do
+    if cond(v) then
+      return true
+    end
+  end
+  return false
+end
+
+function all(haystack, needles)
+  if haystack == nil or needles == nil then return false end
+  local hasNeedles = {}
+  for i, v in ipairs(needles) do
+    hasNeedles[v] = false
+  end
+  for i, v in ipairs(haystack) do
+    if table.find(needles, v) ~= nil then
+      hasNeedles[v] = true
+    end
+  end
+  return not any(hasNeedles, function(x) return not x end)
+end
+
+function reduce(haystack, transform, default)
+  local cur = default or 0
+  for k, v in pairs(haystack) do
+    cur = transform(cur, v, k, haystack)
+  end
+  return cur
+end
+
 function tableSelect(haystack, prop)
   if haystack == nil then return nil end
   local toReturn = {}
@@ -173,6 +213,12 @@ function MatchmakingService:SetStartingVolatility(newStartingVolatility)
   self.StartingVolatility = newStartingVolatility
 end
 
+--- Sets the max gap in rating between party members.
+-- @param newMaxGap The new starting volatility.
+--function MatchmakingService:SetMaxPartySkillGap(newMaxGap)
+--	self.MaxPartySkillGap = newMaxGap
+--end
+
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
   local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
@@ -196,6 +242,7 @@ function MatchmakingService.new()
   Service.PlayerRange = NumberRange.new(6, 10)
   Service.GamePlaceId = -1
   Service.IsGameServer = false
+  --Service.MaxPartySkillGap = 50
   local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
 
   -- Clears the store in studio 
@@ -456,7 +503,29 @@ function MatchmakingService:SetPlayerInfo(player, code)
   self:SetPlayerInfoId(player.UserId, code)
 end
 
---- Queues a player with a specific skill level.
+--- Counts how many players are in the queues.
+-- @return A dictionary of {ratingType: count} and the full count.
+function MatchmakingService:GetQueueCounts()
+  local counts = {}
+  local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
+  local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
+  local queuedSkillLevels = memory:GetAsync("QueuedSkillLevels")
+  if queuedSkillLevels == nil then return {} end
+  for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
+    counts[ratingType] = 0
+    local queue = memoryQueue:GetAsync(ratingType)
+    for i, skillLevelTable in ipairs(skillLevelQueue)  do
+      if queue == nil then continue end
+      queue = queue[tostring(skillLevelTable[1])]
+      counts[ratingType] += #queue
+    end
+  end
+  return counts, reduce(counts, function(acc, cur)
+    return acc + cur
+  end)
+end
+
+--- Queues a player.
 -- @param player The player id to queue.
 -- @param ratingType The rating type to use.
 -- @return A boolean that is true if the player was queued.
@@ -513,13 +582,44 @@ function MatchmakingService:QueuePlayerId(player, ratingType)
   end) ~= nil
 end
 
---- Queues a player with a specific skill level.
+--- Queues a player.
 -- @param player The player to queue.
 -- @param ratingType The rating type to use.
 -- @return A boolean that is true if the player was queued.
 function MatchmakingService:QueuePlayer(player, ratingType)
   return self:QueuePlayerId(player.UserId, ratingType)
 end
+
+--- Queues a party.
+-- @param players The player ids to queue.
+-- @param ratingType The rating type to use.
+-- @return A boolean that is true if the party was queued.
+--function MatchmakingService:QueuePartyId(players, ratingType)
+--	local ratingValues = {}
+--	local avg = 0
+--	for _, v in ipairs(players) do
+--		ratingValues[v] = self:GetPlayerGlickoId(v, ratingType)
+--		if any(ratingValues, function(r)
+--				return math.abs(ratingValues[v] - r) > self.MaxPartySkillGap
+--			end) then
+--			return false, v, "Rating disparity too high"
+--		end
+--		avg += ratingValues[v]
+--	end
+  
+--	avg = avg/dictlen(ratingValues)
+  
+--	local roundedRating = roundSkill(avg)
+  
+--end
+
+--- Queues a party.
+-- @param player The players to queue.
+-- @param ratingType The rating type to use.
+-- @return A boolean that is true if the party was queued.
+--function MatchmakingService:QueueParty(players, ratingType)
+--	return self:QueuePlayerId(tableSelect(players, "UserId"), ratingType)
+--end
 
 --- Removes a specific player id from the queue.
 -- @param player The player id to remove from queue.
