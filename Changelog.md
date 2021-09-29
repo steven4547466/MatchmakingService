@@ -1,5 +1,15 @@
 Changelog
 
+Version 2.1.0-beta
+Changes (breaking):
+* [Addition] `MatchmakingService:GetQueueCounts()`
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* None
+
 Version 2.0.0-beta:
 Changes (breaking):
 * [Change] `QueuePlayer` now takes a ratingType instead of a skill level.
