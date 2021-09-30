@@ -1,11 +1,27 @@
 Changelog
 
-Version 2.1.0-beta
+Version 2.2.0-beta
 Changes (breaking):
-* [Addition] `MatchmakingService:GetQueueCounts()`
+* None
 
 Changes (non-breaking):
+* [Addition] `MatchmakingService:SetMaxPartySkillGap(newMaxGap)`
+* [Addition] `MatchmakingService:GetPlayerInfo(player)`
+* [Addition] `MatchmakingService:QueueParty(players, ratingType)`
+* [Addition] `MatchmakingService:GetPlayerParty(player)`
+* [Addition] `MatchmakingService.PlayerAddedToQueue` signal.
+* [Addition] `MatchmakingService.PlayerRemovedFromQueue` signal.
+* [Change] `MatchmakingService:SetPlayerInfo` now accepts a new argument, party, which is a table of player ids in their party including the player's own id.
+
+Fixes:
 * None
+
+Version 2.1.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] `MatchmakingService:GetQueueCounts()`
 
 Fixes:
 * None

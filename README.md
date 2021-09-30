@@ -1,5 +1,5 @@
 # MatchmakingService
-Current Version: V2.1.0-beta
+Current Version: V2.2.0-beta
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 MatchmakingService is a way to easily make games that involve matchmaking. It utilizes the new MemoryStoreService for blazing fast execution speed. MatchmakingService is as easy to use as:
@@ -153,6 +153,13 @@ MatchmakingService:SetStartingVolatility(0.6) -- Sets the starting volatility to
 
 I do not recommend changing them from their default values.
 
+### Setting the max skill disparity in parties
+By default all party members must be within 50 rating points of all other party members. You may want to change this if you want parties to be of more or less similar skill.
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+MatchmakingService:SetMaxPartySkillGap(100) -- Sets the max skill disparity of parties to 100 rating points.
+```
+
 # Getting/Setting ratings
 While I do not recommend ever setting ratings directly, you may want to get ratings for any number of reasons. MatchmakingService exposes both operations.
 
@@ -193,6 +200,22 @@ To break this down I will go over the parameters of this method:
 
 This method updates, and then saves player ratings for that specific rating type.
 
+# Getting player info
+Getting a player's info can be useful mainly to check if they're in a party.
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+local info = MatchmakingService:GetPlayerInfo(player)
+```
+The info returned is a dictionary (**it may be nil**). The main thing you'll use this for is parties. If the player is in a party, then `info.party` will be a table of all of the player ids of the players in their party including the players own id.
+
+# Getting a player's party
+If a player is partied, you can get all the players in their party like so:
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+local party = MatchmakingService:GetPlayerParty(player)
+```
+If they aren't in a party, this will return `nil`. If they are in a party, this will return a table of all of the player ids of the players in their party including their own id.
+
 # Managing the queue
 Most of the functions of MatchmakingService are for internal use, but are exposed if you want to directly manage the queue yourself. All of the methods shown here have an equivalent id variant that accepts player ids instead of player objects. These exist for convenience. For example `QueuePlayer` is the same as `QueuePlayerId`, except `QueuePlayer` takes a player and `QueuePlayerId` takes a user id.
 
@@ -207,6 +230,24 @@ local perRating, totalCount = MatchmakingService:GetQueueCounts()
 
 `perRating` is a table of `{ratingType=count}` and `totalCount` is the sum of those.
 
+### Listening to when a player is added to or removed from the queue
+You may want to listen to exactly when a player is added to or removed from a queue. This is more performant than running `GetQueueCounts` because it does not make any api calls. MatchmakingService uses a custom signal class to achive this with very little overhead:
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+
+MatchmakingService.PlayerAddedToQueue:Connect(function(plr, glicko, ratingType, skillPool)
+	print(plr, glicko, ratingType, skillPool)
+end)
+
+MatchmakingService.PlayerRemovedFromQueue:Connect(function(plr, ratingType, skillPool)
+	print(plr, ratingType, skillPool)
+end)
+```
+
+In `PlayerAddedToQueue`, the player object is passed along with their glicko object, the rating type their queued for and the skill pool they were put in (which is their rating rounded to the nearest 10).
+
+`PlayerRemovedFromQueue` is similar but it does not pass their glicko object. If you need it you can still use `GetPlayerGlicko`.
+
 ### Adding a player to the queue
 Queuing a player is simple:
 ```lua
@@ -214,6 +255,17 @@ local MatchmakingService = require(7567983240).GetSingleton()
 MatchmakingService:QueuePlayer(player, "ranked") -- Queues the player in the ranked queue pool. Ranked can be any string you want. Think of them as different game modes or queue types. For example in League of Legends you have blind, draft, and ranked. All 3 of these game types use a separate rating behind the scenes.
 ```
 For now, a rating type must be provided, but in future versions the default will be "none" which will have no rating nor will it have skill-based match making.
+
+### Adding a party to the queue
+Parties can be added to the queue and are ensured that they all get into the same game when a game is found. This can also be useful for forcing teams. As of v2.2.0, there is no party parity which means there may be parties matched against all solo players. I may add this in the future if it doesn't prove to be too complex.
+
+You can add a party to the queue like so:
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+MatchmakingService:QueueParty(players, ratingType)
+```
+
+You can use `RemovePlayersFromQueueId(GetPlayerParty(player))` to dequeue a party.
 
 ### Removing a player from queue
 Removing a player is also incredibly simple:
@@ -324,11 +376,10 @@ end)
 If you put this script in your game server in ServerScriptService, it will handle setting game id and removing players from the game on disconnect and removing the game itself on close.
 
 # Future Plans
-
-- A party system
 - A "none" rating type
 - Switch to MemoryQueues if/when we get more ways to manage it
 - Fully random access management that doesn't use a central server
+- Party parity
 
 # Updates
 I do plan to update this to fix bugs and add features when I have free time. I don't get a lot of free time these days because of college and the game that I'm currently working on, but updates/fixes will release periodically.

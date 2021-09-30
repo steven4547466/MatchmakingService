@@ -797,7 +797,7 @@ end
 --- Gets a player's party.
 -- @param player The player id to get the party of.
 -- @return A table of player id's of players in the party including this player.
-function MatchmakingService:GetPartyId(player)
+function MatchmakingService:GetPlayerPartyId(player)
   local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
   local parties = memory:GetAsync("QueuedParties")
   if parties == nil or parties[player] == nil then return nil end
@@ -807,8 +807,8 @@ end
 --- Gets a player's party.
 -- @param player The player to get the party of.
 -- @return A table of player id's of players in the party including this player.
-function MatchmakingService:GetParty(player)
-  return self:GetPartyId(player)
+function MatchmakingService:GetPlayerParty(player)
+  return self:GetPlayerPartyId(player)
 end
 
 
