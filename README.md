@@ -84,7 +84,7 @@ MatchmakingService utilizes the new MemoryStoreService for cross-game ephemeral 
 
 Basically, however, one server will manage making matches across the entire queue. Think of this server as the centralized handler (I was thinking of ways to have this be completely random access, but it gets a little messy, though has potential to happen in the future). When a player queues for a specific skill level they will only be matched up against a certain number of people in the same skill level. The number that are put into the game depends on what you set it to (read the docs below!).
 
-Users are in a first-in-first-out queue. This means that the first players to queue are the first players to get into a game. **At this time, parties are not supported, but that is planned**. When a game is created it can either be joinable or not. By default it is still joinable if the game hasn't started and the server isn't full, the MatchmakingService will prioritize these existing games before trying to make new ones. When a game starts, by default, the server will be locked and no new joiners are permitted.
+Users are in a first-in-first-out queue. This means that the first players to queue are the first players to get into a game. When a game is created it can either be joinable or not. By default it is still joinable if the game hasn't started and the server isn't full, the MatchmakingService will prioritize these existing games before trying to make new ones. When a game starts, by default, the server will be locked and no new joiners are permitted.
 
 # Documentation
 Using the MatchmakingService is easy, the source itself has documentation on everything you'd need, however it will be written here as well.
