@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ProfileService = require(script.ProfileService)
 local Glicko2 = require(script.Glicko2)
+local Signal = require(script.Signal)
 
 local ProfileStore = ProfileService.GetProfileStore("PlayerRatings", {})
 local Profiles = {}
@@ -103,6 +104,18 @@ end
 -- Rounds a value to the nearest 10
 function roundSkill(skill)
   return math.round(skill/10) * 10
+end
+
+function checkForParties(values)
+  for i, v in ipairs(values) do
+    if v[3] ~= nil and i + v[3] > #values then
+      for j = #values, i, -1 do
+        table.remove(values, j)
+      end
+      return false
+    end
+  end
+  return true
 end
 
 -- End useful utilities
@@ -215,9 +228,9 @@ end
 
 --- Sets the max gap in rating between party members.
 -- @param newMaxGap The new starting volatility.
---function MatchmakingService:SetMaxPartySkillGap(newMaxGap)
---	self.MaxPartySkillGap = newMaxGap
---end
+function MatchmakingService:SetMaxPartySkillGap(newMaxGap)
+  self.MaxPartySkillGap = newMaxGap
+end
 
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
@@ -242,7 +255,9 @@ function MatchmakingService.new()
   Service.PlayerRange = NumberRange.new(6, 10)
   Service.GamePlaceId = -1
   Service.IsGameServer = false
-  --Service.MaxPartySkillGap = 50
+  Service.MaxPartySkillGap = 50
+  Service.PlayerAddedToQueue = Signal:Create()
+  Service.PlayerRemovedFromQueue = Signal:Create()
   local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
 
   -- Clears the store in studio 
@@ -266,28 +281,54 @@ function MatchmakingService.new()
       elseif mainJobId == game.JobId then
 
         -- Check all games for open slots
-        --local runningGames = memory:GetAsync("RunningGames")
-        --if runningGames ~= nil then
-        --	for code, mem in pairs(runningGames) do
-        --		if not mem.full and mem.joinable then
-        --			local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
-        --			local queue = memoryQueue:GetAsync(tostring(mem.skillLevel))
-        --			local values = first(queue, Service.PlayerRange.Max - #mem.players)
-        --			if values ~= nil and #values > 0 then
-        --				local plrs = {}
+        local runningGames = memory:GetAsync("RunningGames")
+        if runningGames ~= nil then
+          for code, mem in pairs(runningGames) do
+            if mem.joinable then
+              local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
+              local queue = memoryQueue:GetAsync(mem.ratingType)
+              if queue == nil then continue end
+              queue = queue[tostring(mem.skillLevel)]
+              if queue == nil then continue end
+              
+              local values = first(queue, Service.PlayerRange.Max - #mem.players)
 
-        --				for _, v in ipairs(values) do
-        --					table.insert(plrs, v[1])
-        --					Service:SetPlayerInfoId(v[1], code)
-        --				end
 
-        --				Service:AddPlayersToGameId(plrs, code)
+              if values ~= nil then
+                local acc = #values
+                while not checkForParties(values) do
+                  local f = first(queue, Service.PlayerRange.Max - #mem.players, acc + 1)
+                  if f == nil or #f == 0 then
+                    break
+                  end
+                  acc += #f
+                  append(values, f)
+                end
+              end
 
-        --				Service:RemovePlayersFromQueueId(tableSelect(values, 1), mem.skillLevel)
-        --			end
-        --		end
-        --	end
-        --end	
+              -- Remove all newly queued
+              if values ~= nil then 
+                for j = #values, 1, -1 do
+                  if values[j][2] >= now - Service.MatchmakingInterval*1000 then
+                    table.remove(values, j)
+                  end
+                end
+              end
+              if values ~= nil and #values > 0 then
+                local plrs = {}
+
+                for _, v in ipairs(values) do
+                  table.insert(plrs, v[1])
+                  Service:SetPlayerInfoId(v[1], code)
+                end
+
+                Service:AddPlayersToGameId(plrs, code)
+
+                Service:RemovePlayersFromQueueId(tableSelect(values, 1), mem.skillLevel)
+              end
+            end
+          end
+        end	
 
         -- Main matchmaking
         local queuedSkillLevels = memory:GetAsync("QueuedSkillLevels")
@@ -302,11 +343,13 @@ function MatchmakingService.new()
             local expansions = skillLevelTable[3]
             if queue == nil then continue end
             queue = queue[tostring(skillLevel)]
+            if queue == nil then continue end
             local values = first(queue, Service.PlayerRange.Max)
+            
             if now >= queueTime + 10000 then
               Service:ExpandSearch(ratingType, skillLevel)
             end
-
+            
             -- Handle expansions
             if expansions ~= nil and (values == nil or #values < Service.PlayerRange.Min) then
               for j = 1, expansions do
@@ -321,7 +364,19 @@ function MatchmakingService.new()
                 end
               end							
             end
-
+            
+            if values ~= nil then
+              local acc = #values
+              while not checkForParties(values) do
+                local f = first(queue, Service.PlayerRange.Max, acc + 1)
+                if f == nil or #f == 0 then
+                  break
+                end
+                acc += #f
+                append(values, f)
+              end
+            end
+            
             -- Remove all newly queued
             if values ~= nil then 
               for j = #values, 1, -1 do
@@ -364,8 +419,11 @@ function MatchmakingService.new()
                     }
                 end
               end, 86400)
+              
+              local parties = memory:GetAsync("QueuedParties")
+              
               for _, v in ipairs(values) do
-                Service:SetPlayerInfoId(v[1], reservedCode, ratingType)
+                Service:SetPlayerInfoId(v[1], reservedCode, ratingType, parties ~= nil and parties[v[1]] or {})
               end
               Service:RemoveExpansions(ratingType, skillLevel)
               Service:RemovePlayersFromQueueId(tableSelect(values, 1), skillLevel)
@@ -378,9 +436,9 @@ function MatchmakingService.new()
       local playersToTeleport = {}
       local playersToRatings = {}
       for _, v  in ipairs(Players:GetPlayers()) do
-        local playerData = memory:GetAsync(v.UserId)
+        local playerData = Service:GetPlayerInfoId(v.UserId)
         if playerData ~= nil then
-          if not playerData.teleported then
+          if not playerData.teleported and playerData.curGame ~= nil then
             if playersToTeleport[playerData.curGame] == nil then playersToTeleport[playerData.curGame] = {} end
             table.insert(playersToTeleport[playerData.curGame], v)
             playersToRatings[v.UserId] = playerData.ratingType
@@ -489,18 +547,35 @@ function MatchmakingService:ClearPlayerInfo(player)
 end
 
 --- Sets the player info.
--- @param playerId The player id to update.
--- @param code The game id that the player will teleport to.
-function MatchmakingService:SetPlayerInfoId(playerId, code, ratingType)
+-- @param player The player id to update.
+-- @param code The game id that the player will teleport to, if any.
+-- @param ratingType The rating type of their current game, if any.
+-- @param party The player's party (table of user ids including the player).
+function MatchmakingService:SetPlayerInfoId(player, code, ratingType, party)
   local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
-  memory:SetAsync(playerId, {curGame=code,teleported=false,ratingType=ratingType}, 7200)
+  memory:SetAsync(player, {curGame=code,teleported=false,ratingType=ratingType,party=party}, 7200)
 end
 
 --- Sets the player info.
 -- @param player The player to update.
--- @param code The game id that the player will teleport to.
-function MatchmakingService:SetPlayerInfo(player, code)
-  self:SetPlayerInfoId(player.UserId, code)
+-- @param code The game id that the player will teleport to, if any.
+-- @param ratingType The rating type of their current game, if any.
+-- @param party The player's party (table of user ids including the player).
+function MatchmakingService:SetPlayerInfo(player, code, ratingType, party)
+  self:SetPlayerInfoId(player.UserId, code, ratingType, party)
+end
+
+--- Gets the player info.
+-- @param player The player to get.
+function MatchmakingService:GetPlayerInfoId(player)
+  local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
+  return memory:GetAsync(player)
+end
+
+--- Gets the player info.
+-- @param player The player to get.
+function MatchmakingService:GetPlayerInfo(player)
+  self:GetPlayerInfoId(player.UserId)
 end
 
 --- Counts how many players are in the queues.
@@ -577,9 +652,18 @@ function MatchmakingService:QueuePlayerId(player, ratingType)
     error(errorMessage)
   end
 
-  return find(new[tostring(roundedRating)], function(entry)
+  local s = find(new[tostring(roundedRating)], function(entry)
     return entry[1] == player
   end) ~= nil
+  
+  if s then
+    local plr = Players:GetPlayerByUserId(player)
+    if plr then
+      self.PlayerAddedToQueue:Fire(plr, deserializedRating, ratingType, roundedRating)
+    end
+  end
+  
+  return s
 end
 
 --- Queues a player.
@@ -594,32 +678,139 @@ end
 -- @param players The player ids to queue.
 -- @param ratingType The rating type to use.
 -- @return A boolean that is true if the party was queued.
---function MatchmakingService:QueuePartyId(players, ratingType)
---	local ratingValues = {}
---	local avg = 0
---	for _, v in ipairs(players) do
---		ratingValues[v] = self:GetPlayerGlickoId(v, ratingType)
---		if any(ratingValues, function(r)
---				return math.abs(ratingValues[v] - r) > self.MaxPartySkillGap
---			end) then
---			return false, v, "Rating disparity too high"
---		end
---		avg += ratingValues[v]
---	end
+function MatchmakingService:QueuePartyId(players, ratingType)
+  local ratingValues = {}
+  local avg = 0
+  local success, errorMessage
   
---	avg = avg/dictlen(ratingValues)
+  for _, v in ipairs(players) do
+    ratingValues[v] = self:GetPlayerGlickoId(v, ratingType)
+    if any(ratingValues, function(r)
+        return math.abs(ratingValues[v].Rating - r.Rating) > self.MaxPartySkillGap
+      end) then
+      return false, v, "Rating disparity too high"
+    end
+    avg += ratingValues[v].Rating
+  end
   
---	local roundedRating = roundSkill(avg)
+  avg = avg/dictlen(ratingValues)
   
---end
+  local roundedRating = roundSkill(avg)
+  
+  local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
+  local now = DateTime.now().UnixTimestampMillis
+  local new = nil
+  
+  local tbl = {}
+  
+  for i, v in ipairs(players) do
+    table.insert(tbl, {v, now, #players - i})
+  end
+  
+  success, errorMessage = pcall(function()
+    new = memoryQueue:UpdateAsync(ratingType, function(old)
+      if old == nil then return {[tostring(roundedRating)]=tbl} end
+      if old[tostring(roundedRating)] == nil then old[tostring(roundedRating)] = {} end
+      if find(old[tostring(roundedRating)], function(entry)
+          return any(players, function(x) return entry[1] == x end)
+        end) ~= nil then return old end
+      append(old[tostring(roundedRating)], tbl)
+      return old
+    end, 86400)
+  end)
+  
+  if not success then
+    print("Unable to queue party:")
+    error(errorMessage)
+  end
+  
+  local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
+  
+  local t = {}
+  
+  for _, v in ipairs(players) do
+    t[v] = players
+  end
+  
+  success, errorMessage = pcall(function()
+    memory:UpdateAsync("QueuedParties", function(old)
+      if old == nil then return t end
+      for k, v in pairs(t) do
+        old[k] = v
+      end
+      return old
+    end, 86400)
+  end)
+
+  if not success then
+    print("Unable to update Queued Parties:")
+    error(errorMessage)
+  end
+
+  success, errorMessage = pcall(function()
+    memory:UpdateAsync("QueuedSkillLevels", function(old)
+      if old == nil then return {[ratingType]={{roundedRating, DateTime.now().UnixTimestampMillis}}} end
+      if old[ratingType] == nil then old[ratingType] = {} end
+      local index = find(old[ratingType], function(entry)
+        return entry[1] == roundedRating
+      end)
+      if index ~= nil then return nil end
+      table.insert(old[ratingType], {roundedRating, DateTime.now().UnixTimestampMillis})
+      table.sort(old[ratingType], function(a, b)
+        return b[1] > a[1]
+      end)
+      return old
+    end, 86400)
+  end)
+  
+  if not success then
+    print("Unable to update Queued Skill Levels:")
+    error(errorMessage)
+  end
+  
+  for _, v in ipairs(players) do
+    if find(new[tostring(roundedRating)], function(entry)
+      return entry[1] == v
+    end) == nil then
+      return false
+    end
+  end
+  
+  for _, v in ipairs(players) do
+    local plr = Players:GetPlayerByUserId(v)
+    if plr then
+      self.PlayerAddedToQueue:Fire(plr, ratingValues[v], ratingType, roundedRating, players)
+    end
+  end
+
+  return true
+end
 
 --- Queues a party.
 -- @param player The players to queue.
 -- @param ratingType The rating type to use.
 -- @return A boolean that is true if the party was queued.
---function MatchmakingService:QueueParty(players, ratingType)
---	return self:QueuePlayerId(tableSelect(players, "UserId"), ratingType)
---end
+function MatchmakingService:QueueParty(players, ratingType)
+  return self:QueuePartyId(tableSelect(players, "UserId"), ratingType)
+end
+
+--- Gets a player's party.
+-- @param player The player id to get the party of.
+-- @return A table of player id's of players in the party including this player.
+function MatchmakingService:GetPartyId(player)
+  local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
+  local parties = memory:GetAsync("QueuedParties")
+  if parties == nil or parties[player] == nil then return nil end
+  return parties[player]
+end
+
+--- Gets a player's party.
+-- @param player The player to get the party of.
+-- @return A table of player id's of players in the party including this player.
+function MatchmakingService:GetParty(player)
+  return self:GetPartyId(player)
+end
+
 
 --- Removes a specific player id from the queue.
 -- @param player The player id to remove from queue.
@@ -647,6 +838,12 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
           table.remove(old[tostring(skillLevel)], index)
           if empty[ratingType] == nil then empty[ratingType] = {} end
           empty[ratingType][skillLevel] = #old[tostring(skillLevel)] == 0	
+          
+          local plr = Players:GetPlayerByUserId(player)
+          if plr then
+            self.PlayerRemovedFromQueue:Fire(plr, ratingType, skillLevel)
+          end
+          
           return old
         end, 86400)
       end)
@@ -658,7 +855,19 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
       end
     end
   end
+  
+  success, errorMessage = pcall(function()
+    memory:UpdateAsync("QueuedParties", function(old)
+      if old == nil then return nil end
+      old[player] = nil
+      return old
+    end, 86400)
+  end)
 
+  if not success then
+    print("Unable to update Queued Parties:")
+    error(errorMessage)
+  end
 
   for ratingType, tbl in pairs(empty) do
     for skillLevel, isEmpty in pairs(tbl) do
@@ -675,6 +884,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
           table.sort(old[ratingType], function(a, b)
             return b[1] > a[1]
           end)
+          
           return old
         end, 86400)			
       end)
@@ -723,6 +933,10 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
             end)
             if index == nil then continue end
             table.remove(old[tostring(skillLevel)], index)
+            local plr = Players:GetPlayerByUserId(v)
+            if plr then
+              self.PlayerRemovedFromQueue:Fire(plr, ratingType, skillLevel)
+            end
           end
           if empty[ratingType] == nil then empty[ratingType] = {} end
           empty[ratingType][skillLevel] = #old[tostring(skillLevel)] == 0		
@@ -735,6 +949,21 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
         print(errorMessage)
       end
     end
+  end
+  
+  success, errorMessage = pcall(function()
+    memory:UpdateAsync("QueuedParties", function(old)
+      if old == nil then return nil end
+      for _, v in ipairs(players) do
+        old[v] = nil
+      end
+      return old
+    end, 86400)
+  end)
+
+  if not success then
+    print("Unable to update Queued Parties:")
+    error(errorMessage)
   end
 
   for ratingType, tbl in pairs(empty) do
