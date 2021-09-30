@@ -257,7 +257,7 @@ MatchmakingService:QueuePlayer(player, "ranked") -- Queues the player in the ran
 For now, a rating type must be provided, but in future versions the default will be "none" which will have no rating nor will it have skill-based match making.
 
 ### Adding a party to the queue
-Parties can be added to the queue and are ensured that they all get into the same game when a game is found. This can also be useful for forcing teams. As of v2.2.0, there is no party parity which means there may be parties matched against all solo players. I may add this in the future if it doesn't prove to be too complex.
+Parties can be added to the queue and are ensured that they all get into the same game when a game is found. This can also be useful for forcing teams. As of v2.2.0-beta, there is no party parity which means there may be parties matched against all solo players. I may add this in the future if it doesn't prove to be too complex.
 
 You can add a party to the queue like so:
 ```lua
