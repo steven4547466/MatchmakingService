@@ -1,5 +1,5 @@
 # MatchmakingService
-Current Version: V2.2.0-beta
+Current Version: V3.0.0-beta
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 MatchmakingService is a way to easily make games that involve matchmaking. It utilizes the new MemoryStoreService for blazing fast execution speed. MatchmakingService is as easy to use as:
@@ -380,6 +380,7 @@ If you put this script in your game server in ServerScriptService, it will handl
 - Switch to MemoryQueues if/when we get more ways to manage it
 - Fully random access management that doesn't use a central server
 - Party parity
+- Map support
 
 # Updates
 I do plan to update this to fix bugs and add features when I have free time. I don't get a lot of free time these days because of college and the game that I'm currently working on, but updates/fixes will release periodically.
