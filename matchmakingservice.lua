@@ -613,7 +613,7 @@ end
 --- Gets the player info.
 -- @param player The player to get.
 function MatchmakingService:GetPlayerInfo(player)
-  self:GetPlayerInfoId(player.UserId)
+  return self:GetPlayerInfoId(player.UserId)
 end
 
 --- Counts how many players are in the queues.
