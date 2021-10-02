@@ -1,5 +1,15 @@
 Changelog
 
+Version 3.0.1-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] `GetPlayerInfo` should now correctly return the player info (https://github.com/steven4547466/MatchmakingService/pull/1)
+
 Version 3.0.0-beta
 Changes (breaking):
 * [Change] `MatchmakingService.PlayerAddedToQueue` will now fire with a user id instead of a player. This is to support cross-server signaling.
