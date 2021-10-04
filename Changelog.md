@@ -1,5 +1,15 @@
 Changelog
 
+Version 3.0.2-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] MatchmakingService should properly queue players now, this should resolve an issue with players not being teleported
+
 Version 3.0.1-beta
 Changes (breaking):
 * None
