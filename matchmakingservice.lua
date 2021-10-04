@@ -18,6 +18,7 @@ local Profiles = {}
 
 local MatchmakingService = {
   Singleton = nil;
+  Version = "3.0.2-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -154,6 +155,7 @@ end
 --- Gets or creates the top level singleton of the matchmaking service.
 -- @return MatchmakingService - The matchmaking service singleton.
 function MatchmakingService.GetSingleton()
+  print("Retrieving MatchmakingService ("..MatchmakingService.Version..") Singleton.")
   if MatchmakingService.Singleton == nil then
     MatchmakingService.Singleton = MatchmakingService.new()
     local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
@@ -207,9 +209,9 @@ function MatchmakingService.GetSingleton()
         MessagingService:PublishAsync("MatchmakingServicePlayersRemovedFromQueue", PLAYERSREMOVED)
         table.clear(PLAYERSREMOVED)
       end
-      
+
       table.clear(PLAYERSADDEDTHISWAVE)
-      
+
     end)()
 
   end
@@ -277,7 +279,7 @@ function MatchmakingService:Clear()
   memory:RemoveAsync("RunningGames")
   memory:RemoveAsync("QueuedSkillLevels")
   memory:RemoveAsync("MainJobId")
-  for i = 0, 5000, 10 do -- This is inefficient and unnecessary, but unfortunately we don't have the ability to clear entire maps.
+  for i = 0, 1000, 10 do -- This is inefficient and unnecessary, but unfortunately we don't have the ability to clear entire maps.
     coroutine.wrap(function()
       pcall(function()
         memoryQueue:RemoveAsync(tostring(i))
@@ -305,10 +307,14 @@ function MatchmakingService.new()
   end
 
   coroutine.wrap(function()
+    local lastCheckMain = 0
+    local mainJobId = memory:GetAsync("MainJobId")
     while not Service.IsGameServer and not CLOSED do
       task.wait(Service.MatchmakingInterval)
       local now = DateTime.now().UnixTimestampMillis
-      local mainJobId = memory:GetAsync("MainJobId")
+      if lastCheckMain + 10000 <= now then
+        mainJobId = memory:GetAsync("MainJobId")
+      end
       if mainJobId == -1 or mainJobId == nil then
         memory:UpdateAsync("MainJobId", function(old)
           if old == mainJobId and not CLOSED then
@@ -330,7 +336,6 @@ function MatchmakingService.new()
               if queue == nil then continue end
 
               local values = first(queue, Service.PlayerRange.Max - #mem.players)
-
 
               if values ~= nil then
                 local acc = #values
@@ -428,6 +433,7 @@ function MatchmakingService.new()
             if values == nil or #values < Service.PlayerRange.Min then
               continue
             else
+              local userIds = tableSelect(values, 1)
               -- Otherwise reserve a server and tell all servers the player is ready to join
               local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceId) or "TEST"
               memory:UpdateAsync("RunningGames", function(old)
@@ -436,7 +442,7 @@ function MatchmakingService.new()
                     {
                       ["full"] = #values == Service.PlayerRange.Max;
                       ["skillLevel"] = skillLevel;
-                      ["players"] = values;
+                      ["players"] = userIds;
                       ["started"] = false;
                       ["joinable"] = #values ~= Service.PlayerRange.Max;
                       ["ratingType"] = ratingType;
@@ -449,7 +455,7 @@ function MatchmakingService.new()
                       {
                         ["full"] = #values == Service.PlayerRange.Max;
                         ["skillLevel"] = skillLevel;
-                        ["players"] = values;
+                        ["players"] = userIds;
                         ["started"] = false;
                         ["joinable"] = #values ~= Service.PlayerRange.Max;
                         ["ratingType"] = ratingType;
@@ -460,11 +466,11 @@ function MatchmakingService.new()
 
               local parties = memory:GetAsync("QueuedParties")
 
-              for _, v in ipairs(values) do
-                Service:SetPlayerInfoId(v[1], reservedCode, ratingType, parties ~= nil and parties[v[1]] or {})
+              for _, v in ipairs(userIds) do
+                Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {})
               end
               Service:RemoveExpansions(ratingType, skillLevel)
-              Service:RemovePlayersFromQueueId(tableSelect(values, 1), skillLevel)
+              Service:RemovePlayersFromQueueId(userIds, skillLevel)
             end
           end
         end
@@ -696,7 +702,7 @@ function MatchmakingService:QueuePlayerId(player, ratingType)
 
   if s then
     self.PlayerAddedToQueue:Fire(player, deserializedRating, ratingType, roundedRating)
-    
+
     if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
       local index = find(PLAYERSADDED, function(x)
         return x[1] == player
@@ -706,7 +712,7 @@ function MatchmakingService:QueuePlayerId(player, ratingType)
       end
       table.insert(PLAYERSADDEDTHISWAVE, player)
     end
-    
+
     local index = find(PLAYERSREMOVED, function(x)
       return x[1] == player
     end)
@@ -839,7 +845,7 @@ function MatchmakingService:QueuePartyId(players, ratingType)
       end
       table.insert(PLAYERSADDEDTHISWAVE, v)
     end
-    
+
     local index = find(PLAYERSREMOVED, function(x)
       return x[1] == v
     end)
@@ -905,7 +911,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
           empty[ratingType][skillLevel] = #old[tostring(skillLevel)] == 0	
 
           self.PlayerRemovedFromQueue:Fire(player, ratingType, skillLevel)
-          
+
           if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
             local index = find(PLAYERSREMOVED, function(x)
               return x[1] == player
@@ -915,7 +921,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
             end
             table.insert(PLAYERSADDEDTHISWAVE, player)
           end
-          
+
           local index = find(PLAYERSADDED, function(x)
             return x[1] == player
           end)
@@ -1022,7 +1028,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
               end
               table.insert(PLAYERSADDEDTHISWAVE, v)
             end
-            
+
             local index = find(PLAYERSADDED, function(x)
               return x[1] == v
             end)
