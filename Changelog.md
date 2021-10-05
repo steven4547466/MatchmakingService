@@ -1,5 +1,15 @@
 Changelog
 
+Version 3.1.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] `MatchmakingService:GetQueue(ratingType)` Gets the queue of the specified rating type. Returns the values in a dictionary of `{skillLevel: queue}` where skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
+
+Fixes:
+* None
+
 Version 3.0.2-beta
 Changes (breaking):
 * None

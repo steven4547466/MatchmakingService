@@ -1,5 +1,5 @@
 # MatchmakingService
-Current Version: V3.0.2-beta
+Current Version: V3.1.0-beta
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 MatchmakingService is a way to easily make games that involve matchmaking. It utilizes the new MemoryStoreService for blazing fast execution speed. MatchmakingService is as easy to use as:
@@ -220,6 +220,25 @@ If they aren't in a party, this will return `nil`. If they are in a party, this 
 Most of the functions of MatchmakingService are for internal use, but are exposed if you want to directly manage the queue yourself. All of the methods shown here have an equivalent id variant that accepts player ids instead of player objects. These exist for convenience. For example `QueuePlayer` is the same as `QueuePlayerId`, except `QueuePlayer` takes a player and `QueuePlayerId` takes a user id.
 
 Enough with that though here's all the methods that MatchmakingService provides to manage your queue.
+
+### Getting a specific queue
+Queue might be important to you for any number of reasons. MatchmakingService exposes a helpful method to get the queue of a specific rating type:
+```lua
+local MatchmakingService = require(7567983240).GetSingleton()
+local queues = MatchmakingService:GetQueue(ratingType)
+```
+
+`queues` is a dictionary that would look like this:
+```lua
+{
+	[poolOne] = {userId, userId2, userId3, ...};
+	[poolTwo] = {userId, userId2, userId3, ...};
+	...;
+}
+```
+
+The pool is a rounded rating. It's internally stored as a string, so if you want to perform mathematical expressions on it make sure you convert it to a number. So if you want to get the queue of a specific rating in a specific pool, say 500 rating: `MatchmakingService:GetQueue(ratingType)["500"]` would get you that queue.
+
 
 ### Getting queue counts
 You may want to get a count of players in the queue. This can be accomplished like so:

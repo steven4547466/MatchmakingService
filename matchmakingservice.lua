@@ -18,7 +18,7 @@ local Profiles = {}
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.0.2-beta";
+  Version = "3.1.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -642,6 +642,18 @@ function MatchmakingService:GetQueueCounts()
   return counts, reduce(counts, function(acc, cur)
     return acc + cur
   end)
+end
+
+--- Gets a table of user ids in a specific queue.
+-- @param ratingType The rating type to get the queue of.
+-- @return A dictionary of {skillLevel: queue} where skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
+function MatchmakingService:GetQueue(ratingType)
+  local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
+  local queue = memoryQueue:GetAsync(ratingType)
+  for k, v in pairs(queue) do
+    queue[k] = tableSelect(v, 1)
+  end
+  return queue
 end
 
 --- Queues a player.
