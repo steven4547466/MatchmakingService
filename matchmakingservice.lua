@@ -18,7 +18,7 @@ local Profiles = {}
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.1.0-beta";
+  Version = "3.1.1-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -160,11 +160,12 @@ function MatchmakingService.GetSingleton()
     MatchmakingService.Singleton = MatchmakingService.new()
     local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
     local mainJobId = memory:GetAsync("MainJobId")
-    local isMain = mainJobId == nil or mainJobId == -1
+    local now = DateTime.now().UnixTimestampMillis
+    local isMain = mainJobId == nil or mainJobId[2] + 25000 <= now
     if isMain and not CLOSED then
       memory:UpdateAsync("MainJobId", function(old)
-        if old == mainJobId then
-          return game.JobId
+        if old == nil or old[1] == mainJobId then
+          return {game.JobId, now}
         end
         return nil
       end, 86400)
@@ -314,16 +315,24 @@ function MatchmakingService.new()
       local now = DateTime.now().UnixTimestampMillis
       if lastCheckMain + 10000 <= now then
         mainJobId = memory:GetAsync("MainJobId")
+        lastCheckMain = now
+        if mainJobId ~= nil and mainJobId[1] == game.JobId then
+          memory:UpdateAsync("MainJobId", function(old)
+            if (old == nil or old[1] == game.JobId) and not CLOSED then
+              return {game.JobId, now}
+            end
+            return nil
+          end, 86400)
+        end
       end
-      if mainJobId == -1 or mainJobId == nil then
+      if mainJobId == nil or mainJobId[2] + 25000 <= now then
         memory:UpdateAsync("MainJobId", function(old)
-          if old == mainJobId and not CLOSED then
-            return game.JobId
+          if (old == nil or old[1] == mainJobId[1]) and not CLOSED then
+            return {game.JobId, now}
           end
           return nil
         end, 86400)
-      elseif mainJobId == game.JobId then
-
+      elseif mainJobId[1] == game.JobId then
         -- Check all games for open slots
         local runningGames = memory:GetAsync("RunningGames")
         if runningGames ~= nil then
@@ -1408,7 +1417,7 @@ game:BindToClose(function()
   local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
   local success, errorMessage = pcall(function()
     local mainId = memory:GetAsync("MainJobId")
-    if mainId == game.JobId then
+    if mainId[1] == game.JobId then
       memory:RemoveAsync("MainJobId")
     end
   end)

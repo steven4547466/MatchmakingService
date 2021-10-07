@@ -5,6 +5,16 @@ Changes (breaking):
 * None
 
 Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Added a fallback to updating main job. If 25 seconds has passed without the main job being updated, a running game will automatically reassign itself as the main job. By default, however, the main job removes itself on close, but this will prevent server hangs from causing lasting issues
+
+Version 3.1.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
 * [Addition] `MatchmakingService:GetQueue(ratingType)` Gets the queue of the specified rating type. Returns the values in a dictionary of `{skillLevel: queue}` where skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
 
 Fixes:
