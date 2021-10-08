@@ -18,7 +18,7 @@ local Profiles = {}
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.1.1-beta";
+  Version = "3.1.2-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -527,7 +527,7 @@ function MatchmakingService:GetPlayerGlickoId(player, ratingType)
   while Profiles[player] == nil do
     task.wait(0.1)
     i += 0.1
-    if i > 3 then 
+    if i > 8 then 
       error("Unable to get player profile: Wait time exceeded")
       return 
     end
@@ -566,7 +566,7 @@ function MatchmakingService:SetPlayerGlickoId(player, ratingType, glicko)
   while Profiles[player] == nil do
     task.wait(0.1)
     i += 0.1
-    if i > 3 then 
+    if i > 8 then 
       error("Unable to get player profile: Wait time exceeded")
       return 
     end

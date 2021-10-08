@@ -8,6 +8,16 @@ Changes (non-breaking):
 * None
 
 Fixes:
+* [Fix/Change] Increased the wait time for player profiles to up to 8 seconds which should better prevent "Unable to get player profile: Wait time exceeded" errors when the player is actually in the game
+
+Version 3.1.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
 * [Fix] Added a fallback to updating main job. If 25 seconds has passed without the main job being updated, a running game will automatically reassign itself as the main job. By default, however, the main job removes itself on close, but this will prevent server hangs from causing lasting issues
 
 Version 3.1.0-beta

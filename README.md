@@ -1,5 +1,5 @@
 # MatchmakingService
-Current Version: V3.1.1-beta
+Current Version: V3.1.2-beta
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 MatchmakingService is a way to easily make games that involve matchmaking. It utilizes the new MemoryStoreService for blazing fast execution speed. MatchmakingService is as easy to use as:
@@ -263,7 +263,7 @@ MatchmakingService.PlayerRemovedFromQueue:Connect(function(plr, ratingType, skil
 end)
 ```
 
-In `PlayerAddedToQueue`, the player object is passed along with their glicko object, the rating type their queued for and the skill pool they were put in (which is their rating rounded to the nearest 10).
+In `PlayerAddedToQueue`, the player's user id is passed along with their glicko object, the rating type their queued for and the skill pool they were put in (which is their rating rounded to the nearest 10).
 
 `PlayerRemovedFromQueue` is similar but it does not pass their glicko object. If you need it you can still use `GetPlayerGlicko`.
 
