@@ -18,7 +18,7 @@ local Profiles = {}
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.1.2-beta";
+  Version = "3.1.3-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
