@@ -1,5 +1,19 @@
 Changelog
 
+Version 3.1.3-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed an issue where MatchmakingService would attempt to index nil with a number.
+
+Version 3.1.1-beta
+Changes (breaking):
+* None
+
 Version 3.1.2-beta
 Changes (breaking):
 * None

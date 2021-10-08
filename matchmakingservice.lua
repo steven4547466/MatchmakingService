@@ -327,7 +327,7 @@ function MatchmakingService.new()
       end
       if mainJobId == nil or mainJobId[2] + 25000 <= now then
         memory:UpdateAsync("MainJobId", function(old)
-          if (old == nil or old[1] == mainJobId[1]) and not CLOSED then
+          if (old == nil or mainJobId == nil or old[1] == mainJobId[1]) and not CLOSED then
             return {game.JobId, now}
           end
           return nil
