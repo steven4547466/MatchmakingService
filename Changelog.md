@@ -1,6 +1,6 @@
 Changelog
 
-Version 3.1.0-beta
+Version 3.1.2-beta
 Changes (breaking):
 * None
 
@@ -10,7 +10,7 @@ Changes (non-breaking):
 Fixes:
 * [Fix/Change] Increased the wait time for player profiles to up to 8 seconds which should better prevent "Unable to get player profile: Wait time exceeded" errors when the player is actually in the game
 
-Version 3.1.0-beta
+Version 3.1.1-beta
 Changes (breaking):
 * None
 
