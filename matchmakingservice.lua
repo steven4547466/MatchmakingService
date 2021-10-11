@@ -172,7 +172,7 @@ function MatchmakingService.GetSingleton()
     end
     Players.PlayerAdded:Connect(PlayerAdded)
     for _, player in ipairs(Players:GetPlayers()) do
-      coroutine.wrap(PlayerAdded)(player)
+      task.spawn(PlayerAdded, player)
     end
 
     Players.PlayerRemoving:Connect(function(player)
@@ -199,7 +199,7 @@ function MatchmakingService.GetSingleton()
       end
     end)
 
-    coroutine.wrap(function()
+    task.spawn(function()
       task.wait(5) -- ~12 messages a minute.
       if #PLAYERSADDED > 0 then
         MessagingService:PublishAsync("MatchmakingServicePlayersAddedToQueue", PLAYERSADDED)
@@ -213,7 +213,7 @@ function MatchmakingService.GetSingleton()
 
       table.clear(PLAYERSADDEDTHISWAVE)
 
-    end)()
+    end)
 
   end
   return MatchmakingService.Singleton
@@ -281,11 +281,11 @@ function MatchmakingService:Clear()
   memory:RemoveAsync("QueuedSkillLevels")
   memory:RemoveAsync("MainJobId")
   for i = 0, 1000, 10 do -- This is inefficient and unnecessary, but unfortunately we don't have the ability to clear entire maps.
-    coroutine.wrap(function()
+    task.spawn(function()
       pcall(function()
         memoryQueue:RemoveAsync(tostring(i))
       end)
-    end)()
+    end)
   end
 end
 
@@ -307,7 +307,7 @@ function MatchmakingService.new()
     print("Cleared")
   end
 
-  coroutine.wrap(function()
+  task.spawn(function()
     local lastCheckMain = 0
     local mainJobId = memory:GetAsync("MainJobId")
     while not Service.IsGameServer and not CLOSED do
@@ -511,7 +511,7 @@ function MatchmakingService.new()
         end
       end
     end
-  end)()
+  end)
   return Service
 end
 
