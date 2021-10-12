@@ -5,7 +5,7 @@ Changes (breaking):
 * None
 
 Changes (non-breaking):
-* [Change] Switchted to `task.spawn` over `coroutine.wrap` [#2](https://github.com/steven4547466/MatchmakingService/pull/2)
+* [Change] Switched to `task.spawn` over `coroutine.wrap` [#2](https://github.com/steven4547466/MatchmakingService/pull/2)
 
 Fixes:
 * [Fix] Added retries to getting things from memory. This should better prevent "Request failed" errors. Cache module still in the works
