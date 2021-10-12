@@ -110,7 +110,7 @@ This makes it easy to stay up to date, but it isn't necessary.
 You can choose to change the properties themselves, or you can use the setters. It doesn't matter which you use, but the setters are documented as follows:
 
 ### Setting the update interval
-By default, MatchmakingService will try to find matches or teleport players to their matches every half second. You can change this for any number of reasons like performance, but I recommend the 0.5-3 second range. Changing it is simple:
+By default, MatchmakingService will try to find matches or teleport players to their matches every 3 seconds. You can change this for any number of reasons like performance, but I recommend the 1-3 second range. Changing it is simple:
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()
 MatchmakingService:SetMatchmakingInterval(1) -- Sets the update interval to 1 second
