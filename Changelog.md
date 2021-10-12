@@ -1,11 +1,11 @@
 Changelog
 
-Version 3.1.4-beta
+Version 3.2.0-beta
 Changes (breaking):
 * None
 
 Changes (non-breaking):
-* None
+* [Change] Switchted to `task.spawn` over `coroutine.wrap` [#2](https://github.com/steven4547466/MatchmakingService/pull/2)
 
 Fixes:
 * [Fix] Added retries to getting things from memory. This should better prevent "Request failed" errors. Cache module still in the works

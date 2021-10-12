@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.1.4-beta";
+  Version = "3.2.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
