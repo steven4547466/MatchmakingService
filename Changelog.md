@@ -1,5 +1,16 @@
 Changelog
 
+Version 3.1.4-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Added retries to getting things from memory. This should better prevent "Request failed" errors. Cache module still in the works
+* [Fix] Profiles will now be force loaded meaning "Unable to get player profile: Wait time exceeded" errors should be less frequent.
+
 Version 3.1.3-beta
 Changes (breaking):
 * None
