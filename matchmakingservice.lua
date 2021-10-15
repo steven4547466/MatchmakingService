@@ -498,6 +498,18 @@ function MatchmakingService.new()
                   print("Length of entire data:")
                   print(string.len(d))
                 end
+                local d = game.HttpService:JSONEncode({
+                  ["full"] = #values == Service.PlayerRange.Max;
+                  ["skillLevel"] = skillLevel;
+                  ["players"] = userIds;
+                  ["started"] = false;
+                  ["joinable"] = #values ~= Service.PlayerRange.Max;
+                  ["ratingType"] = ratingType;
+                })
+                print("New data:")
+                print(d)
+                print("Length of new data:")
+                print(string.len(d))
                 print("Unable to add game to running games:")
                 error(err)
               end
