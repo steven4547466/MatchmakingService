@@ -455,22 +455,11 @@ function MatchmakingService.new()
               local userIds = tableSelect(values, 1)
               -- Otherwise reserve a server and tell all servers the player is ready to join
               local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceId) or "TEST"
-              memory:UpdateAsync("RunningGames", function(old)
-                if old ~= nil then
-                  old[reservedCode] = 
-                    {
-                      ["full"] = #values == Service.PlayerRange.Max;
-                      ["skillLevel"] = skillLevel;
-                      ["players"] = userIds;
-                      ["started"] = false;
-                      ["joinable"] = #values ~= Service.PlayerRange.Max;
-                      ["ratingType"] = ratingType;
-                    }
-                  return old
-                else
-                  return 
-                    {
-                      [reservedCode] = 
+              local success, err, data
+              success, err = pcall(function()
+                memory:UpdateAsync("RunningGames", function(old)
+                  if old ~= nil then
+                    old[reservedCode] = 
                       {
                         ["full"] = #values == Service.PlayerRange.Max;
                         ["skillLevel"] = skillLevel;
@@ -479,9 +468,39 @@ function MatchmakingService.new()
                         ["joinable"] = #values ~= Service.PlayerRange.Max;
                         ["ratingType"] = ratingType;
                       }
-                    }
+                    data = old
+                    return old
+                  else
+                    data = true
+                    return 
+                      {
+                        [reservedCode] = 
+                          {
+                            ["full"] = #values == Service.PlayerRange.Max;
+                            ["skillLevel"] = skillLevel;
+                            ["players"] = userIds;
+                            ["started"] = false;
+                            ["joinable"] = #values ~= Service.PlayerRange.Max;
+                            ["ratingType"] = ratingType;
+                          }
+                      }
+                  end
+                end, 86400)
+              end)
+              
+              if not success then
+                if data == true then
+                  print("First game")
+                else
+                  local d = game.HttpService:JSONEncode(data)
+                  print("Data:")
+                  print(d)
+                  print("Length of entire data:")
+                  print(string.len(d))
                 end
-              end, 86400)
+                print("Unable to add game to running games:")
+                error(err)
+              end
 
               local parties = GetFromMemory(memory, "QueuedParties", 3)
 
