@@ -1,5 +1,15 @@
 Changelog
 
+Version 3.2.1-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] A possible fix to [#3](https://github.com/steven4547466/MatchmakingService/issues/3) has been added. This fix is being monitored.
+
 Version 3.2.0-beta
 Changes (breaking):
 * None

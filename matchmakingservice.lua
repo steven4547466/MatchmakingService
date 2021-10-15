@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.2.0-beta";
+  Version = "3.2.1-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -312,7 +312,7 @@ function MatchmakingService.new()
   Service.MaxPartySkillGap = 50
   Service.PlayerAddedToQueue = Signal:Create()
   Service.PlayerRemovedFromQueue = Signal:Create()
-  
+
   -- Clears the store in studio 
   if RunService:IsStudio() then 
     Service:Clear()
@@ -475,19 +475,19 @@ function MatchmakingService.new()
                     return 
                       {
                         [reservedCode] = 
-                          {
-                            ["full"] = #values == Service.PlayerRange.Max;
-                            ["skillLevel"] = skillLevel;
-                            ["players"] = userIds;
-                            ["started"] = false;
-                            ["joinable"] = #values ~= Service.PlayerRange.Max;
-                            ["ratingType"] = ratingType;
-                          }
+                        {
+                          ["full"] = #values == Service.PlayerRange.Max;
+                          ["skillLevel"] = skillLevel;
+                          ["players"] = userIds;
+                          ["started"] = false;
+                          ["joinable"] = #values ~= Service.PlayerRange.Max;
+                          ["ratingType"] = ratingType;
+                        }
                       }
                   end
                 end, 86400)
               end)
-              
+
               if not success then
                 if data == true then
                   print("First game")
@@ -1342,6 +1342,7 @@ end
 -- @param gameId The game to remove.
 -- @return true if there was no error.
 function MatchmakingService:RemoveGame(gameId)
+  local gameData = GetFromMemory(memory, "RunningGames", 3)[gameId]
   local success, errorMessage = pcall(function()
     memory:UpdateAsync("RunningGames", function(old)
       if old ~= nil and old[gameId] ~= nil then
@@ -1356,6 +1357,13 @@ function MatchmakingService:RemoveGame(gameId)
     print("Unable to update Running Games (Remove game):")
     error(errorMessage)
   end
+  
+  if gameData then
+    for userId in ipairs(gameData.players) do
+      self:ClearPlayerInfoId(userId)
+    end
+  end
+  
   return true
 end
 
