@@ -1,5 +1,16 @@
 Changelog
 
+Version 3.2.2-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed an issue that prevented players from being matched after their ratings were updated.
+* [Adjustment] Rating can no longer go below 0.
+
 Version 3.2.1-beta
 Changes (breaking):
 * None

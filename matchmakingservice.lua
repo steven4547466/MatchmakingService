@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.2.1-beta";
+  Version = "3.2.2-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -113,6 +113,7 @@ end
 
 -- Rounds a value to the nearest 10
 function roundSkill(skill)
+  if skill <= 0 then return 0 end
   return math.round(skill/10) * 10
 end
 
@@ -146,17 +147,23 @@ end
 -- Private connections
 
 function PlayerAdded(player)
-  local profile = ProfileStore:LoadProfileAsync("Player_" .. player.UserId, "ForceLoad")
+  print("Player added, Loading profile " .. tostring(player.UserId))
+  local profile = ProfileStore:LoadProfileAsync("Player_" .. player.UserId, "Steal")
   if profile ~= nil then
+    print("Profile found")
     profile:AddUserId(player.UserId)
     profile:Reconcile() -- In case we add anything to defaults in the future
     profile:ListenToRelease(function()
+      print("Profile released")
       Profiles[player.UserId] = nil
       player:Kick() -- Any time a profile is ever released, the user cannot be in the game.
     end)
+    print("Adding profile " .. tostring(player.UserId))
     if player:IsDescendantOf(Players) == true then
+      print("Added profile")
       Profiles[player.UserId] = profile
     else
+      print("Releasing profile")
       profile:Release()
     end
   else
@@ -356,7 +363,7 @@ function MatchmakingService.new()
               if queue == nil then continue end
 
               local values = first(queue, Service.PlayerRange.Max - #mem.players)
-
+              
               if values ~= nil then
                 local acc = #values
                 while not checkForParties(values) do
@@ -368,6 +375,7 @@ function MatchmakingService.new()
                   append(values, f)
                 end
               end
+              
 
               -- Remove all newly queued
               if values ~= nil then 
@@ -377,6 +385,7 @@ function MatchmakingService.new()
                   end
                 end
               end
+              
               if values ~= nil and #values > 0 then
                 local plrs = {}
 
@@ -438,7 +447,7 @@ function MatchmakingService.new()
                 append(values, f)
               end
             end
-
+            
             -- Remove all newly queued
             if values ~= nil then 
               for j = #values, 1, -1 do
@@ -563,6 +572,7 @@ end
 -- @param ratingType The rating type to get.
 -- @return The deserialzed glicko object.
 function MatchmakingService:GetPlayerGlickoId(player, ratingType)
+  --return Glicko2.g2(self.StartingRating, self.StartingDeviation, self.StartingVolatility)
   local i = 0
   local profile = nil
   while Profiles[player] == nil do
@@ -1296,7 +1306,7 @@ function MatchmakingService:UpdateRatingsId(team1, team2, ratingType, winner)
     -- if draw then 0.5 else if won then 1 else 0
     local t1Score = (winner == 0 and 0.5) or winner == 1 and 1 or 0 
     local t2Score = (winner == 0 and 0.5) or winner == 2 and 1 or 0
-
+    
     for _, id in ipairs(team1) do
       -- Update with the opposite score because they're opponents
       -- basically if they win score them with 0 as that means team 2 lost against them when we update
@@ -1311,14 +1321,14 @@ function MatchmakingService:UpdateRatingsId(team1, team2, ratingType, winner)
 
     for _, id in ipairs(team1) do
       local glicko = self:GetPlayerGlickoId(id, ratingType):update(team2Scored) -- Update them against the scored glickos of team 2
+      if glicko.Rating <= 0 then glicko.Rating = 0 end
       self:SetPlayerGlickoId(id, ratingType, glicko)
-      self:GetPlayerGlickoId(id, ratingType)
     end
 
     for _, id in ipairs(team2) do
       local glicko = self:GetPlayerGlickoId(id, ratingType):update(team1Scored) -- Update them against the scored glickos of team 1
+      if glicko.Rating <= 0 then glicko.Rating = 0 end
       self:SetPlayerGlickoId(id, ratingType, glicko)
-      self:GetPlayerGlickoId(id, ratingType)
     end
   end)
   if not success then
@@ -1357,13 +1367,13 @@ function MatchmakingService:RemoveGame(gameId)
     print("Unable to update Running Games (Remove game):")
     error(errorMessage)
   end
-  
+
   if gameData then
     for userId in ipairs(gameData.players) do
       self:ClearPlayerInfoId(userId)
     end
   end
-  
+
   return true
 end
 
@@ -1379,7 +1389,13 @@ function MatchmakingService:StartGame(gameId, joinable)
         old[gameId].started = true
         old[gameId].joinable = joinable
         return old
-      elseif old[gameId] == nil then
+      else
+        if old ~= nil and old[gameId] == nil then
+          warn("Unable to update Running Games (Start game): Invalid gameId.")
+        else
+          warn("Unable to update Running Games (Start game): No running games found in memory")
+        end
+        
         return nil
       end
     end, 86400)
