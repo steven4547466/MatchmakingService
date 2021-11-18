@@ -1,5 +1,15 @@
 Changelog
 
+Version 3.3.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Change] Players are now removed from queue automatically upon leaving, if they are in the queue.
+
+Fixes:
+* [Fix] Broke up the memory stores to bypass the arbitrary 1kb limit on a single key in the memory store map. This fix is being monitored.
+
 Version 3.2.2-beta
 Changes (breaking):
 * None
