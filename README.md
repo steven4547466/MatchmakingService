@@ -25,10 +25,6 @@ game.Players.PlayerAdded:Connect(function(p)
 	MatchmakingService:QueuePlayer(p, "ranked")
 end)
 
-game.Players.PlayerRemoving:Connect(function(p)
-	MatchmakingService:RemovePlayerFromQueue(p)
-end)
-
 for i, p in ipairs(game.Players:GetPlayers()) do
 	MatchmakingService:QueuePlayer(p, "ranked")
 end

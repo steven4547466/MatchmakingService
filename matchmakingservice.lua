@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.2.2-beta";
+  Version = "3.3.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -147,23 +147,17 @@ end
 -- Private connections
 
 function PlayerAdded(player)
-  print("Player added, Loading profile " .. tostring(player.UserId))
   local profile = ProfileStore:LoadProfileAsync("Player_" .. player.UserId, "Steal")
   if profile ~= nil then
-    print("Profile found")
     profile:AddUserId(player.UserId)
     profile:Reconcile() -- In case we add anything to defaults in the future
     profile:ListenToRelease(function()
-      print("Profile released")
       Profiles[player.UserId] = nil
       player:Kick() -- Any time a profile is ever released, the user cannot be in the game.
     end)
-    print("Adding profile " .. tostring(player.UserId))
     if player:IsDescendantOf(Players) == true then
-      print("Added profile")
       Profiles[player.UserId] = profile
     else
-      print("Releasing profile")
       profile:Release()
     end
   else
@@ -202,6 +196,7 @@ function MatchmakingService.GetSingleton()
       if profile ~= nil then
         profile:Release()
       end
+      MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
     end)
 
     MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
@@ -297,7 +292,19 @@ end
 
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
+  local count = GetFromMemory(memory, "RunningGamesCount", 3)
+  if count then
+    for i = 1, count do
+      local runningGames = GetFromMemory(memory, "RunningGames"..tostring(i), 3)
+      if runningGames ~= nil then
+        for _, code in ipairs(runningGames) do
+          memory:RemoveAsync(code)
+        end
+      end
+    end
+  end
   memory:RemoveAsync("RunningGames")
+  memory:RemoveAsync("RunningGamesCount")
   memory:RemoveAsync("QueuedSkillLevels")
   memory:RemoveAsync("MainJobId")
   for i = 0, 1000, 10 do -- This is inefficient and unnecessary, but unfortunately we don't have the ability to clear entire maps.
@@ -342,6 +349,7 @@ function MatchmakingService.new()
             end
             return nil
           end, 86400)
+          mainJobId = {game.JobId, now}
         end
       end
       if mainJobId == nil or mainJobId[2] + 30000 <= now then
@@ -351,56 +359,64 @@ function MatchmakingService.new()
           end
           return nil
         end, 86400)
+        mainJobId = {game.JobId, now}
       elseif mainJobId[1] == game.JobId then
         -- Check all games for open slots
-        local runningGames = GetFromMemory(memory, "RunningGames", 3)
-        if runningGames ~= nil then
-          for code, mem in pairs(runningGames) do
-            if mem.joinable then
-              local queue = GetFromMemory(memoryQueue, mem.ratingType, 3)
-              if queue == nil then continue end
-              queue = queue[tostring(mem.skillLevel)]
-              if queue == nil then continue end
+        local parties = GetFromMemory(memory, "QueuedParties", 3)
+        local runningGamesCount = GetFromMemory(memory, "RunningGamesCount", 3)
+        if runningGamesCount then
+          for i = 1, runningGamesCount do
+            local runningGames = GetFromMemory(memory, "RunningGames"..tostring(i), 3)
+            if runningGames ~= nil then
+              for _, code in ipairs(runningGames) do
+                local mem = GetFromMemory(memory, code, 3)
+                if mem.joinable then
+                  local queue = GetFromMemory(memoryQueue, mem.ratingType, 3)
+                  if queue == nil then continue end
+                  queue = queue[tostring(mem.skillLevel)]
+                  if queue == nil then continue end
 
-              local values = first(queue, Service.PlayerRange.Max - #mem.players)
-              
-              if values ~= nil then
-                local acc = #values
-                while not checkForParties(values) do
-                  local f = first(queue, Service.PlayerRange.Max - #mem.players, acc + 1)
-                  if f == nil or #f == 0 then
-                    break
+                  local values = first(queue, Service.PlayerRange.Max - #mem.players)
+
+                  if values ~= nil then
+                    local acc = #values
+                    while not checkForParties(values) do
+                      local f = first(queue, Service.PlayerRange.Max - #mem.players, acc + 1)
+                      if f == nil or #f == 0 then
+                        break
+                      end
+                      acc += #f
+                      append(values, f)
+                    end
                   end
-                  acc += #f
-                  append(values, f)
-                end
-              end
-              
 
-              -- Remove all newly queued
-              if values ~= nil then 
-                for j = #values, 1, -1 do
-                  if values[j][2] >= now - Service.MatchmakingInterval*1000 then
-                    table.remove(values, j)
+                  -- Remove all newly queued
+                  if values ~= nil then 
+                    for j = #values, 1, -1 do
+                      if values[j][2] >= now - Service.MatchmakingInterval*1000 then
+                        table.remove(values, j)
+                      end
+                    end
+                  end
+
+                  if values ~= nil and #values > 0 then
+                    local plrs = {}
+
+                    for _, v in ipairs(values) do
+                      table.insert(plrs, v[1])
+                      Service:SetPlayerInfoId(v[1], code, mem.ratingType, parties ~= nil and parties[v] or {})
+                    end
+
+                    Service:AddPlayersToGameId(plrs, code)
+
+                    Service:RemovePlayersFromQueueId(tableSelect(values, 1), mem.skillLevel)
                   end
                 end
               end
-              
-              if values ~= nil and #values > 0 then
-                local plrs = {}
-
-                for _, v in ipairs(values) do
-                  table.insert(plrs, v[1])
-                  Service:SetPlayerInfoId(v[1], code)
-                end
-
-                Service:AddPlayersToGameId(plrs, code)
-
-                Service:RemovePlayersFromQueueId(tableSelect(values, 1), mem.skillLevel)
-              end
-            end
+            end	
           end
-        end	
+        end
+        
 
         -- Main matchmaking
         local queuedSkillLevels = GetFromMemory(memory, "QueuedSkillLevels", 3)
@@ -464,72 +480,58 @@ function MatchmakingService.new()
               local userIds = tableSelect(values, 1)
               -- Otherwise reserve a server and tell all servers the player is ready to join
               local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceId) or "TEST"
-              local success, err, data
+              local success, err
               success, err = pcall(function()
-                memory:UpdateAsync("RunningGames", function(old)
-                  if old ~= nil then
-                    old[reservedCode] = 
-                      {
-                        ["full"] = #values == Service.PlayerRange.Max;
-                        ["skillLevel"] = skillLevel;
-                        ["players"] = userIds;
-                        ["started"] = false;
-                        ["joinable"] = #values ~= Service.PlayerRange.Max;
-                        ["ratingType"] = ratingType;
-                      }
-                    data = old
-                    return old
-                  else
-                    data = true
-                    return 
-                      {
-                        [reservedCode] = 
-                        {
-                          ["full"] = #values == Service.PlayerRange.Max;
-                          ["skillLevel"] = skillLevel;
-                          ["players"] = userIds;
-                          ["started"] = false;
-                          ["joinable"] = #values ~= Service.PlayerRange.Max;
-                          ["ratingType"] = ratingType;
-                        }
-                      }
-                  end
+                memory:UpdateAsync(reservedCode, function()
+                return 
+                  {
+                    ["full"] = #values == Service.PlayerRange.Max;
+                    ["skillLevel"] = skillLevel;
+                    ["players"] = userIds;
+                    ["started"] = false;
+                    ["joinable"] = #values ~= Service.PlayerRange.Max;
+                    ["ratingType"] = ratingType;
+                  }
                 end, 86400)
               end)
-
+              
               if not success then
-                if data == true then
-                  print("First game")
-                else
-                  local d = game.HttpService:JSONEncode(data)
-                  print("Data:")
-                  print(d)
-                  print("Length of entire data:")
-                  print(string.len(d))
+                print("Error adding new game:")
+                print(err)
+              else
+                if not runningGamesCount then
+                  memory:SetAsync("RunningGamesCount", 1, 86400)
+                  runningGamesCount = 1
                 end
-                local d = game.HttpService:JSONEncode({
-                  ["full"] = #values == Service.PlayerRange.Max;
-                  ["skillLevel"] = skillLevel;
-                  ["players"] = userIds;
-                  ["started"] = false;
-                  ["joinable"] = #values ~= Service.PlayerRange.Max;
-                  ["ratingType"] = ratingType;
-                })
-                print("New data:")
-                print(d)
-                print("Length of new data:")
-                print(string.len(d))
-                print("Unable to add game to running games:")
-                error(err)
-              end
+                local incremented = false
+                for i = 1, runningGamesCount do
+                  success, err = pcall(function()
+                    memory:UpdateAsync("RunningGames"..tostring(i), function(old)
+                      if not old then old = {reservedCode} end
+                      table.insert(old, reservedCode)
+                      return old
+                    end, 86400)
+                  end)
+                  
+                  if not success and incremented then
+                    print("Error adding game to running games after incrementing:")
+                    print(err)
+                  elseif not success and runningGamesCount then
+                    incremented = true
+                    memory:SetAsync("RunningGamesCount", runningGamesCount + 1, 86400)
+                    runningGamesCount += 1
+                  elseif not success and not runningGamesCount then
+                    print("Error adding game to running games:")
+                    print(err)
+                  end
+                end
 
-              local parties = GetFromMemory(memory, "QueuedParties", 3)
-
-              for _, v in ipairs(userIds) do
-                Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {})
+                for _, v in ipairs(userIds) do
+                  Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {})
+                end
+                Service:RemoveExpansions(ratingType, skillLevel)
+                Service:RemovePlayersFromQueueId(userIds, skillLevel)
               end
-              Service:RemoveExpansions(ratingType, skillLevel)
-              Service:RemovePlayersFromQueueId(userIds, skillLevel)
             end
           end
         end
@@ -1166,11 +1168,11 @@ end
 function MatchmakingService:AddPlayerToGameId(player, gameId, updateJoinable)
   if updateJoinable == nil then updateJoinable = true end
   local success, errorMessage = pcall(function()
-    memory:UpdateAsync("RunningGames", function(old)
-      if old ~= nil and old[gameId] ~= nil then
-        table.insert(old[gameId].players, player)
-        old[gameId].full = #old[gameId].players == self.PlayerRange.Max
-        old[gameId].joinable = updateJoinable and #old[gameId].players ~= self.PlayerRange.Max or old[gameId].joinable
+    memory:UpdateAsync(gameId, function(old)
+      if old ~= nil then
+        table.insert(old.players, player)
+        old.full = #old.players == self.PlayerRange.Max
+        old.joinable = updateJoinable and #old.players ~= self.PlayerRange.Max or old.joinable
         return old
       end
     end, 86400)
@@ -1196,13 +1198,13 @@ end
 -- @return true if there was no error.
 function MatchmakingService:AddPlayersToGameId(players, gameId, updateJoinable)
   local success, errorMessage = pcall(function()
-    memory:UpdateAsync("RunningGames", function(old)
-      if old ~= nil and old[gameId] ~= nil then
+    memory:UpdateAsync(gameId, function(old)
+      if old ~= nil then
         for _, v in ipairs(players) do
-          table.insert(old[gameId].players, v)
+          table.insert(old.players, v)
         end
-        old[gameId].full = #old[gameId].players == self.PlayerRange.Max
-        old[gameId].joinable = updateJoinable and #old[gameId].players ~= self.PlayerRange.Max or old[gameId].joinable
+        old.full = #old.players == self.PlayerRange.Max
+        old.joinable = updateJoinable and #old.players ~= self.PlayerRange.Max or old.joinable
         return old
       end
     end, 86400)
@@ -1228,16 +1230,16 @@ end
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayerFromGameId(player, gameId, updateJoinable)
   local success, errorMessage = pcall(function()
-    memory:UpdateAsync("RunningGames", function(old)
-      if old ~= nil and old[gameId] ~= nil then
-        local index = table.find(old[gameId].players, player)
+    memory:UpdateAsync(gameId, function(old)
+      if old ~= nil then
+        local index = table.find(old.players, player)
         if index ~= nil then 
-          table.remove(old[gameId].players, index)
+          table.remove(old.players, index)
         else
           return nil
         end
-        old[gameId].full = #old[gameId].players == self.PlayerRange.Max
-        old[gameId].joinable = updateJoinable and #old[gameId].players ~= self.PlayerRange.Max or old[gameId].joinable
+        old.full = #old.players == self.PlayerRange.Max
+        old.joinable = updateJoinable and #old.players ~= self.PlayerRange.Max or old.joinable
         return old
       end
     end, 86400)
@@ -1263,15 +1265,15 @@ end
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayersFromGameId(players, gameId, updateJoinable)
   local success, errorMessage = pcall(function()
-    memory:UpdateAsync("RunningGames", function(old)
-      if old ~= nil and old[gameId] ~= nil then
+    memory:UpdateAsync(gameId, function(old)
+      if old ~= nil then
         for _, v in ipairs(players) do
-          local index = table.find(old[gameId].players, v)
+          local index = table.find(old.players, v)
           if index == nil then continue end
-          table.remove(old[gameId].players, index)
+          table.remove(old.players, index)
         end
-        old[gameId].full = #old[gameId].players == self.PlayerRange.Max
-        old[gameId].joinable = updateJoinable and #old[gameId].players ~= self.PlayerRange.Max or old[gameId].joinable
+        old.full = #old.players == self.PlayerRange.Max
+        old.joinable = updateJoinable and #old.players ~= self.PlayerRange.Max or old.joinable
         return old
       end
     end, 86400)
@@ -1352,20 +1354,50 @@ end
 -- @param gameId The game to remove.
 -- @return true if there was no error.
 function MatchmakingService:RemoveGame(gameId)
-  local gameData = GetFromMemory(memory, "RunningGames", 3)[gameId]
+  local gameData = GetFromMemory(memory, gameId, 3)
   local success, errorMessage = pcall(function()
-    memory:UpdateAsync("RunningGames", function(old)
-      if old ~= nil and old[gameId] ~= nil then
-        old[gameId] = nil
-        return old
-      elseif old[gameId] == nil then
-        return nil
-      end
-    end, 86400)
+    memory:RemoveAsync(gameId)
   end)
   if not success then
     print("Unable to update Running Games (Remove game):")
     error(errorMessage)
+  end
+  
+  local runningGamesCount = GetFromMemory(memory, "RunningGamesCount", 3)
+  if runningGamesCount then
+    for i = 1, runningGamesCount do
+      local runningGames = GetFromMemory(memory, "RunningGames"..tostring(i), 3)
+      if runningGames ~= nil then
+        local index = table.find(runningGames, gameId)
+        if index == nil then continue end
+        if #runningGames == 1 then
+          local success, errorMessage = pcall(function()
+            memory:RemoveAsync("RunningGames"..tostring(i))
+          end)
+          if runningGamesCount == i then
+            memory:UpdateAsync("RunningGamesCount", function(old)
+              return old - 1
+            end, 86400)
+          end
+          if not success then
+            print("Unable to update Running Games (Remove game 2):")
+            error(errorMessage)
+          end
+        else
+          local success, errorMessage = pcall(function()
+            memory:UpdateAsync("RunningGames"..tostring(i), function(old)
+              table.remove(old, index)
+              return old
+            end, 86400)
+          end)
+          if not success then
+            print("Unable to update Running Games (Remove game 3):")
+            error(errorMessage)
+          end
+        end
+        break
+      end
+    end
   end
 
   if gameData then
@@ -1384,13 +1416,13 @@ end
 function MatchmakingService:StartGame(gameId, joinable)
   if joinable == nil then joinable = false end
   local success, errorMessage = pcall(function()
-    memory:UpdateAsync("RunningGames", function(old)
-      if old ~= nil and old[gameId] ~= nil then
-        old[gameId].started = true
-        old[gameId].joinable = joinable
+    memory:UpdateAsync(gameId, function(old)
+      if old ~= nil then
+        old.started = true
+        old.joinable = joinable
         return old
       else
-        if old ~= nil and old[gameId] == nil then
+        if old ~= nil and old == nil then
           warn("Unable to update Running Games (Start game): Invalid gameId.")
         else
           warn("Unable to update Running Games (Start game): No running games found in memory")
