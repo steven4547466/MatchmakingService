@@ -1,5 +1,5 @@
 # MatchmakingService
-Current Version: V3.3.0-beta
+Current Version: V3.4.0-beta
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 In case it wasn't clear to everyone, which it obviously isn't. **This module is in beta and has no guarantee of working under all conditions. It is being actively developed there are DEFINITELY game breaking bugs and issues that have not been found.**
@@ -22,11 +22,11 @@ MatchmakingService:SetGamePlace(7584483307)
 
 -- Queue players (you can call QueuePlayer from anywhere)
 game.Players.PlayerAdded:Connect(function(p)
-	MatchmakingService:QueuePlayer(p, "ranked")
+  MatchmakingService:QueuePlayer(p, "ranked")
 end)
 
 for i, p in ipairs(game.Players:GetPlayers()) do
-	MatchmakingService:QueuePlayer(p, "ranked")
+  MatchmakingService:QueuePlayer(p, "ranked")
 end
 ```
 
@@ -41,42 +41,42 @@ local t1 = {}
 local t2 = {}
 -- Basic start function
 function Start()
-	print("Started")
-	MatchmakingService:StartGame(_G.gameId)
-	-- Simple teams.
-	local p = game.Players:GetPlayers()
-	table.insert(t1, p[1])
-	table.insert(t2, p[2])
+  print("Started")
+  MatchmakingService:StartGame(_G.gameId)
+  -- Simple teams.
+  local p = game.Players:GetPlayers()
+  table.insert(t1, p[1])
+  table.insert(t2, p[2])
 end
 
 -- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!
 function EndGame(winner)
-	MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
-	for i, v in ipairs(game.Players:GetPlayers()) do
-		-- You can teleport them back to the hub here, I just kick them
-		v:Kick()
-	end
+  MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
+  for i, v in ipairs(game.Players:GetPlayers()) do
+    -- You can teleport them back to the hub here, I just kick them
+    v:Kick()
+  end
 end
 
 game.Players.PlayerAdded:Connect(function(player)
-	local joinData = player:GetJoinData()
-	if _G.gameId == nil and joinData then
-		-- Global so its accessible from other scripts if it needs to be.
-		_G.gameId = joinData.TeleportData.gameCode
-		_G.ratingType = joinData.TeleportData.ratingType
-	end
-	if #game.Players:GetPlayers() >= 2 then
-		Start()
-	end
+  local joinData = player:GetJoinData()
+  if _G.gameId == nil and joinData then
+    -- Global so its accessible from other scripts if it needs to be.
+    _G.gameId = joinData.TeleportData.gameCode
+    _G.ratingType = joinData.TeleportData.ratingType
+  end
+  if #game.Players:GetPlayers() >= 2 then
+    Start()
+  end
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-	MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
+  MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
 end)
 
 -- THIS IS EXTREMELY IMPORTANT
 game:BindToClose(function()
-	MatchmakingService:RemoveGame(_G.gameId)
+  MatchmakingService:RemoveGame(_G.gameId)
 end)
 ```
 
@@ -101,6 +101,9 @@ local MatchmakingService = require(7567983240).GetSingleton()
 ```
 
 This makes it easy to stay up to date, but it isn't necessary.
+
+##### The options table
+You may want to provide additional options when obtaining the service. You can do this by passing a table of options when calling `GetSingleton`. Right now the only recoginzed option is `DisableRatingSystem`.
 
 ### Changing settings
 You can choose to change the properties themselves, or you can use the setters. It doesn't matter which you use, but the setters are documented as follows:
@@ -191,11 +194,11 @@ Currently MatchmakingService supports games that have 2 teams with any number of
 ```lua
 -- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!
 function EndGame()
-	MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
-	for i, v in ipairs(game.Players:GetPlayers()) do
-		-- You can teleport them back to the hub here, I just kick them
-		v:Kick()
-	end
+  MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
+  for i, v in ipairs(game.Players:GetPlayers()) do
+    -- You can teleport them back to the hub here, I just kick them
+    v:Kick()
+  end
 end
 ``` 
 
@@ -235,9 +238,9 @@ local queues = MatchmakingService:GetQueue(ratingType)
 `queues` is a dictionary that would look like this:
 ```lua
 {
-	[poolOne] = {userId, userId2, userId3, ...};
-	[poolTwo] = {userId, userId2, userId3, ...};
-	...;
+  [poolOne] = {userId, userId2, userId3, ...};
+  [poolTwo] = {userId, userId2, userId3, ...};
+  ...;
 }
 ```
 
@@ -259,11 +262,11 @@ You may want to listen to exactly when a player is added to or removed from a qu
 local MatchmakingService = require(7567983240).GetSingleton()
 
 MatchmakingService.PlayerAddedToQueue:Connect(function(plr, glicko, ratingType, skillPool)
-	print(plr, glicko, ratingType, skillPool)
+  print(plr, glicko, ratingType, skillPool)
 end)
 
 MatchmakingService.PlayerRemovedFromQueue:Connect(function(plr, ratingType, skillPool)
-	print(plr, ratingType, skillPool)
+  print(plr, ratingType, skillPool)
 end)
 ```
 
@@ -358,42 +361,42 @@ local t1 = {}
 local t2 = {}
 -- Basic start function
 function Start()
-	print("Started")
-	MatchmakingService:StartGame(_G.gameId)
-	-- Simple teams.
-	local p = game.Players:GetPlayers()
-	table.insert(t1, p[1])
-	table.insert(t2, p[2])
+  print("Started")
+  MatchmakingService:StartGame(_G.gameId)
+  -- Simple teams.
+  local p = game.Players:GetPlayers()
+  table.insert(t1, p[1])
+  table.insert(t2, p[2])
 end
 
 -- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!
 function EndGame(winner)
-	MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
-	for i, v in ipairs(game.Players:GetPlayers()) do
-		-- You can teleport them back to the hub here, I just kick them
-		v:Kick()
-	end
+  MatchmakingService:UpdateRatings(t1, t2, _G.ratingType, winner)
+  for i, v in ipairs(game.Players:GetPlayers()) do
+    -- You can teleport them back to the hub here, I just kick them
+    v:Kick()
+  end
 end
 
 game.Players.PlayerAdded:Connect(function(player)
-	local joinData = player:GetJoinData()
-	if _G.gameId == nil and joinData then
-		-- Global so its accessible from other scripts if it needs to be.
-		_G.gameId = joinData.TeleportData.gameCode
-		_G.ratingType = joinData.TeleportData.ratingType
-	end
-	if #game.Players:GetPlayers() >= 2 then
-		Start()
-	end
+  local joinData = player:GetJoinData()
+  if _G.gameId == nil and joinData then
+    -- Global so its accessible from other scripts if it needs to be.
+    _G.gameId = joinData.TeleportData.gameCode
+    _G.ratingType = joinData.TeleportData.ratingType
+  end
+  if #game.Players:GetPlayers() >= 2 then
+    Start()
+  end
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-	MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
+  MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
 end)
 
 -- THIS IS EXTREMELY IMPORTANT
 game:BindToClose(function()
-	MatchmakingService:RemoveGame(_G.gameId)
+  MatchmakingService:RemoveGame(_G.gameId)
 end)
 ```
 If you put this script in your game server in ServerScriptService, it will handle setting game id and removing players from the game on disconnect and removing the game itself on close.
