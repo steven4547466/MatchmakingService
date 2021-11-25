@@ -9,20 +9,20 @@ local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local MessagingService = game:GetService("MessagingService")
-local ProfileService = require(script.ProfileService)
-local Glicko2 = require(script.Glicko2)
+local ProfileService = nil
+local Glicko2 = nil
 local Signal = require(script.Signal)
 --local Cache = require(script.Cache)
 
-local ProfileStore = ProfileService.GetProfileStore("PlayerRatings", {})
-local Profiles = {}
+local ProfileStore = nil
+local Profiles = nil
 
 local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
 local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.3.0-beta";
+  Version = "3.4.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -171,10 +171,31 @@ end
 
 --- Gets or creates the top level singleton of the matchmaking service.
 -- @return MatchmakingService - The matchmaking service singleton.
-function MatchmakingService.GetSingleton()
+function MatchmakingService.GetSingleton(options)
   print("Retrieving MatchmakingService ("..MatchmakingService.Version..") Singleton.")
   if MatchmakingService.Singleton == nil then
-    MatchmakingService.Singleton = MatchmakingService.new()
+    if not options.DisableRatingSystem then
+      ProfileService = require(script.ProfileService)
+      Glicko2 = require(script.Glicko2)
+      ProfileStore = ProfileService.GetProfileStore("PlayerRatings", {})
+      Profiles = {}
+      Players.PlayerAdded:Connect(PlayerAdded)
+      for _, player in ipairs(Players:GetPlayers()) do
+        task.spawn(PlayerAdded, player)
+      end
+      Players.PlayerRemoving:Connect(function(player)
+        local profile = Profiles[player.UserId]
+        if profile ~= nil then
+          profile:Release()
+        end
+        MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
+      end)
+    else
+      Players.PlayerRemoving:Connect(function(player)
+        MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
+      end)
+    end
+    MatchmakingService.Singleton = MatchmakingService.new(options)
     local mainJobId = GetFromMemory(memory, "MainJobId", 3)
     local now = DateTime.now().UnixTimestampMillis
     local isMain = mainJobId == nil or mainJobId[2] + 25000 <= now
@@ -186,24 +207,13 @@ function MatchmakingService.GetSingleton()
         return nil
       end, 86400)
     end
-    Players.PlayerAdded:Connect(PlayerAdded)
-    for _, player in ipairs(Players:GetPlayers()) do
-      task.spawn(PlayerAdded, player)
-    end
 
-    Players.PlayerRemoving:Connect(function(player)
-      local profile = Profiles[player.UserId]
-      if profile ~= nil then
-        profile:Release()
-      end
-      MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
-    end)
 
     MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
       for _, v in ipairs(players) do
         if Players:GetPlayerByUserId(v) ~= nil then continue end
-        local glicko = Glicko2.deserialize(v[3], 2)
-        local roundedRating = roundSkill(glicko.Rating)
+        local glicko = if options.DisableRatingSystem then nil else Glicko2.deserialize(v[3], 2)
+        local roundedRating = if options.DisableRatingSystem then nil else roundSkill(glicko.Rating)
 
         MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], glicko, v[2], roundedRating, v[4])
       end
@@ -316,9 +326,10 @@ function MatchmakingService:Clear()
   end
 end
 
-function MatchmakingService.new()
+function MatchmakingService.new(options)
   local Service = {}
   setmetatable(Service, MatchmakingService)
+  Service.Options = options
   Service.MatchmakingInterval = 3
   Service.PlayerRange = NumberRange.new(6, 10)
   Service.GamePlaceId = -1
@@ -370,6 +381,7 @@ function MatchmakingService.new()
             if runningGames ~= nil then
               for _, code in ipairs(runningGames) do
                 local mem = GetFromMemory(memory, code, 3)
+                if mem == nil then continue end
                 if mem.joinable then
                   local queue = GetFromMemory(memoryQueue, mem.ratingType, 3)
                   if queue == nil then continue end
@@ -416,7 +428,7 @@ function MatchmakingService.new()
             end	
           end
         end
-        
+
 
         -- Main matchmaking
         local queuedSkillLevels = GetFromMemory(memory, "QueuedSkillLevels", 3)
@@ -463,7 +475,7 @@ function MatchmakingService.new()
                 append(values, f)
               end
             end
-            
+
             -- Remove all newly queued
             if values ~= nil then 
               for j = #values, 1, -1 do
@@ -483,18 +495,18 @@ function MatchmakingService.new()
               local success, err
               success, err = pcall(function()
                 memory:UpdateAsync(reservedCode, function()
-                return 
-                  {
-                    ["full"] = #values == Service.PlayerRange.Max;
-                    ["skillLevel"] = skillLevel;
-                    ["players"] = userIds;
-                    ["started"] = false;
-                    ["joinable"] = #values ~= Service.PlayerRange.Max;
-                    ["ratingType"] = ratingType;
-                  }
+                  return 
+                    {
+                      ["full"] = #values == Service.PlayerRange.Max;
+                      ["skillLevel"] = skillLevel;
+                      ["players"] = userIds;
+                      ["started"] = false;
+                      ["joinable"] = #values ~= Service.PlayerRange.Max;
+                      ["ratingType"] = ratingType;
+                    }
                 end, 86400)
               end)
-              
+
               if not success then
                 print("Error adding new game:")
                 print(err)
@@ -512,7 +524,7 @@ function MatchmakingService.new()
                       return old
                     end, 86400)
                   end)
-                  
+
                   if not success and incremented then
                     print("Error adding game to running games after incrementing:")
                     print(err)
@@ -575,6 +587,7 @@ end
 -- @return The deserialzed glicko object.
 function MatchmakingService:GetPlayerGlickoId(player, ratingType)
   --return Glicko2.g2(self.StartingRating, self.StartingDeviation, self.StartingVolatility)
+  if self.Options.DisableRatingSystem then return nil end
   local i = 0
   local profile = nil
   while Profiles[player] == nil do
@@ -614,6 +627,7 @@ end
 -- @param ratingType The rating type to get.
 -- @param glicko The new glicko object
 function MatchmakingService:SetPlayerGlickoId(player, ratingType, glicko)
+  if self.Options.DisableRatingSystem then return nil end
   local i = 0
   local profile = nil
   while Profiles[player] == nil do
@@ -657,6 +671,7 @@ end
 -- @param ratingType The rating type of their current game, if any.
 -- @param party The player's party (table of user ids including the player).
 function MatchmakingService:SetPlayerInfoId(player, code, ratingType, party)
+  if self.Options.DisableRatingSystem then ratingType = "MMS_RatingDisabled" end
   memory:SetAsync(player, {curGame=code,teleported=false,ratingType=ratingType,party=party}, 7200)
 end
 
@@ -705,6 +720,7 @@ end
 -- @param ratingType The rating type to get the queue of.
 -- @return A dictionary of {skillLevel: queue} where skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
 function MatchmakingService:GetQueue(ratingType)
+  if self.Options.DisableRatingSystem then ratingType = "MMS_RatingDisabled" end
   local queue = GetFromMemory(memoryQueue, ratingType, 3)
   for k, v in pairs(queue) do
     queue[k] = tableSelect(v, 1)
@@ -717,8 +733,14 @@ end
 -- @param ratingType The rating type to use.
 -- @return A boolean that is true if the player was queued.
 function MatchmakingService:QueuePlayerId(player, ratingType)
-  local deserializedRating = self:GetPlayerGlickoId(player, ratingType)
-  local roundedRating = roundSkill(deserializedRating.Rating)
+  local deserializedRating = nil
+  local roundedRating = 0
+  if self.Options.DisableRatingSystem then 
+    ratingType = "MMS_RatingDisabled" 
+  else
+    deserializedRating = self:GetPlayerGlickoId(player, ratingType)
+    roundedRating = roundSkill(deserializedRating.Rating)
+  end
   local success, errorMessage
 
   local now = DateTime.now().UnixTimestampMillis
@@ -802,21 +824,25 @@ end
 -- @param ratingType The rating type to use.
 -- @return A boolean that is true if the party was queued.
 function MatchmakingService:QueuePartyId(players, ratingType)
-  local ratingValues = {}
+  local ratingValues = nil
   local avg = 0
-  local success, errorMessage
-
-  for _, v in ipairs(players) do
-    ratingValues[v] = self:GetPlayerGlickoId(v, ratingType)
-    if any(ratingValues, function(r)
-        return math.abs(ratingValues[v].Rating - r.Rating) > self.MaxPartySkillGap
-      end) then
-      return false, v, "Rating disparity too high"
+  if self.Options.DisableRatingSystem then 
+    ratingType = "MMS_RatingDisabled"
+  else
+    ratingValues = {}
+    for _, v in ipairs(players) do
+      ratingValues[v] = self:GetPlayerGlickoId(v, ratingType)
+      if any(ratingValues, function(r)
+          return math.abs(ratingValues[v].Rating - r.Rating) > self.MaxPartySkillGap
+        end) then
+        return false, v, "Rating disparity too high"
+      end
+      avg += ratingValues[v].Rating
     end
-    avg += ratingValues[v].Rating
-  end
 
-  avg = avg/dictlen(ratingValues)
+    avg = avg/dictlen(ratingValues)
+  end
+  local success, errorMessage
 
   local roundedRating = roundSkill(avg)
   local now = DateTime.now().UnixTimestampMillis
@@ -1301,6 +1327,7 @@ end
 -- @param winner The winner of the game (0 - Draw, 1 - Team 1 win, 2 - Team 2 win).
 -- @return true if there was no error.
 function MatchmakingService:UpdateRatingsId(team1, team2, ratingType, winner)
+  if self.Options.DisableRatingSystem then return nil end
   local success, errorMessage = pcall(function()
     local team1Scored = {}
     local team2Scored = {}
@@ -1308,7 +1335,7 @@ function MatchmakingService:UpdateRatingsId(team1, team2, ratingType, winner)
     -- if draw then 0.5 else if won then 1 else 0
     local t1Score = (winner == 0 and 0.5) or winner == 1 and 1 or 0 
     local t2Score = (winner == 0 and 0.5) or winner == 2 and 1 or 0
-    
+
     for _, id in ipairs(team1) do
       -- Update with the opposite score because they're opponents
       -- basically if they win score them with 0 as that means team 2 lost against them when we update
@@ -1362,7 +1389,7 @@ function MatchmakingService:RemoveGame(gameId)
     print("Unable to update Running Games (Remove game):")
     error(errorMessage)
   end
-  
+
   local runningGamesCount = GetFromMemory(memory, "RunningGamesCount", 3)
   if runningGamesCount then
     for i = 1, runningGamesCount do
@@ -1427,7 +1454,7 @@ function MatchmakingService:StartGame(gameId, joinable)
         else
           warn("Unable to update Running Games (Start game): No running games found in memory")
         end
-        
+
         return nil
       end
     end, 86400)
@@ -1444,6 +1471,9 @@ end
 -- @param skillLevel The ratingType to expand.
 -- @param skillLevel The rating to expand.
 function MatchmakingService:ExpandSearch(ratingType, skillLevel)
+  if self.Options.DisableRatingSystem then 
+    return
+  end
   local success, errorMessage = pcall(function()
     memory:UpdateAsync("QueuedSkillLevels", function(old)
       if old == nil or old[ratingType] == nil then return nil end
@@ -1466,6 +1496,9 @@ end
 -- @param skillLevel The ratingType to remove expansions from.
 -- @param skillLevel The rating to to remove expansions from.
 function MatchmakingService:RemoveExpansions(ratingType, skillLevel)
+  if self.Options.DisableRatingSystem then 
+    return
+  end
   local success, errorMessage = pcall(function()
     memory:UpdateAsync("QueuedSkillLevels", function(old)
       if old == nil or old[ratingType] == nil then return nil end
@@ -1490,12 +1523,14 @@ game:BindToClose(function()
       memory:RemoveAsync("MainJobId")
     end
   end)
-
-  for _, plr in ipairs(Players:GetPlayers()) do
-    MatchmakingService:RemovePlayerFromQueueId(plr.UserId)
-    local profile = Profiles[plr.UserId]
-    if profile ~= nil then
-      profile:Release()
+  
+  if not MatchmakingService.GetSingleton().Options.DisableRatingSystem then 
+    for _, plr in ipairs(Players:GetPlayers()) do
+      MatchmakingService:RemovePlayerFromQueueId(plr.UserId)
+      local profile = Profiles[plr.UserId]
+      if profile ~= nil then
+        profile:Release()
+      end
     end
   end
 end)

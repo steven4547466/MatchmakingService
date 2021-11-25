@@ -1,5 +1,15 @@
 Changelog
 
+Version 3.4.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] Added an `options` table to `GetSingleton`. Right now the only accepted option is `DisableRatingSystem` which will disable the rating system, disable profile service, and everyone will be in the same queue pool.
+
+Fixes:
+* None
+
 Version 3.3.0-beta
 Changes (breaking):
 * None
