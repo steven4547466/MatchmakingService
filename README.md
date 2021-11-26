@@ -1,5 +1,5 @@
 # MatchmakingService
-Current Version: V3.4.0-beta
+Current Version: V3.4.1-beta
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 In case it wasn't clear to everyone, which it obviously isn't. **This module is in beta and has no guarantee of working under all conditions. It is being actively developed there are DEFINITELY game breaking bugs and issues that have not been found.**

@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.4.0-beta";
+  Version = "3.4.1-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -795,7 +795,7 @@ function MatchmakingService:QueuePlayerId(player, ratingType)
         return x[1] == player
       end)
       if index == nil then
-        table.insert(PLAYERSADDED, {player, ratingType, deserializedRating:serialize()})
+        table.insert(PLAYERSADDED, {player, ratingType, if self.Options.DisableRatingSystem then nil else deserializedRating:serialize()})
       end
       table.insert(PLAYERSADDEDTHISWAVE, player)
     end
@@ -922,13 +922,13 @@ function MatchmakingService:QueuePartyId(players, ratingType)
   end
 
   for _, v in ipairs(players) do
-    self.PlayerAddedToQueue:Fire(v, ratingValues[v], ratingType, roundedRating, players)
+    self.PlayerAddedToQueue:Fire(v, if self.Options.DisableRatingSystem then nil else ratingValues[v], ratingType, roundedRating, players)
     if table.find(PLAYERSADDEDTHISWAVE, v) == nil then
       local index = find(PLAYERSADDED, function(x)
         return x[1] == v
       end)
       if index == nil then
-        table.insert(PLAYERSADDED, {v, ratingType, ratingValues[v]:serialize()})
+        table.insert(PLAYERSADDED, {v, ratingType, if self.Options.DisableRatingSystem then nil else ratingValues[v]:serialize()})
       end
       table.insert(PLAYERSADDEDTHISWAVE, v)
     end
