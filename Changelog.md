@@ -8,7 +8,7 @@ Changes (non-breaking):
 * None
 
 Fixes:
-* [Fix] Fixed an issue where you would get an error while queueing a player or party with the rating system disabled
+* [Fix] Fixed an issue where you would get an error while queueing a player or party with the rating system disabled.
 
 Version 3.4.0-beta
 Changes (breaking):
