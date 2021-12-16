@@ -25,8 +25,8 @@ Changes (breaking):
 * [Change] `QueuePlayer` now requires a third argument `map` which is a map name that is the same as one added with `AddGamePlace`.
 * [Change] `QueuePartyId` now requires a third argument `map` which is a map name that is the same as one added with `AddGamePlace`.
 * [Change] `QueueParty` now requires a third argument `map` which is a map name that is the same as one added with `AddGamePlace`.
-* [Change] `UpdatePlayerRatingsId`'s arguments have been completely changed. It now takes the arguments `ratingType`, `ranks`, `teams`. Where `ratingType` is the name of the rating type. `ranks` is a table of numbers that relate to placements of each team. `teams` is a table of tables that contain user ids.
-* [Change] `UpdatePlayerRatings`'s arguments have been completely changed. It now takes the arguments `ratingType`, `ranks`, `teams`. Where `ratingType` is the name of the rating type. `ranks` is a table of numbers that relate to placements of each team. `teams` is a table of tables that contain players.
+* [Change] `UpdateRatingsId`'s arguments have been completely changed. It now takes the arguments `ratingType`, `ranks`, `teams`. Where `ratingType` is the name of the rating type. `ranks` is a table of numbers that relate to placements of each team. `teams` is a table of tables that contain user ids.
+* [Change] `UpdateRatings`'s arguments have been completely changed. It now takes the arguments `ratingType`, `ranks`, `teams`. Where `ratingType` is the name of the rating type. `ranks` is a table of numbers that relate to placements of each team. `teams` is a table of tables that contain players.
 
 Changes (non-breaking):
 * [Change] Queue expansions has been removed for the time being. Will be readded in the future.
