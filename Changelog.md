@@ -1,5 +1,41 @@
 Changelog
 
+Version 4.0.0-beta
+Changes (breaking):
+* [Addition] [OpenSkill](https://devforum.roblox.com/t/openskill-a-skill-based-rating-system-for-matchmaking/1571168) has been added in place of Glicko2 for the rating system.
+* [Addition] `AddGamePlace(name, id)` has replaced `SetGamePlace`. `name` is the name of the map, `id` is the game's place id. Supports any number of maps.
+* [Addition] `SetStartingMean(newStartingMean)` has been added.
+* [Addition] `ToRatingNumber(openSkillObject)` has been added.
+* [Removal] ProfileService has been removed.
+* [Removal] Glicko2 has been removed.
+* [Removal] `SetGamePlace` has been removed.
+* [Removal] `SetStartingRating` has been removed (due to how open skill works, this will not be readdedd).
+* [Removal] `SetStartingVolatility` has been removed.
+* [Removal] `GetQueueCounts` has been temporarily removed. Will be readded in the future.
+* [Change] Significant changes have been made to the internal queue system.
+* [Change] `PlayerAddedToQueue` will now fire with the arguments `Player`, `Map`, `RatingType`, `RoundedRating`.
+* [Change] `PlayerRemovedFromQueue` will now fire with the arguments `Player`, `Map`, `RatingType`, `RoundedRating`.
+* [Change] `SetStartingDeviation` has been renamed to `SetStartingStandardDeviation`
+* [Change] `GetPlayerGlickoId` has been renamed to `GetPlayerRatingId`. It now returns an OpenSkill object. To get a rating number from this, use `MatchmakingService:ToRatingNumber(openSkillObject)`.
+* [Change] `GetPlayerGlicko` has been renamed to `GetPlayerRating`. It now returns an OpenSkill object. To get a rating number from this, use `MatchmakingService:ToRatingNumber(openSkillObject)`.
+* [Change] `SetPlayerGlickoId` has been renamed to `SetPlayerRatingId`. Its third parameter is now an OpenSkill object, rather than a glicko object.
+* [Change] `SetPlayerGlicko` has been renamed to `SetPlayerRating`. Its third parameter is now an OpenSkill object, rather than a glicko object.
+* [Change] `GetQueue` now takes `map` as an argument instead of `ratingType`. It will now return in the format `{ratingType: {skillLevel: queue}}` where `queue` is a table of tables `{userId, partyMembersAfter}`
+* [Change] `QueuePlayerId` now requires a third argument `map` which is a map name that is the same as one added with `AddGamePlace`.
+* [Change] `QueuePlayer` now requires a third argument `map` which is a map name that is the same as one added with `AddGamePlace`.
+* [Change] `QueuePartyId` now requires a third argument `map` which is a map name that is the same as one added with `AddGamePlace`.
+* [Change] `QueueParty` now requires a third argument `map` which is a map name that is the same as one added with `AddGamePlace`.
+* [Change] `UpdatePlayerRatingsId`'s arguments have been completely changed. It now takes the arguments `ratingType`, `ranks`, `teams`. Where `ratingType` is the name of the rating type. `ranks` is a table of numbers that relate to placements of each team. `teams` is a table of tables that contain user ids.
+* [Change] `UpdatePlayerRatings`'s arguments have been completely changed. It now takes the arguments `ratingType`, `ranks`, `teams`. Where `ratingType` is the name of the rating type. `ranks` is a table of numbers that relate to placements of each team. `teams` is a table of tables that contain players.
+
+Changes (non-breaking):
+* [Change] Queue expansions has been removed for the time being. Will be readded in the future.
+* [Change] `SetPlayerInfoId` now has a fifth parameter `map` which is the name of the map they queued for.
+* [Change] `SetPlayerInfo` now has a fifth parameter `map` which is the name of the map they queued for.
+
+Fixes:
+* [Fix] Options will now default to `{}`.
+
 Version 3.4.1-beta
 Changes (breaking):
 * None
