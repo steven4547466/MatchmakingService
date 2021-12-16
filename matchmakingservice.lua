@@ -561,6 +561,13 @@ function MatchmakingService.new(options)
   return Service
 end
 
+--- Turns an OpenSkill object into a single rating number.
+-- @param openSkillObject The open skill object.
+-- @return The single number representation of the object.
+function MatchmakingService:ToRatingNumber(openSkillObject)
+  return OpenSkill.Ordinal(openSkillObject)
+end
+
 --- Gets or initializes a players OpenSkill object.
 -- You should not edit this directly unless you
 -- know what you're doing.
