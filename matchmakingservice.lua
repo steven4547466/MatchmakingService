@@ -9,20 +9,19 @@ local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local MessagingService = game:GetService("MessagingService")
-local ProfileService = nil
-local Glicko2 = nil
-local Signal = require(script.Signal)
---local Cache = require(script.Cache)
+local DatastoreService = game:GetService("DataStoreService")
 
-local ProfileStore = nil
-local Profiles = nil
+local SkillDatastore = DatastoreService:GetDataStore("MATCHMAKINGSERVICE_SKILLS")
+
+local OpenSkill = require(script.OpenSkill)
+local Signal = require(script.Signal)
 
 local memory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
 local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.4.1-beta";
+  Version = "4.0.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -119,7 +118,7 @@ end
 
 function checkForParties(values)
   for i, v in ipairs(values) do
-    if v[3] ~= nil and i + v[3] > #values then
+    if v[2] ~= nil and i + v[2] > #values then
       for j = #values, i, -1 do
         table.remove(values, j)
       end
@@ -129,7 +128,8 @@ function checkForParties(values)
   return true
 end
 
-function GetFromMemory(m, k, retries)
+function getFromMemory(m, k, retries)
+  if retries == nil then retries = 3 end
   local success, response
   local count = 0
   while not success and count < retries do
@@ -141,30 +141,60 @@ function GetFromMemory(m, k, retries)
   return response
 end
 
+function updateQueue(map, ratingType, stringRoundedRating)
+  local now = DateTime.now().UnixTimestampMillis
+  local success, errorMessage
+
+  success, errorMessage = pcall(function()
+    memoryQueue:UpdateAsync("QueuedMaps", function(old)
+      if old == nil then 
+        old = {map}
+      else
+        if find(old, function(v)
+            return v == map
+          end) then
+          return old
+        end
+        table.insert(old, map)
+      end
+      return old
+    end, 86400)
+  end)
+
+  if not success then
+    print("Unable to update queued maps:")
+    error(errorMessage)
+  end
+
+  success, errorMessage = pcall(function()
+    memoryQueue:UpdateAsync(map.."_QueuedRatingTypes", function(old)
+      if old == nil then 
+        old = {}
+        old[ratingType] = {{stringRoundedRating, now}}
+      elseif old[ratingType] ~= nil then
+        old[ratingType] = {{stringRoundedRating, now}}
+      else
+        if find(old[ratingType], function(v)
+            return v[1] == stringRoundedRating
+          end) then
+          return old
+        end
+        table.insert(old[ratingType], {stringRoundedRating, now})
+      end
+      return old
+    end, 86400)
+  end)
+
+  if not success then
+    print("Unable to update queued rating types:")
+    error(errorMessage)
+  end
+end
+
 -- End useful utilities
 
 
 -- Private connections
-
-function PlayerAdded(player)
-  local profile = ProfileStore:LoadProfileAsync("Player_" .. player.UserId, "Steal")
-  if profile ~= nil then
-    profile:AddUserId(player.UserId)
-    profile:Reconcile() -- In case we add anything to defaults in the future
-    profile:ListenToRelease(function()
-      Profiles[player.UserId] = nil
-      player:Kick() -- Any time a profile is ever released, the user cannot be in the game.
-    end)
-    if player:IsDescendantOf(Players) == true then
-      Profiles[player.UserId] = profile
-    else
-      profile:Release()
-    end
-  else
-    player:Kick()
-    error("Unable to obtain player profile: " .. player.Name .. " (" .. player.UserId .. ")")
-  end
-end
 
 -- End private connections
 
@@ -174,29 +204,11 @@ end
 function MatchmakingService.GetSingleton(options)
   print("Retrieving MatchmakingService ("..MatchmakingService.Version..") Singleton.")
   if MatchmakingService.Singleton == nil then
-    if not options.DisableRatingSystem then
-      ProfileService = require(script.ProfileService)
-      Glicko2 = require(script.Glicko2)
-      ProfileStore = ProfileService.GetProfileStore("PlayerRatings", {})
-      Profiles = {}
-      Players.PlayerAdded:Connect(PlayerAdded)
-      for _, player in ipairs(Players:GetPlayers()) do
-        task.spawn(PlayerAdded, player)
-      end
-      Players.PlayerRemoving:Connect(function(player)
-        local profile = Profiles[player.UserId]
-        if profile ~= nil then
-          profile:Release()
-        end
-        MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
-      end)
-    else
-      Players.PlayerRemoving:Connect(function(player)
-        MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
-      end)
-    end
+    Players.PlayerRemoving:Connect(function(player)
+      MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
+    end)
     MatchmakingService.Singleton = MatchmakingService.new(options)
-    local mainJobId = GetFromMemory(memory, "MainJobId", 3)
+    local mainJobId = getFromMemory(memory, "MainJobId", 3)
     local now = DateTime.now().UnixTimestampMillis
     local isMain = mainJobId == nil or mainJobId[2] + 25000 <= now
     if isMain and not CLOSED then
@@ -212,17 +224,15 @@ function MatchmakingService.GetSingleton(options)
     MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
       for _, v in ipairs(players) do
         if Players:GetPlayerByUserId(v) ~= nil then continue end
-        local glicko = if options.DisableRatingSystem then nil else Glicko2.deserialize(v[3], 2)
-        local roundedRating = if options.DisableRatingSystem then nil else roundSkill(glicko.Rating)
 
-        MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], glicko, v[2], roundedRating, v[4])
+        MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], v[2], v[3], v[4])
       end
     end)
 
     MessagingService:SubscribeAsync("MatchmakingServicePlayersRemovedFromQueue", function(players)
       for _, v in ipairs(players) do
         if Players:GetPlayerByUserId(v) ~= nil then continue end
-        MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3])
+        MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3], v[4])
       end
     end)
 
@@ -261,10 +271,10 @@ function MatchmakingService:SetPlayerRange(newPlayerRange)
   self.PlayerRange = newPlayerRange
 end
 
---- Sets the place to teleport to.
+--- Add a new game place.
 -- @param newPlace The place id to teleport to.
-function MatchmakingService:SetGamePlace(newPlace)
-  self.GamePlaceId = newPlace
+function MatchmakingService:AddGamePlace(name, id)
+  self.GamePlaceIds[name] = id
 end
 
 --- Sets whether or not this is a game server.
@@ -274,24 +284,18 @@ function MatchmakingService:SetIsGameServer(newValue)
   self.IsGameServer = newValue
 end
 
---- Sets the starting rating of glicko objects.
--- @param newStartingRating The new starting rating.
-function MatchmakingService:SetStartingRating(newStartingRating)
-  self.StartingRating = newStartingRating
+--- Sets the starting mean of OpenSkill objects.
+-- Do not modify this unless you know what you're doing.
+-- @param newStartingMean The new starting mean.
+function MatchmakingService:SetStartingMean(newStartingMean)
+  self.StartingMean = newStartingMean
 end
 
---- Sets the starting deviation of glicko objects.
+--- Sets the starting standard deviation of OpenSkill objects.
 -- Do not modify this unless you know what you're doing.
--- @param newStartingDeviation The new starting deviation.
-function MatchmakingService:SetStartingDeviation(newStartingDeviation)
-  self.StartingDeviation = newStartingDeviation
-end
-
---- Sets the starting volatility of glicko objects.
--- Do not modify this unless you know what you're doing.
--- @param newStartingVolatility The new starting volatility.
-function MatchmakingService:SetStartingVolatility(newStartingVolatility)
-  self.StartingVolatility = newStartingVolatility
+-- @param newStartingStandardDeviation The new starting standing deviation.
+function MatchmakingService:SetStartingStandardDeviation(newStartingStandardDeviation)
+  self.StartingStandardDeviation = newStartingStandardDeviation
 end
 
 --- Sets the max gap in rating between party members.
@@ -302,10 +306,10 @@ end
 
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
-  local count = GetFromMemory(memory, "RunningGamesCount", 3)
+  local count = getFromMemory(memory, "RunningGamesCount", 3)
   if count then
     for i = 1, count do
-      local runningGames = GetFromMemory(memory, "RunningGames"..tostring(i), 3)
+      local runningGames = getFromMemory(memory, "RunningGames"..tostring(i), 3)
       if runningGames ~= nil then
         for _, code in ipairs(runningGames) do
           memory:RemoveAsync(code)
@@ -317,22 +321,29 @@ function MatchmakingService:Clear()
   memory:RemoveAsync("RunningGamesCount")
   memory:RemoveAsync("QueuedSkillLevels")
   memory:RemoveAsync("MainJobId")
-  for i = 0, 1000, 10 do -- This is inefficient and unnecessary, but unfortunately we don't have the ability to clear entire maps.
-    task.spawn(function()
-      pcall(function()
-        memoryQueue:RemoveAsync(tostring(i))
-      end)
-    end)
+  local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
+  if queuedMaps == nil then return end
+  memoryQueue:RemoveAsync("QueuedMaps")
+
+  for i, map in ipairs(queuedMaps) do
+    local mapQueue = self:GetQueue(map)
+    memoryQueue:RemoveAsync(map.."_QueuedRatingTypes")
+    if mapQueue == nil then continue end
+    for ratingType, skillLevelAndQueue in pairs(mapQueue) do
+      for skillLevel, queue in pairs(skillLevelAndQueue) do
+        memoryQueue:RemoveAsync(map.."_"..ratingType.."_"..skillLevel)
+      end
+    end
   end
 end
 
 function MatchmakingService.new(options)
   local Service = {}
   setmetatable(Service, MatchmakingService)
-  Service.Options = options
+  Service.Options = options or {}
   Service.MatchmakingInterval = 3
   Service.PlayerRange = NumberRange.new(6, 10)
-  Service.GamePlaceId = -1
+  Service.GamePlaceIds = {}
   Service.IsGameServer = false
   Service.MaxPartySkillGap = 50
   Service.PlayerAddedToQueue = Signal:Create()
@@ -346,12 +357,12 @@ function MatchmakingService.new(options)
 
   task.spawn(function()
     local lastCheckMain = 0
-    local mainJobId = GetFromMemory(memory, "MainJobId", 3)
+    local mainJobId = getFromMemory(memory, "MainJobId", 3)
     while not Service.IsGameServer and not CLOSED do
       task.wait(Service.MatchmakingInterval)
       local now = DateTime.now().UnixTimestampMillis
       if lastCheckMain + 10000 <= now then
-        mainJobId = GetFromMemory(memory, "MainJobId", 3)
+        mainJobId = getFromMemory(memory, "MainJobId", 3)
         lastCheckMain = now
         if mainJobId ~= nil and mainJobId[1] == game.JobId then
           memory:UpdateAsync("MainJobId", function(old)
@@ -373,20 +384,18 @@ function MatchmakingService.new(options)
         mainJobId = {game.JobId, now}
       elseif mainJobId[1] == game.JobId then
         -- Check all games for open slots
-        local parties = GetFromMemory(memory, "QueuedParties", 3)
-        local runningGamesCount = GetFromMemory(memory, "RunningGamesCount", 3)
+        local parties = getFromMemory(memory, "QueuedParties", 3)
+        local runningGamesCount = getFromMemory(memory, "RunningGamesCount", 3)
         if runningGamesCount then
           for i = 1, runningGamesCount do
-            local runningGames = GetFromMemory(memory, "RunningGames"..tostring(i), 3)
+            local runningGames = getFromMemory(memory, "RunningGames"..tostring(i), 3)
             if runningGames ~= nil then
               for _, code in ipairs(runningGames) do
-                local mem = GetFromMemory(memory, code, 3)
+                local mem = getFromMemory(memory, code, 3)
                 if mem == nil then continue end
                 if mem.joinable then
-                  local queue = GetFromMemory(memoryQueue, mem.ratingType, 3)
-                  if queue == nil then continue end
-                  queue = queue[tostring(mem.skillLevel)]
-                  if queue == nil then continue end
+                  local queue = Service:GetQueue(mem.map)[mem.ratingType][mem.skillLevel]
+                  if queue == nil or #queue == 0 then continue end
 
                   local values = first(queue, Service.PlayerRange.Max - #mem.players)
 
@@ -403,25 +412,25 @@ function MatchmakingService.new(options)
                   end
 
                   -- Remove all newly queued
-                  if values ~= nil then 
-                    for j = #values, 1, -1 do
-                      if values[j][2] >= now - Service.MatchmakingInterval*1000 then
-                        table.remove(values, j)
-                      end
-                    end
-                  end
+                  --if values ~= nil then 
+                  --	for j = #values, 1, -1 do
+                  --		if values[j][2] >= now - Service.MatchmakingInterval*1000 then
+                  --			table.remove(values, j)
+                  --		end
+                  --	end
+                  --end
 
                   if values ~= nil and #values > 0 then
                     local plrs = {}
 
                     for _, v in ipairs(values) do
                       table.insert(plrs, v[1])
-                      Service:SetPlayerInfoId(v[1], code, mem.ratingType, parties ~= nil and parties[v] or {})
+                      Service:SetPlayerInfoId(v[1], code, mem.ratingType, parties ~= nil and parties[v] or {}, mem.map)
                     end
 
                     Service:AddPlayersToGameId(plrs, code)
 
-                    Service:RemovePlayersFromQueueId(tableSelect(values, 1), mem.skillLevel)
+                    Service:RemovePlayersFromQueueId(tableSelect(values, 1))
                   end
                 end
               end
@@ -429,129 +438,101 @@ function MatchmakingService.new(options)
           end
         end
 
-
         -- Main matchmaking
-        local queuedSkillLevels = GetFromMemory(memory, "QueuedSkillLevels", 3)
-        if queuedSkillLevels == nil then continue end
+        local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
+        if queuedMaps == nil then continue end
 
-        for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
-          local queue = GetFromMemory(memoryQueue, ratingType, 3)
-          for i, skillLevelTable in ipairs(skillLevelQueue)  do
-            local skillLevel = skillLevelTable[1]
-            local queueTime = skillLevelTable[2]
-            local expansions = skillLevelTable[3]
-            if queue == nil then continue end
-            queue = queue[tostring(skillLevel)]
-            if queue == nil then continue end
-            local values = first(queue, Service.PlayerRange.Max)
+        for i, map in ipairs(queuedMaps) do
+          local mapQueue = Service:GetQueue(map)
+          if mapQueue == nil then continue end
+          for ratingType, skillLevelAndQueue in pairs(mapQueue) do
+            for skillLevel, queue in pairs(skillLevelAndQueue) do
+              local values = first(queue, Service.PlayerRange.Max)
 
-            if now >= queueTime + 10000 then
-              Service:ExpandSearch(ratingType, skillLevel)
-            end
-
-            -- Handle expansions
-            if expansions ~= nil and (values == nil or #values < Service.PlayerRange.Min) then
-              for j = 1, expansions do
-                for a = 1, 2 do
-                  local n = j
-                  if a == 2 then n *= -1 end
-                  local t = skillLevelQueue[n + i]
-                  if t == nil then continue end
-                  local l = t[1]
-                  if l == nil or queue[tostring(l)] == nil then continue end
-                  append(values, first(queue[tostring(l)], Service.PlayerRange.Max))
-                end
-              end							
-            end
-
-            if values ~= nil then
-              local acc = #values
-              while not checkForParties(values) do
-                local f = first(queue, Service.PlayerRange.Max, acc + 1)
-                if f == nil or #f == 0 then
-                  break
-                end
-                acc += #f
-                append(values, f)
-              end
-            end
-
-            -- Remove all newly queued
-            if values ~= nil then 
-              for j = #values, 1, -1 do
-                if values[j][2] >= now - Service.MatchmakingInterval*1000 then
-                  table.remove(values, j)
-                end
-              end
-            end
-
-            -- If there aren't enough players than skip this skill level
-            if values == nil or #values < Service.PlayerRange.Min then
-              continue
-            else
-              local userIds = tableSelect(values, 1)
-              -- Otherwise reserve a server and tell all servers the player is ready to join
-              local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceId) or "TEST"
-              local success, err
-              success, err = pcall(function()
-                memory:UpdateAsync(reservedCode, function()
-                  return 
-                    {
-                      ["full"] = #values == Service.PlayerRange.Max;
-                      ["skillLevel"] = skillLevel;
-                      ["players"] = userIds;
-                      ["started"] = false;
-                      ["joinable"] = #values ~= Service.PlayerRange.Max;
-                      ["ratingType"] = ratingType;
-                    }
-                end, 86400)
-              end)
-
-              if not success then
-                print("Error adding new game:")
-                print(err)
-              else
-                if not runningGamesCount then
-                  memory:SetAsync("RunningGamesCount", 1, 86400)
-                  runningGamesCount = 1
-                end
-                local incremented = false
-                for i = 1, runningGamesCount do
-                  success, err = pcall(function()
-                    memory:UpdateAsync("RunningGames"..tostring(i), function(old)
-                      if not old then old = {reservedCode} end
-                      table.insert(old, reservedCode)
-                      return old
-                    end, 86400)
-                  end)
-
-                  if not success and incremented then
-                    print("Error adding game to running games after incrementing:")
-                    print(err)
-                  elseif not success and runningGamesCount then
-                    incremented = true
-                    memory:SetAsync("RunningGamesCount", runningGamesCount + 1, 86400)
-                    runningGamesCount += 1
-                  elseif not success and not runningGamesCount then
-                    print("Error adding game to running games:")
-                    print(err)
+              if values ~= nil then
+                local acc = #values
+                while not checkForParties(values) do
+                  local f = first(queue, Service.PlayerRange.Max, acc + 1)
+                  if f == nil or #f == 0 then
+                    break
                   end
+                  acc += #f
+                  append(values, f)
                 end
-
-                for _, v in ipairs(userIds) do
-                  Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {})
-                end
-                Service:RemoveExpansions(ratingType, skillLevel)
-                Service:RemovePlayersFromQueueId(userIds, skillLevel)
               end
+
+              -- If there aren't enough players than skip this skill level
+              if values == nil or #values < Service.PlayerRange.Min then
+                continue
+              else
+                local userIds = tableSelect(values, 1)
+                -- Otherwise reserve a server and tell all servers the player is ready to join
+                local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceIds[map]) or "TEST"
+                local success, err
+                success, err = pcall(function()
+                  memory:UpdateAsync(reservedCode, function()
+                    return 
+                      {
+                        ["full"] = #values == Service.PlayerRange.Max;
+                        ["skillLevel"] = skillLevel;
+                        ["players"] = userIds;
+                        ["started"] = false;
+                        ["joinable"] = #values ~= Service.PlayerRange.Max;
+                        ["ratingType"] = ratingType;
+                        ["map"] = map
+                      }
+                  end, 86400)
+                end)
+
+                if not success then
+                  print("Error adding new game:")
+                  print(err)
+                else
+                  if not runningGamesCount then
+                    memory:SetAsync("RunningGamesCount", 1, 86400)
+                    runningGamesCount = 1
+                  end
+                  local incremented = false
+                  for i = 1, runningGamesCount do
+                    success, err = pcall(function()
+                      memory:UpdateAsync("RunningGames"..tostring(i), function(old)
+                        if not old then old = {reservedCode} end
+                        table.insert(old, reservedCode)
+                        return old
+                      end, 86400)
+                    end)
+
+                    if not success and incremented then
+                      print("Error adding game to running games after incrementing:")
+                      print(err)
+                    elseif not success and runningGamesCount then
+                      incremented = true
+                      memory:SetAsync("RunningGamesCount", runningGamesCount + 1, 86400)
+                      runningGamesCount += 1
+                    elseif not success and not runningGamesCount then
+                      print("Error adding game to running games:")
+                      print(err)
+                    end
+                  end
+
+                  for _, v in ipairs(userIds) do
+                    Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {}, map)
+                  end
+                  --Service:RemoveExpansions(ratingType, skillLevel)
+                  Service:RemovePlayersFromQueueId(userIds)
+                end
+              end
+
             end
           end
         end
+
       end
 
       -- Teleport any players to their respective games
       local playersToTeleport = {}
       local playersToRatings = {}
+      local playersToMaps = {}
       for _, v  in ipairs(Players:GetPlayers()) do
         local playerData = Service:GetPlayerInfoId(v.UserId)
         if playerData ~= nil then
@@ -559,6 +540,7 @@ function MatchmakingService.new(options)
             if playersToTeleport[playerData.curGame] == nil then playersToTeleport[playerData.curGame] = {} end
             table.insert(playersToTeleport[playerData.curGame], v)
             playersToRatings[v.UserId] = playerData.ratingType
+            playersToMaps[v.UserId] = playerData.map
             local new = memory:UpdateAsync(v.UserId, function(old)
               if old then
                 old.teleported = true
@@ -571,7 +553,7 @@ function MatchmakingService.new(options)
 
       for code, players in pairs(playersToTeleport) do
         if code ~= "TEST" then 
-          TeleportService:TeleportToPrivateServer(Service.GamePlaceId, code, players, nil, {gameCode=code, ratingType=playersToRatings[players[1].UserId]})
+          TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil, {gameCode=code, ratingType=playersToRatings[players[1].UserId]})
         end
       end
     end
@@ -579,78 +561,52 @@ function MatchmakingService.new(options)
   return Service
 end
 
---- Gets or initializes a players deserialized glicko object.
+--- Gets or initializes a players OpenSkill object.
 -- You should not edit this directly unless you
 -- know what you're doing.
 -- @param player The player id to get the glicko object of
 -- @param ratingType The rating type to get.
--- @return The deserialzed glicko object.
-function MatchmakingService:GetPlayerGlickoId(player, ratingType)
-  --return Glicko2.g2(self.StartingRating, self.StartingDeviation, self.StartingVolatility)
+-- @return The OpenSkill object (which is just 2 numbers).
+function MatchmakingService:GetPlayerRatingId(player, ratingType)
   if self.Options.DisableRatingSystem then return nil end
-  local i = 0
-  local profile = nil
-  while Profiles[player] == nil do
-    task.wait(0.1)
-    i += 0.1
-    if i > 8 then 
-      error("Unable to get player profile: Wait time exceeded")
-      return 
-    end
+  local skill = SkillDatastore:GetAsync(ratingType.."_"..tostring(player))
+  if not skill then
+    local rating = OpenSkill.Rating(self.StartingMean, self.StartingStandardDeviation)
+    SkillDatastore:SetAsync(ratingType.."_"..tostring(player), rating, {player})
+    skill = rating
   end
-
-  profile = Profiles[player]
-
-  local playerRatingSerialized = profile.Data[ratingType]
-
-  if playerRatingSerialized == nil then
-    profile.Data[ratingType] = Glicko2.g2(self.StartingRating, self.StartingDeviation, self.StartingVolatility):serialize()
-  end
-
-  return Glicko2.deserialize(profile.Data[ratingType], 2)
+  return skill
 end
 
---- Gets or initializes a players deserialized glicko object.
--- You should not edit this directly unless you
--- know what you're doing.
--- @param player The player to get the glicko object of
--- @param ratingType The rating type to get.
--- @return The deserialzed glicko object.
-function MatchmakingService:GetPlayerGlicko(player, ratingType)
-  return self:GetPlayerGlickoId(player.UserId, ratingType)
-end
-
---- Sets a players rating.
+--- Gets or initializes a players OpenSkill object.
 -- You should not edit this directly unless you
 -- know what you're doing.
 -- @param player The player id to get the glicko object of
 -- @param ratingType The rating type to get.
--- @param glicko The new glicko object
-function MatchmakingService:SetPlayerGlickoId(player, ratingType, glicko)
-  if self.Options.DisableRatingSystem then return nil end
-  local i = 0
-  local profile = nil
-  while Profiles[player] == nil do
-    task.wait(0.1)
-    i += 0.1
-    if i > 8 then 
-      error("Unable to get player profile: Wait time exceeded")
-      return 
-    end
-  end
-  profile = Profiles[player]
-
-  profile.Data[ratingType] = glicko:serialize()
+-- @return The OpenSkill object (which is just 2 numbers).
+function MatchmakingService:GetPlayerRating(player, ratingType)
+  return self:GetPlayerRatingId(player.UserId, ratingType)
 end
 
---- Sets a players rating.
+--- Sets a player's skill.
 -- You should not edit this directly unless you
 -- know what you're doing.
--- @param player The player to get the glicko object of
+-- @param player The player id to get the glicko object of
 -- @param ratingType The rating type to get.
--- @param glicko The new glicko object
-function MatchmakingService:SetPlayerGlicko(player, ratingType, glicko)
-  self:SetPlayerGlickoId(player.UserId, ratingType, glicko)
+-- @param rating The new OpenSkill object.
+function MatchmakingService:SetPlayerRatingId(player, ratingType, rating)
+  if self.Options.DisableRatingSystem then return nil end
+  SkillDatastore:SetAsync(ratingType.."_"..tostring(player), rating, {player})
+end
+
+--- Sets a player's skill.
+-- You should not edit this directly unless you
+-- know what you're doing.
+-- @param player The player id to get the glicko object of
+-- @param ratingType The rating type to get.
+-- @param rating The new OpenSkill object.
+function MatchmakingService:SetPlayerRating(player, ratingType, rating)
+  self:SetPlayerSkillId(player.UserId, ratingType, rating)
 end
 
 --- Clears the player info.
@@ -670,9 +626,10 @@ end
 -- @param code The game id that the player will teleport to, if any.
 -- @param ratingType The rating type of their current game, if any.
 -- @param party The player's party (table of user ids including the player).
-function MatchmakingService:SetPlayerInfoId(player, code, ratingType, party)
+-- @param map The player's queued map, if any.
+function MatchmakingService:SetPlayerInfoId(player, code, ratingType, party, map)
   if self.Options.DisableRatingSystem then ratingType = "MMS_RatingDisabled" end
-  memory:SetAsync(player, {curGame=code,teleported=false,ratingType=ratingType,party=party}, 7200)
+  memory:SetAsync(player, {curGame=code,teleported=false,ratingType=ratingType,party=party,map=map}, 7200)
 end
 
 --- Sets the player info.
@@ -680,14 +637,15 @@ end
 -- @param code The game id that the player will teleport to, if any.
 -- @param ratingType The rating type of their current game, if any.
 -- @param party The player's party (table of user ids including the player).
-function MatchmakingService:SetPlayerInfo(player, code, ratingType, party)
-  self:SetPlayerInfoId(player.UserId, code, ratingType, party)
+-- @param map The player's queued map, if any.
+function MatchmakingService:SetPlayerInfo(player, code, ratingType, party, map)
+  self:SetPlayerInfoId(player.UserId, code, ratingType, party, map)
 end
 
 --- Gets the player info.
 -- @param player The player to get.
 function MatchmakingService:GetPlayerInfoId(player)
-  return GetFromMemory(memory, player, 3)
+  return getFromMemory(memory, player, 3)
 end
 
 --- Gets the player info.
@@ -698,32 +656,36 @@ end
 
 --- Counts how many players are in the queues.
 -- @return A dictionary of {ratingType: count} and the full count.
-function MatchmakingService:GetQueueCounts()
-  local counts = {}
-  local queuedSkillLevels = GetFromMemory(memory, "QueuedSkillLevels", 3)
-  if queuedSkillLevels == nil then return {} end
-  for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
-    counts[ratingType] = 0
-    local queue = GetFromMemory(memoryQueue, ratingType, 3)
-    for i, skillLevelTable in ipairs(skillLevelQueue)  do
-      if queue == nil then continue end
-      queue = queue[tostring(skillLevelTable[1])]
-      counts[ratingType] += #queue
-    end
-  end
-  return counts, reduce(counts, function(acc, cur)
-    return acc + cur
-  end)
-end
+--function MatchmakingService:GetQueueCounts()
+--	local counts = {}
+--	local queuedSkillLevels = getFromMemory(memory, "QueuedSkillLevels", 3)
+--	if queuedSkillLevels == nil then return {} end
+--	for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
+--		counts[ratingType] = 0
+--		local queue = getFromMemory(memoryQueue, ratingType, 3)
+--		for i, skillLevelTable in ipairs(skillLevelQueue)  do
+--			if queue == nil then continue end
+--			queue = queue[tostring(skillLevelTable[1])]
+--			counts[ratingType] += #queue
+--		end
+--	end
+--	return counts, reduce(counts, function(acc, cur)
+--		return acc + cur
+--	end)
+--end
 
 --- Gets a table of user ids in a specific queue.
--- @param ratingType The rating type to get the queue of.
--- @return A dictionary of {skillLevel: queue} where skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
-function MatchmakingService:GetQueue(ratingType)
-  if self.Options.DisableRatingSystem then ratingType = "MMS_RatingDisabled" end
-  local queue = GetFromMemory(memoryQueue, ratingType, 3)
-  for k, v in pairs(queue) do
-    queue[k] = tableSelect(v, 1)
+-- @param map The map to get the queue of.
+-- @return A dictionary of {ratingType: {skillLevel: queue}} where rating type is the rating type, skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
+function MatchmakingService:GetQueue(map)
+  local queuedRatingTypes = getFromMemory(memoryQueue, map.."_QueuedRatingTypes", 3)
+  if queuedRatingTypes == nil then return nil end
+  local queue = {}
+  for ratingType, ratingObj in pairs(queuedRatingTypes) do
+    queue[ratingType] = {}
+    for i, v in ipairs(ratingObj) do
+      queue[ratingType][v[1]] = getFromMemory(memoryQueue, map.."_"..ratingType.."_"..v[1], 3)
+    end
   end
   return queue
 end
@@ -731,28 +693,30 @@ end
 --- Queues a player.
 -- @param player The player id to queue.
 -- @param ratingType The rating type to use.
+-- @param map The map to queue them on.
 -- @return A boolean that is true if the player was queued.
-function MatchmakingService:QueuePlayerId(player, ratingType)
+function MatchmakingService:QueuePlayerId(player, ratingType, map)
   local deserializedRating = nil
   local roundedRating = 0
   if self.Options.DisableRatingSystem then 
     ratingType = "MMS_RatingDisabled" 
   else
-    deserializedRating = self:GetPlayerGlickoId(player, ratingType)
-    roundedRating = roundSkill(deserializedRating.Rating)
+    deserializedRating = self:GetPlayerRatingId(player, ratingType)
+    roundedRating = roundSkill(OpenSkill.Ordinal(deserializedRating))
   end
+  local stringRoundedRating = tostring(roundedRating)
+
   local success, errorMessage
 
-  local now = DateTime.now().UnixTimestampMillis
   local new = nil
+
   success, errorMessage = pcall(function()
-    new = memoryQueue:UpdateAsync(ratingType, function(old)
-      if old == nil then return {[tostring(roundedRating)]={{player, now}}} end
-      if old[tostring(roundedRating)] == nil then old[tostring(roundedRating)] = {} end
-      if find(old[tostring(roundedRating)], function(entry)
-          return entry[1] == player
-        end) ~= nil then return old end
-      table.insert(old[tostring(roundedRating)], {player, now})
+    new = memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..stringRoundedRating, function(old)
+      if old == nil then 
+        old = {{player}}
+      else
+        table.insert(old, {player})
+      end
       return old
     end, 86400)
   end)
@@ -762,40 +726,19 @@ function MatchmakingService:QueuePlayerId(player, ratingType)
     error(errorMessage)
   end
 
-  success, errorMessage = pcall(function()
-    memory:UpdateAsync("QueuedSkillLevels", function(old)
-      if old == nil then return {[ratingType]={{roundedRating, DateTime.now().UnixTimestampMillis}}} end
-      if old[ratingType] == nil then old[ratingType] = {} end
-      local index = find(old[ratingType], function(entry)
-        return entry[1] == roundedRating
-      end)
-      if index ~= nil then return nil end
-      table.insert(old[ratingType], {roundedRating, DateTime.now().UnixTimestampMillis})
-      table.sort(old[ratingType], function(a, b)
-        return b[1] > a[1]
-      end)
-      return old
-    end, 86400)
-  end)
+  updateQueue(map, ratingType, stringRoundedRating)
 
-  if not success then
-    print("Unable to update Queued Skill Levels:")
-    error(errorMessage)
-  end
-
-  local s = find(new[tostring(roundedRating)], function(entry)
-    return entry[1] == player
-  end) ~= nil
+  local s = find(new, function(v) return v[1] == player end) ~= nil
 
   if s then
-    self.PlayerAddedToQueue:Fire(player, deserializedRating, ratingType, roundedRating)
+    self.PlayerAddedToQueue:Fire(player, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating)
 
     if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
       local index = find(PLAYERSADDED, function(x)
         return x[1] == player
       end)
       if index == nil then
-        table.insert(PLAYERSADDED, {player, ratingType, if self.Options.DisableRatingSystem then nil else deserializedRating:serialize()})
+        table.insert(PLAYERSADDED, {player, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating})
       end
       table.insert(PLAYERSADDEDTHISWAVE, player)
     end
@@ -814,16 +757,18 @@ end
 --- Queues a player.
 -- @param player The player to queue.
 -- @param ratingType The rating type to use.
+-- @param map The map to queue them on.
 -- @return A boolean that is true if the player was queued.
-function MatchmakingService:QueuePlayer(player, ratingType)
-  return self:QueuePlayerId(player.UserId, ratingType)
+function MatchmakingService:QueuePlayer(player, ratingType, map)
+  return self:QueuePlayerId(player.UserId, ratingType, map)
 end
 
 --- Queues a party.
 -- @param players The player ids to queue.
 -- @param ratingType The rating type to use.
+-- @param map The map to queue them on.
 -- @return A boolean that is true if the party was queued.
-function MatchmakingService:QueuePartyId(players, ratingType)
+function MatchmakingService:QueuePartyId(players, ratingType, map)
   local ratingValues = nil
   local avg = 0
   if self.Options.DisableRatingSystem then 
@@ -831,13 +776,13 @@ function MatchmakingService:QueuePartyId(players, ratingType)
   else
     ratingValues = {}
     for _, v in ipairs(players) do
-      ratingValues[v] = self:GetPlayerGlickoId(v, ratingType)
+      ratingValues[v] = self:GetPlayerRatingId(v, ratingType)
       if any(ratingValues, function(r)
-          return math.abs(ratingValues[v].Rating - r.Rating) > self.MaxPartySkillGap
+          return math.abs(OpenSkill.Ordinal(ratingValues[v]) - OpenSkill.Ordinal(r)) > self.MaxPartySkillGap
         end) then
         return false, v, "Rating disparity too high"
       end
-      avg += ratingValues[v].Rating
+      avg += OpenSkill.Ordinal(ratingValues[v])
     end
 
     avg = avg/dictlen(ratingValues)
@@ -845,23 +790,23 @@ function MatchmakingService:QueuePartyId(players, ratingType)
   local success, errorMessage
 
   local roundedRating = roundSkill(avg)
-  local now = DateTime.now().UnixTimestampMillis
+  local stringRoundedRating = tostring(roundedRating)
   local new = nil
 
   local tbl = {}
 
   for i, v in ipairs(players) do
-    table.insert(tbl, {v, now, #players - i})
+    table.insert(tbl, {v, #players - i})
   end
 
   success, errorMessage = pcall(function()
-    new = memoryQueue:UpdateAsync(ratingType, function(old)
-      if old == nil then return {[tostring(roundedRating)]=tbl} end
-      if old[tostring(roundedRating)] == nil then old[tostring(roundedRating)] = {} end
-      if find(old[tostring(roundedRating)], function(entry)
-          return any(players, function(x) return entry[1] == x end)
-        end) ~= nil then return old end
-      append(old[tostring(roundedRating)], tbl)
+    new = memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..stringRoundedRating, function(old)
+      if old == nil then 
+        old = {}
+      end
+      for i, v in ipairs(players) do
+        table.insert(old, v)
+      end
       return old
     end, 86400)
   end)
@@ -879,7 +824,7 @@ function MatchmakingService:QueuePartyId(players, ratingType)
 
   success, errorMessage = pcall(function()
     memory:UpdateAsync("QueuedParties", function(old)
-      if old == nil then return t end
+      if old == nil then old = {} end
       for k, v in pairs(t) do
         old[k] = v
       end
@@ -892,43 +837,22 @@ function MatchmakingService:QueuePartyId(players, ratingType)
     error(errorMessage)
   end
 
-  success, errorMessage = pcall(function()
-    memory:UpdateAsync("QueuedSkillLevels", function(old)
-      if old == nil then return {[ratingType]={{roundedRating, DateTime.now().UnixTimestampMillis}}} end
-      if old[ratingType] == nil then old[ratingType] = {} end
-      local index = find(old[ratingType], function(entry)
-        return entry[1] == roundedRating
-      end)
-      if index ~= nil then return nil end
-      table.insert(old[ratingType], {roundedRating, DateTime.now().UnixTimestampMillis})
-      table.sort(old[ratingType], function(a, b)
-        return b[1] > a[1]
-      end)
-      return old
-    end, 86400)
-  end)
-
-  if not success then
-    print("Unable to update Queued Skill Levels:")
-    error(errorMessage)
-  end
+  updateQueue(map, ratingType, stringRoundedRating)
 
   for _, v in ipairs(players) do
-    if find(new[tostring(roundedRating)], function(entry)
-        return entry[1] == v
-      end) == nil then
+    if table.find(new, v) == nil then
       return false
     end
   end
 
   for _, v in ipairs(players) do
-    self.PlayerAddedToQueue:Fire(v, if self.Options.DisableRatingSystem then nil else ratingValues[v], ratingType, roundedRating, players)
+    self.PlayerAddedToQueue:Fire(v, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating)
     if table.find(PLAYERSADDEDTHISWAVE, v) == nil then
       local index = find(PLAYERSADDED, function(x)
         return x[1] == v
       end)
       if index == nil then
-        table.insert(PLAYERSADDED, {v, ratingType, if self.Options.DisableRatingSystem then nil else ratingValues[v]:serialize()})
+        table.insert(PLAYERSADDED, {v, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating})
       end
       table.insert(PLAYERSADDEDTHISWAVE, v)
     end
@@ -947,16 +871,17 @@ end
 --- Queues a party.
 -- @param player The players to queue.
 -- @param ratingType The rating type to use.
+-- @param map The map to queue them on.
 -- @return A boolean that is true if the party was queued.
-function MatchmakingService:QueueParty(players, ratingType)
-  return self:QueuePartyId(tableSelect(players, "UserId"), ratingType)
+function MatchmakingService:QueueParty(players, ratingType, map)
+  return self:QueuePartyId(tableSelect(players, "UserId"), ratingType, map)
 end
 
 --- Gets a player's party.
 -- @param player The player id to get the party of.
 -- @return A table of player id's of players in the party including this player.
 function MatchmakingService:GetPlayerPartyId(player)
-  local parties = GetFromMemory(memory, "QueuedParties", 3)
+  local parties = getFromMemory(memory, "QueuedParties", 3)
   if parties == nil or parties[player] == nil then return nil end
   return parties[player]
 end
@@ -973,54 +898,58 @@ end
 -- @param player The player id to remove from queue.
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayerFromQueueId(player)
-  local empty = {}
+  local toRemove = {}
   local hasErrors = false
   local success, errorMessage
 
-  local queuedSkillLevels = GetFromMemory(memory, "QueuedSkillLevels", 3)
-  if queuedSkillLevels == nil then return end
-  for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
-    for i, skillLevelTable in ipairs(skillLevelQueue) do
-      local skillLevel = skillLevelTable[1]
-      success, errorMessage = pcall(function()
-        memoryQueue:UpdateAsync(ratingType, function(old)
-          if old == nil then return nil end
-          if old[tostring(skillLevel)] == nil then old[tostring(skillLevel)] = {} end
-          local index = find(old[tostring(skillLevel)], function(entry)
-            return entry[1] == player
+  local queuedMaps = getFromMemory(memory, "QueuedMaps", 3)
+
+  if queuedMaps == nil then return end
+
+  for i, map in ipairs(queuedMaps) do
+    local queue = self:GetQueue(map)
+    for ratingType, skillLevelAndQueue in pairs(queue) do
+      for skillLevel, levelQueue in pairs(skillLevelAndQueue) do
+        if table.find(levelQueue, player) then
+          success, errorMessage = pcall(function()
+            memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..skillLevel, function(old)
+              if old == nil then return nil end
+              local index = table.find(old, player)
+              if index == nil then return nil end
+              table.remove(old, index)
+              if #old == 0 then 
+                table.insert(toRemove, map.."_"..ratingType.."_"..skillLevel)
+              end
+
+              self.PlayerRemovedFromQueue:Fire(player, map, ratingType, skillLevel)
+
+              if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
+                local index = find(PLAYERSREMOVED, function(x)
+                  return x[1] == player
+                end)
+                if index == nil then
+                  table.insert(PLAYERSREMOVED, {player, map, ratingType, skillLevel})
+                end
+                table.insert(PLAYERSADDEDTHISWAVE, player)
+              end
+
+              local index = find(PLAYERSADDED, function(x)
+                return x[1] == player
+              end)
+              if index ~= nil then
+                table.remove(PLAYERSADDED, index)
+              end
+
+              return old
+            end, 86400)
           end)
-          if index == nil then return nil end
-          table.remove(old[tostring(skillLevel)], index)
-          if empty[ratingType] == nil then empty[ratingType] = {} end
-          empty[ratingType][skillLevel] = #old[tostring(skillLevel)] == 0	
 
-          self.PlayerRemovedFromQueue:Fire(player, ratingType, skillLevel)
-
-          if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
-            local index = find(PLAYERSREMOVED, function(x)
-              return x[1] == player
-            end)
-            if index == nil then
-              table.insert(PLAYERSREMOVED, {player, ratingType, skillLevel})
-            end
-            table.insert(PLAYERSADDEDTHISWAVE, player)
-          end
-
-          local index = find(PLAYERSADDED, function(x)
-            return x[1] == player
-          end)
-          if index ~= nil then
-            table.remove(PLAYERSADDED, index)
-          end
-
-          return old
-        end, 86400)
-      end)
-
-      if not success then
-        hasErrors = true
-        print("Unable to remove player from queue:")
-        print(errorMessage)
+          if not success then
+            hasErrors = true
+            print("Unable to remove player from queue:")
+            print(errorMessage)
+          end					
+        end
       end
     end
   end
@@ -1038,32 +967,60 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
     error(errorMessage)
   end
 
-  for ratingType, tbl in pairs(empty) do
-    for skillLevel, isEmpty in pairs(tbl) do
-      if not isEmpty then continue end
-      success, errorMessage = pcall(function()
-        memory:UpdateAsync("QueuedSkillLevels", function(old)
-          if old == nil then return nil end
-          if old[ratingType] == nil then old[ratingType] = {} end
-          local index = find(old[ratingType], function(entry)
-            return entry[1] == skillLevel
-          end)
-          if index ~= nil then return nil end
+  for i = #toRemove, 1, -1 do
+    local str = toRemove[i]
+    memoryQueue:RemoveAsync(str)
+    local map, ratingType, skillLevel = table.unpack(string.split(str, "_"))
+
+    memoryQueue:UpdateAsync(map.."_QueuedRatingTypes", function(old)
+      if old == nil then 
+        return nil
+      elseif old[ratingType] ~= nil then
+        local index = find(old, function(v) return v[1] == skillLevel end)
+        if index ~= nil then
           table.remove(old[ratingType], index)
-          table.sort(old[ratingType], function(a, b)
-            return b[1] > a[1]
-          end)
-
-          return old
-        end, 86400)			
-      end)
-
-      if not success then
-        hasErrors = true
-        print("Unable to update Queued Skill Levels:")
-        print(errorMessage)
+        end
+        if #old[ratingType] == 0 then
+          old[ratingType] = nil
+        end
+        if dictlen(old) == 0 then
+          table.insert(toRemove, map.."_QueuedRatingTypes")
+        end
       end
+      return old
+    end, 86400)
+
+    if not success then
+      hasErrors = true
+      print("Unable to update Queued Rating Types:")
+      print(errorMessage)
     end
+    table.remove(toRemove, i)
+  end
+
+  for i = #toRemove, 1, -1 do
+    local str = toRemove[i]
+    memoryQueue:RemoveAsync(str)
+    local map = table.unpack(string.split(str, "_"))
+
+    memoryQueue:UpdateAsync("QueuedMaps", function(old)
+      if old == nil then 
+        return nil
+      else
+        local index = table.find(old, map)
+        if index ~= nil then
+          table.remove(old, index)
+        end
+      end
+      return old
+    end, 86400)
+
+    if not success then
+      hasErrors = true
+      print("Unable to update Queued Maps:")
+      print(errorMessage)
+    end
+    table.remove(toRemove, i)
   end
 
   return hasErrors
@@ -1081,52 +1038,60 @@ end
 -- @param players The player ids to remove from queue.
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayersFromQueueId(players)
-  local empty = {}
+  local toRemove = {}
   local hasErrors = false
   local success, errorMessage
 
-  local queuedSkillLevels = GetFromMemory(memory, "QueuedSkillLevels", 3)
-  if queuedSkillLevels == nil then return end
-  for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
-    for i, skillLevelTable in ipairs(skillLevelQueue) do
-      local skillLevel = skillLevelTable[1]
-      success, errorMessage = pcall(function()
-        memoryQueue:UpdateAsync(ratingType, function(old)
-          if old == nil then return nil end
-          for _, v in ipairs(players) do
-            if old[tostring(skillLevel)] == nil then old[tostring(skillLevel)] = {} end
-            local index = find(old[tostring(skillLevel)], function(entry)
-              return entry[1] == v
-            end)
-            if index == nil then continue end
-            table.remove(old[tostring(skillLevel)], index)
-            self.PlayerRemovedFromQueue:Fire(v, ratingType, skillLevel)
-            if table.find(PLAYERSADDEDTHISWAVE, v) == nil then
-              local index = find(PLAYERSREMOVED, function(x)
-                return x[1] == v
-              end)
-              if index == nil then
-                table.insert(PLAYERSREMOVED, {v, ratingType, skillLevel})
-              end
-              table.insert(PLAYERSADDEDTHISWAVE, v)
-            end
+  local queuedMaps = getFromMemory(memory, "QueuedMaps", 3)
 
-            local index = find(PLAYERSADDED, function(x)
-              return x[1] == v
+  if queuedMaps == nil then return end
+
+  for i, map in ipairs(queuedMaps) do
+    local queue = self:GetQueue(map)
+    for ratingType, skillLevelAndQueue in pairs(queue) do
+      for skillLevel, levelQueue in pairs(skillLevelAndQueue) do
+        for i, player in ipairs(players) do
+          if table.find(levelQueue, player) then
+            success, errorMessage = pcall(function()
+              memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..skillLevel, function(old)
+                if old == nil then return nil end
+                local index = table.find(old, player)
+                if index == nil then return nil end
+                table.remove(old, index)
+                if #old == 0 then 
+                  table.insert(toRemove, map.."_"..ratingType.."_"..skillLevel)
+                end
+
+                self.PlayerRemovedFromQueue:Fire(player, map, ratingType, skillLevel)
+
+                if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
+                  local index = find(PLAYERSREMOVED, function(x)
+                    return x[1] == player
+                  end)
+                  if index == nil then
+                    table.insert(PLAYERSREMOVED, {player, map, ratingType, skillLevel})
+                  end
+                  table.insert(PLAYERSADDEDTHISWAVE, player)
+                end
+
+                local index = find(PLAYERSADDED, function(x)
+                  return x[1] == player
+                end)
+                if index ~= nil then
+                  table.remove(PLAYERSADDED, index)
+                end
+
+                return old
+              end, 86400)
             end)
-            if index ~= nil then
-              table.remove(PLAYERSADDED, index)
-            end
+
+            if not success then
+              hasErrors = true
+              print("Unable to remove player from queue:")
+              print(errorMessage)
+            end					
           end
-          if empty[ratingType] == nil then empty[ratingType] = {} end
-          empty[ratingType][skillLevel] = #old[tostring(skillLevel)] == 0		
-          return old
-        end, 86400)
-      end)
-      if not success then
-        hasErrors = true
-        print("Unable to remove players from queue:")
-        print(errorMessage)
+        end
       end
     end
   end
@@ -1134,8 +1099,8 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
   success, errorMessage = pcall(function()
     memory:UpdateAsync("QueuedParties", function(old)
       if old == nil then return nil end
-      for _, v in ipairs(players) do
-        old[v] = nil
+      for i, player in ipairs(players) do
+        old[player] = nil
       end
       return old
     end, 86400)
@@ -1146,35 +1111,60 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
     error(errorMessage)
   end
 
-  for ratingType, tbl in pairs(empty) do
-    for skillLevel, isEmpty in pairs(tbl) do
-      if not isEmpty then continue end
-      success, errorMessage = pcall(function()
-        memory:UpdateAsync("QueuedSkillLevels", function(old)
-          if old == nil then return nil end
-          if old[ratingType] == nil then old[ratingType] = {} end
-          local index = find(old[ratingType], function(entry)
-            return entry[1] == skillLevel
-          end)
-          if index == nil then return nil end
-          table.remove(old[ratingType], index)
-          if #old[ratingType] == 0 then
-            old[ratingType] = nil
-          else
-            table.sort(old[ratingType], function(a, b)
-              return b[1] > a[1]
-            end)
-          end
-          return old
-        end, 86400)			
-      end)
+  for i = #toRemove, 1, -1 do
+    local str = toRemove[i]
+    memoryQueue:RemoveAsync(str)
+    local map, ratingType, skillLevel = table.unpack(string.split(str, "_"))
 
-      if not success then
-        hasErrors = true
-        print("Unable to update Queued Skill Levels:")
-        print(errorMessage)
+    memoryQueue:UpdateAsync(map.."_QueuedRatingTypes", function(old)
+      if old == nil then 
+        return nil
+      elseif old[ratingType] ~= nil then
+        local index = find(old, function(v) return v[1] == skillLevel end)
+        if index ~= nil then
+          table.remove(old[ratingType], index)
+        end
+        if #old[ratingType] == 0 then
+          old[ratingType] = nil
+        end
+        if dictlen(old) == 0 then
+          table.insert(toRemove, map.."_QueuedRatingTypes")
+        end
       end
+      return old
+    end, 86400)
+
+    if not success then
+      hasErrors = true
+      print("Unable to update Queued Rating Types:")
+      print(errorMessage)
     end
+    table.remove(toRemove, i)
+  end
+
+  for i = #toRemove, 1, -1 do
+    local str = toRemove[i]
+    memoryQueue:RemoveAsync(str)
+    local map = table.unpack(string.split(str, "_"))
+
+    memoryQueue:UpdateAsync("QueuedMaps", function(old)
+      if old == nil then 
+        return nil
+      else
+        local index = table.find(old, map)
+        if index ~= nil then
+          table.remove(old, index)
+        end
+      end
+      return old
+    end, 86400)
+
+    if not success then
+      hasErrors = true
+      print("Unable to update Queued Maps:")
+      print(errorMessage)
+    end
+    table.remove(toRemove, i)
   end
 
   return hasErrors
@@ -1321,44 +1311,31 @@ function MatchmakingService:RemovePlayersFromGame(players, gameId, updateJoinabl
 end
 
 --- Update player ratings after a game is over.
--- @param team1 Team 1's player id's.
--- @param team1 Team 2's player id's.
--- @param ratingType The rating type of the game.
--- @param winner The winner of the game (0 - Draw, 1 - Team 1 win, 2 - Team 2 win).
+-- @param ratingType The rating type this is applicable for.
+-- @param ranks The ranks of the teams. #scores should be the same as the #teams.
+-- @param teams The teams. A table of tables which contain player ids.
 -- @return true if there was no error.
-function MatchmakingService:UpdateRatingsId(team1, team2, ratingType, winner)
+function MatchmakingService:UpdateRatingsId(ratingType, ranks, teams)
   if self.Options.DisableRatingSystem then return nil end
   local success, errorMessage = pcall(function()
-    local team1Scored = {}
-    local team2Scored = {}
-
-    -- if draw then 0.5 else if won then 1 else 0
-    local t1Score = (winner == 0 and 0.5) or winner == 1 and 1 or 0 
-    local t2Score = (winner == 0 and 0.5) or winner == 2 and 1 or 0
-
-    for _, id in ipairs(team1) do
-      -- Update with the opposite score because they're opponents
-      -- basically if they win score them with 0 as that means team 2 lost against them when we update
-      local glicko = self:GetPlayerGlickoId(id, ratingType):score(t2Score)
-      table.insert(team1Scored, glicko)
+    local ratings = {}
+    for i, team in ipairs(teams) do
+      local teamRatings = {}
+      for i, plr in ipairs(team) do
+        table.insert(teamRatings, self:GetPlayerRatingId(plr, ratingType))
+      end
+      table.insert(ratings, teamRatings)
     end
 
-    for _, id in ipairs(team2) do
-      local glicko = self:GetPlayerGlickoId(id, ratingType):score(t1Score)
-      table.insert(team2Scored, glicko)
+    OpenSkill.Rate(ratings, { rank = ranks })
+
+    for i, team in ipairs(ratings) do
+      for j, rating in ipairs(team) do
+        local plr = teams[i][j]
+        self:SetPlayerRatingId(plr, ratingType, rating)
+      end
     end
 
-    for _, id in ipairs(team1) do
-      local glicko = self:GetPlayerGlickoId(id, ratingType):update(team2Scored) -- Update them against the scored glickos of team 2
-      if glicko.Rating <= 0 then glicko.Rating = 0 end
-      self:SetPlayerGlickoId(id, ratingType, glicko)
-    end
-
-    for _, id in ipairs(team2) do
-      local glicko = self:GetPlayerGlickoId(id, ratingType):update(team1Scored) -- Update them against the scored glickos of team 1
-      if glicko.Rating <= 0 then glicko.Rating = 0 end
-      self:SetPlayerGlickoId(id, ratingType, glicko)
-    end
   end)
   if not success then
     print("Unable to update Ratings:")
@@ -1368,20 +1345,23 @@ function MatchmakingService:UpdateRatingsId(team1, team2, ratingType, winner)
 end
 
 --- Update player ratings after a game is over.
--- @param team1 Team 1's players.
--- @param team1 Team 2's player.
--- @param ratingType The rating type of the game.
--- @param winner The winner of the game (0 - Draw, 1 - Team 1 win, 2 - Team 2 win).
+-- @param ratingType The rating type this is applicable for.
+-- @param ranks The ranks of the teams. #scores should be the same as the #teams.
+-- @param teams The teams. A table of tables which contain players.
 -- @return true if there was no error.
-function MatchmakingService:UpdateRatings(team1, team2, ratingType, winner)
-  return self:UpdateRatingsId(tableSelect(team1, "UserId"), tableSelect(team2, "UserId"), ratingType, winner)
+function MatchmakingService:UpdateRatings(ratingType, ranks, teams)
+  local teamsIds = {}
+  for i, team in ipairs(teams) do
+    table.insert(teamsIds, tableSelect(team, "UserId"))
+  end
+  return self:UpdateRatingsId(ratingType, ranks, teamsIds)
 end
 
 --- Removes a game from memory.
 -- @param gameId The game to remove.
 -- @return true if there was no error.
 function MatchmakingService:RemoveGame(gameId)
-  local gameData = GetFromMemory(memory, gameId, 3)
+  local gameData = getFromMemory(memory, gameId, 3)
   local success, errorMessage = pcall(function()
     memory:RemoveAsync(gameId)
   end)
@@ -1390,10 +1370,10 @@ function MatchmakingService:RemoveGame(gameId)
     error(errorMessage)
   end
 
-  local runningGamesCount = GetFromMemory(memory, "RunningGamesCount", 3)
+  local runningGamesCount = getFromMemory(memory, "RunningGamesCount", 3)
   if runningGamesCount then
     for i = 1, runningGamesCount do
-      local runningGames = GetFromMemory(memory, "RunningGames"..tostring(i), 3)
+      local runningGames = getFromMemory(memory, "RunningGames"..tostring(i), 3)
       if runningGames ~= nil then
         local index = table.find(runningGames, gameId)
         if index == nil then continue end
@@ -1518,21 +1498,11 @@ end
 game:BindToClose(function()
   CLOSED = true
   local success, errorMessage = pcall(function()
-    local mainId = GetFromMemory(memory, "MainJobId", 3)
+    local mainId = getFromMemory(memory, "MainJobId", 3)
     if mainId[1] == game.JobId then
       memory:RemoveAsync("MainJobId")
     end
   end)
-  
-  if not MatchmakingService.GetSingleton().Options.DisableRatingSystem then 
-    for _, plr in ipairs(Players:GetPlayers()) do
-      MatchmakingService:RemovePlayerFromQueueId(plr.UserId)
-      local profile = Profiles[plr.UserId]
-      if profile ~= nil then
-        profile:Release()
-      end
-    end
-  end
 end)
 
 return MatchmakingService
