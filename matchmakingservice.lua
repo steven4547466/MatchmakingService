@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.0.0-beta";
+  Version = "4.1.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -263,18 +263,20 @@ function MatchmakingService:SetMatchmakingInterval(newInterval)
 end
 
 --- Sets the min/max players.
+-- @param map The map the player range applies to.
 -- @param newPlayerRange The NumberRange with the min and max players.
-function MatchmakingService:SetPlayerRange(newPlayerRange)
+function MatchmakingService:SetPlayerRange(map, newPlayerRange)
   if newPlayerRange.Max > 100 then
     error("Maximum players has a cap of 100.")
   end
-  self.PlayerRange = newPlayerRange
+  self.PlayerRanges[map] = newPlayerRange
 end
 
 --- Add a new game place.
 -- @param newPlace The place id to teleport to.
 function MatchmakingService:AddGamePlace(name, id)
   self.GamePlaceIds[name] = id
+  self.PlayerRanges[name] = NumberRange.new(6, 10)
 end
 
 --- Sets whether or not this is a game server.
@@ -342,7 +344,7 @@ function MatchmakingService.new(options)
   setmetatable(Service, MatchmakingService)
   Service.Options = options or {}
   Service.MatchmakingInterval = 3
-  Service.PlayerRange = NumberRange.new(6, 10)
+  Service.PlayerRanges = {}
   Service.GamePlaceIds = {}
   Service.IsGameServer = false
   Service.MaxPartySkillGap = 50
@@ -397,12 +399,12 @@ function MatchmakingService.new(options)
                   local queue = Service:GetQueue(mem.map)[mem.ratingType][mem.skillLevel]
                   if queue == nil or #queue == 0 then continue end
 
-                  local values = first(queue, Service.PlayerRange.Max - #mem.players)
+                  local values = first(queue, Service.PlayerRanges[mem.map].Max - #mem.players)
 
                   if values ~= nil then
                     local acc = #values
                     while not checkForParties(values) do
-                      local f = first(queue, Service.PlayerRange.Max - #mem.players, acc + 1)
+                      local f = first(queue, Service.PlayerRanges[mem.map].Max - #mem.players, acc + 1)
                       if f == nil or #f == 0 then
                         break
                       end
@@ -447,12 +449,12 @@ function MatchmakingService.new(options)
           if mapQueue == nil then continue end
           for ratingType, skillLevelAndQueue in pairs(mapQueue) do
             for skillLevel, queue in pairs(skillLevelAndQueue) do
-              local values = first(queue, Service.PlayerRange.Max)
+              local values = first(queue, Service.PlayerRanges[map].Max)
 
               if values ~= nil then
                 local acc = #values
                 while not checkForParties(values) do
-                  local f = first(queue, Service.PlayerRange.Max, acc + 1)
+                  local f = first(queue, Service.PlayerRanges[map].Max, acc + 1)
                   if f == nil or #f == 0 then
                     break
                   end
@@ -462,7 +464,7 @@ function MatchmakingService.new(options)
               end
 
               -- If there aren't enough players than skip this skill level
-              if values == nil or #values < Service.PlayerRange.Min then
+              if values == nil or #values < Service.PlayerRanges[map].Min then
                 continue
               else
                 local userIds = tableSelect(values, 1)
@@ -473,11 +475,11 @@ function MatchmakingService.new(options)
                   memory:UpdateAsync(reservedCode, function()
                     return 
                       {
-                        ["full"] = #values == Service.PlayerRange.Max;
+                        ["full"] = #values == Service.PlayerRanges[map].Max;
                         ["skillLevel"] = skillLevel;
                         ["players"] = userIds;
                         ["started"] = false;
-                        ["joinable"] = #values ~= Service.PlayerRange.Max;
+                        ["joinable"] = #values ~= Service.PlayerRanges[map].Max;
                         ["ratingType"] = ratingType;
                         ["map"] = map
                       }
@@ -1194,8 +1196,8 @@ function MatchmakingService:AddPlayerToGameId(player, gameId, updateJoinable)
     memory:UpdateAsync(gameId, function(old)
       if old ~= nil then
         table.insert(old.players, player)
-        old.full = #old.players == self.PlayerRange.Max
-        old.joinable = updateJoinable and #old.players ~= self.PlayerRange.Max or old.joinable
+        old.full = #old.players == self.PlayerRanges[old.map].Max
+        old.joinable = updateJoinable and #old.players ~= self.PlayerRanges[old.map].Max or old.joinable
         return old
       end
     end, 86400)
@@ -1226,8 +1228,8 @@ function MatchmakingService:AddPlayersToGameId(players, gameId, updateJoinable)
         for _, v in ipairs(players) do
           table.insert(old.players, v)
         end
-        old.full = #old.players == self.PlayerRange.Max
-        old.joinable = updateJoinable and #old.players ~= self.PlayerRange.Max or old.joinable
+        old.full = #old.players == self.PlayerRanges[old.map].Max
+        old.joinable = updateJoinable and #old.players ~= self.PlayerRanges[old.map].Max or old.joinable
         return old
       end
     end, 86400)
@@ -1261,8 +1263,8 @@ function MatchmakingService:RemovePlayerFromGameId(player, gameId, updateJoinabl
         else
           return nil
         end
-        old.full = #old.players == self.PlayerRange.Max
-        old.joinable = updateJoinable and #old.players ~= self.PlayerRange.Max or old.joinable
+        old.full = #old.players == self.PlayerRanges[old.map].Max
+        old.joinable = updateJoinable and #old.players ~= self.PlayerRanges[old.map].Max or old.joinable
         return old
       end
     end, 86400)
@@ -1295,8 +1297,8 @@ function MatchmakingService:RemovePlayersFromGameId(players, gameId, updateJoina
           if index == nil then continue end
           table.remove(old.players, index)
         end
-        old.full = #old.players == self.PlayerRange.Max
-        old.joinable = updateJoinable and #old.players ~= self.PlayerRange.Max or old.joinable
+        old.full = #old.players == self.PlayerRanges[old.map].Max
+        old.joinable = updateJoinable and #old.players ~= self.PlayerRanges[old.map].Max or old.joinable
         return old
       end
     end, 86400)
