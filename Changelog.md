@@ -1,5 +1,16 @@
 Changelog
 
+Version 4.1.0-beta
+Changes (breaking):
+* [Addition] `SetPlayerRange` now takes a `map` name as its first argument. Player range is now per map.
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* None
+
+
 Version 4.0.0-beta
 Changes (breaking):
 * [Addition] [OpenSkill](https://devforum.roblox.com/t/openskill-a-skill-based-rating-system-for-matchmaking/1571168) has been added in place of Glicko2 for the rating system.
