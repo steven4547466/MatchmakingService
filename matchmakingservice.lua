@@ -496,7 +496,7 @@ function MatchmakingService.new(options)
                   print("Error adding new game:")
                   print(err)
                 else
-                  if not runningGamesCount then
+		  if not runningGamesCount or runningGamesCount == 0 then
                     memory:SetAsync("RunningGamesCount", 1, 86400)
                     runningGamesCount = 1
                   end
