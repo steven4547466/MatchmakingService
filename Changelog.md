@@ -1,5 +1,16 @@
 Changelog
 
+Version 4.1.1-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed an issue with breaking up the running games resulting in an error.
+
+
 Version 4.1.0-beta
 Changes (breaking):
 * [Addition] `SetPlayerRange` now takes a `map` name as its first argument. Player range is now per map.
