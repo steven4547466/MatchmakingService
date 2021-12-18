@@ -1,0 +1,900 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="canonical" href="https://example.com/gettingstarted/">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
+    
+    
+      
+        <title>Getting Started - Matchmaking Service</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.db9e7362.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="light-blue" data-md-color-accent="">
+  
+    
+    <script>function __prefix(e){return new URL("..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+      <script>var palette=__get("__palette");if(null!==palette&&"object"==typeof palette.color)for(var key in palette.color)document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#getting-started" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Matchmaking Service" class="md-header__button md-logo" aria-label="Matchmaking Service" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Matchmaking Service
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Getting Started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="light-blue" data-md-color-accent=""  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+          
+            <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_2" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22z"/></svg>
+            </label>
+          
+        
+          
+          
+          <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="light-blue" data-md-color-accent=""  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_2">
+          
+            <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31z"/></svg>
+            </label>
+          
+        
+      </form>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        
+<a href="https://github.com/steven4547466/MatchmakingService/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Matchmaking Service" class="md-nav__button md-logo" aria-label="Matchmaking Service" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    Matchmaking Service
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/steven4547466/MatchmakingService/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Getting Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Getting Started
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-the-module" class="md-nav__link">
+    Getting the module
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preface" class="md-nav__link">
+    Preface
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hub-logic" class="md-nav__link">
+    Hub logic
+  </a>
+  
+    <nav class="md-nav" aria-label="Hub logic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#obtaining-the-matchmakingservice-singleton" class="md-nav__link">
+    Obtaining the MatchmakingService Singleton
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-the-instance-server" class="md-nav__link">
+    Setting the instance server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-the-player-range" class="md-nav__link">
+    Setting the player range
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queueing-players" class="md-nav__link">
+    Queueing players
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queueing-parties" class="md-nav__link">
+    Queueing parties
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-single-players-from-the-queue" class="md-nav__link">
+    Removing single players from the queue
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-multiple-players-from-the-queue" class="md-nav__link">
+    Removing multiple players from the queue
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instance-server-logic" class="md-nav__link">
+    Instance server logic
+  </a>
+  
+    <nav class="md-nav" aria-label="Instance server logic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#denoating-a-server-as-a-game-instance" class="md-nav__link">
+    Denoating a server as a game instance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#obtaining-teleport-data-from-the-server" class="md-nav__link">
+    Obtaining teleport data from the server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#starting-the-game" class="md-nav__link">
+    Starting the game
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manually-removing-a-player-from-a-game" class="md-nav__link">
+    Manually removing a player from a game
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ending-the-game" class="md-nav__link">
+    Ending the game
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updating-rating" class="md-nav__link">
+    Updating rating
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-example-scripts" class="md-nav__link">
+    Full example scripts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    Conclusion
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../maindocs/" class="md-nav__link">
+        Main Documentation
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-the-module" class="md-nav__link">
+    Getting the module
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preface" class="md-nav__link">
+    Preface
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hub-logic" class="md-nav__link">
+    Hub logic
+  </a>
+  
+    <nav class="md-nav" aria-label="Hub logic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#obtaining-the-matchmakingservice-singleton" class="md-nav__link">
+    Obtaining the MatchmakingService Singleton
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-the-instance-server" class="md-nav__link">
+    Setting the instance server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-the-player-range" class="md-nav__link">
+    Setting the player range
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queueing-players" class="md-nav__link">
+    Queueing players
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queueing-parties" class="md-nav__link">
+    Queueing parties
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-single-players-from-the-queue" class="md-nav__link">
+    Removing single players from the queue
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-multiple-players-from-the-queue" class="md-nav__link">
+    Removing multiple players from the queue
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instance-server-logic" class="md-nav__link">
+    Instance server logic
+  </a>
+  
+    <nav class="md-nav" aria-label="Instance server logic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#denoating-a-server-as-a-game-instance" class="md-nav__link">
+    Denoating a server as a game instance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#obtaining-teleport-data-from-the-server" class="md-nav__link">
+    Obtaining teleport data from the server
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#starting-the-game" class="md-nav__link">
+    Starting the game
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manually-removing-a-player-from-a-game" class="md-nav__link">
+    Manually removing a player from a game
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ending-the-game" class="md-nav__link">
+    Ending the game
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updating-rating" class="md-nav__link">
+    Updating rating
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-example-scripts" class="md-nav__link">
+    Full example scripts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    Conclusion
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/steven4547466/MatchmakingService/edit/master/docs/gettingstarted.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="getting-started">Getting Started</h1>
+<h2 id="getting-the-module">Getting the module</h2>
+<p>While I personally recommend requiring the module directly by id to stay up to date, there are a number of reasons why you may choose to not do this. For this reason the module itself is available to add to your roblox inventory <a href="https://www.roblox.com/library/7567983240/MatchmakingService">here</a>.</p>
+<h2 id="preface">Preface</h2>
+<p>Matchmaking Service requires at least 2 games in a single universe to work. We call these hub servers and instance servers. Your hub servers are responsible for adding players to queues. Your instance servers are where the actual game will take place, this is where you want all of your game logic to go. We'll be starting off with the basic hub server logic.</p>
+<p>Matchmaking Service currently utilizes a central server to handle all matchmaking. We are looking into ways to distributing this and having a fully decentralized hub for performance, but no great solution has been found. <strong>For this reason I do not recommend having 1 player max hub servers</strong> as that means it's constantly switching central servers which is less than ideal.</p>
+<h2 id="hub-logic">Hub logic</h2>
+<h3 id="obtaining-the-matchmakingservice-singleton">Obtaining the MatchmakingService Singleton</h3>
+<p>Matchmaking Service utilizes a top-level singleton. This means every time you require it and invoke <code>GetSingleton</code> in the same server the same singleton is returned. Getting this singleton is really simple:
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span> 
+<span class="c1">-- You may opt to use a direct path to it if you don&#39;t want to require by id</span>
+</code></pre></div></p>
+<h3 id="setting-the-instance-server">Setting the instance server</h3>
+<p>As said in the preface, Matchmaking Service uses hub servers and instance servers. Instance servers are your game servers. They are the place players are teleported to when a match is found. For this step you will need the place id of your instance server. This is simple to obtain.</p>
+<p>First, open the instance server's place in studio. Then in your console type <code>print(game.PlaceId)</code>. The result is the place id that you will need for this step. Alternatively, use the asset manager and right click on the place and "Copy ID to clipboard":
+<img alt="Screenshot" src="../img/CopyIDImage.png" /></p>
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">AddGamePlace</span><span class="p">(</span><span class="s2">&quot;Map Name&quot;</span><span class="p">,</span> <span class="n">placeIdYouCopied</span><span class="p">)</span>
+<span class="c1">-- Instance and hub servers must exist in the same universe</span>
+</code></pre></div>
+
+<p>And believe it or not, that's it. That is the most basic implementation of a hub server without changing any of the values.</p>
+<h3 id="setting-the-player-range">Setting the player range</h3>
+<p>The player range controls the min and max players for a game. If you think about many other multiplayer games, the game might start while the server is not full or it might want to wait for a full server to move players into the game. Using <a href="https://developer.roblox.com/en-us/api-reference/datatype/NumberRange">NumberRanges</a> makes this functionality easy.
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetPlayerRange</span><span class="p">(</span><span class="s2">&quot;Map Name&quot;</span><span class="p">,</span> <span class="n">NumberRange</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+</code></pre></div>
+What this does is tells the queue to teleport players to the instance server when there are at least 5, but allows new players to be added to the game until there are 10.</p>
+<h3 id="queueing-players">Queueing players</h3>
+<p>Queueing players is simple, you can do this from a gui remote event, on join or anywhere (from the server):
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">QueuePlayer</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;unranked&quot;</span><span class="p">,</span> <span class="s2">&quot;Map Name&quot;</span><span class="p">)</span>
+</code></pre></div>
+This will queue a player into the <code>unranked</code> lobby (note, just because it's unranked does not mean it's not rated. All rank types will have a rating attached to them, but it's up to you whether you want to update it or not). This means they will only search for other players in the same lobby. There are no huge limits on this, except I recommend to keep the size under 20 characters. </p>
+<h3 id="queueing-parties">Queueing parties</h3>
+<p>Matchmaking Service provides an easy way to queue multiple players at the same time and ensure they get into the same game. However, Matchmaking Service will not handle forming parties or ensuring they're on the same team in instance servers, that is something you will have to do.
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">QueueParty</span><span class="p">(</span><span class="n">players</span><span class="p">,</span> <span class="s2">&quot;unranked&quot;</span><span class="p">,</span> <span class="s2">&quot;Map Name&quot;</span><span class="p">)</span>
+<span class="c1">-- Players is a table of player objects</span>
+</code></pre></div>
+When you do this, they will be guaranteed to get into the same server.</p>
+<h3 id="removing-single-players-from-the-queue">Removing single players from the queue</h3>
+<p>By default, Matchmaking Service will handle removing players from the queue when they get into a game or leave the hub. However, you may want to give them the option to remove themselves from queue, so Matchmaking Service exposes a method for this:
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayerFromQueue</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+</code></pre></div>
+This will remove them from the queue, no matter what lobby they're in. If they are not queued, then this will do nothing.</p>
+<h3 id="removing-multiple-players-from-the-queue">Removing multiple players from the queue</h3>
+<p>Removing multiple players from the queue at the same time is helpful to drastically reduce the number of calls to memory, which means lower chance of hitting the cap and breaking the system. This is also the easiest way to remove parties from the queue.
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayersFromQueue</span><span class="p">(</span><span class="n">players</span><span class="p">)</span>
+<span class="c1">--- Players is a table of player objects</span>
+</code></pre></div>
+Note: This function is more efficient on memory updates if all of the users are in the same lobby type, however it is not required.</p>
+<h2 id="instance-server-logic">Instance server logic</h2>
+<p>Instance servers are also simple. This section will go over the most basic instance server implementation and everything that is required to make it work.</p>
+<h3 id="denoating-a-server-as-a-game-instance">Denoating a server as a game instance</h3>
+<p>It's important to denote a server as a game instance as this removes the ability for it to become the central server, and removes logic that may impact game performance. <strong>You should set the player range to match that of the hub server</strong> You can choose to set the field directly, but I recommend that you use the built in method in case anything changes in the future:
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetIsGameServer</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+</code></pre></div></p>
+<h3 id="obtaining-teleport-data-from-the-server">Obtaining teleport data from the server</h3>
+<p>Data about the match is sent over the players' teleport data. This prevents additional calls to the memory store which means queues can run faster. I recommend doing this right in player join, but you could theoretically do it at any time you'd like.
+<div class="highlight"><pre><span></span><code><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerAdded</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+  <span class="kd">local</span> <span class="n">joinData</span> <span class="o">=</span> <span class="n">player</span><span class="p">:</span><span class="n">GetJoinData</span><span class="p">()</span>
+  <span class="kr">if</span> <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span> <span class="o">==</span> <span class="kc">nil</span> <span class="ow">and</span> <span class="n">joinData</span> <span class="kr">then</span>
+    <span class="c1">-- Global variables are not recommended in a lot of cases.</span>
+    <span class="c1">-- However, here it would be nice to have access to them,</span>
+    <span class="c1">-- regardless of scope. Mainly because this server instance</span>
+    <span class="c1">-- will be destroyed when the game is over so you needn&#39;t</span>
+    <span class="c1">-- worry about this causing long-standing memory leaks.</span>
+    <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span> <span class="o">=</span> <span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">gameCode</span>
+    <span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span> <span class="o">=</span> <span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">ratingType</span>
+  <span class="kr">end</span>
+<span class="kr">end</span><span class="p">)</span>
+</code></pre></div></p>
+<h3 id="starting-the-game">Starting the game</h3>
+<p>Starting the game is important because it tells the queue manager that the game is started, you can also pass a boolean value that determines whether or not the game is joinable still. By default the game will not be joinable if no value is passed.
+<div class="highlight"><pre><span></span><code><span class="kr">function</span> <span class="nf">Start</span><span class="p">()</span>
+  <span class="c1">-- Start the game, but allow new joiners</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">StartGame</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">,</span> <span class="kc">true</span><span class="p">)</span>
+<span class="kr">end</span>
+</code></pre></div></p>
+<h3 id="manually-removing-a-player-from-a-game">Manually removing a player from a game</h3>
+<p>You may manually remove players from games when they leave to open up spots for new players in games. You can do that with the following script. Note: for this to work properly, the player range in the hub server and instance server must match.
+<div class="highlight"><pre><span></span><code><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerRemoving</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+    <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayerFromGame</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
+<span class="kr">end</span><span class="p">)</span>
+</code></pre></div></p>
+<h3 id="ending-the-game">Ending the game</h3>
+<p>This step is <strong>extremely important</strong> and significantly reduces memory footprint of games. If you don't do this they will reside in memory until it's cleared. You must include these 3 lines of code. The only reason I don't implement it into the base system is because you may want to run actions before you remove a game.
+<div class="highlight"><pre><span></span><code><span class="n">game</span><span class="p">:</span><span class="n">BindToClose</span><span class="p">(</span><span class="kr">function</span><span class="p">()</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemoveGame</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
+<span class="kr">end</span><span class="p">)</span>
+</code></pre></div></p>
+<h3 id="updating-rating">Updating rating</h3>
+<p>As noted previously, Matchmaking Service has a built in rating system. If you want to use it, you'll have to manually invoke the <code>UpdateRatings</code> function. If you don't invoke this function, the players' rating will never change and it'll be essentially the same as having no rating at all. </p>
+<p>Updating rating <strong>must be done before BindToClose</strong>. This means that you will need your own end game functionality. This script is an example of one way you may choose to implement this functionality:
+<div class="highlight"><pre><span></span><code><span class="kr">function</span> <span class="nf">EndGame</span><span class="p">(</span><span class="n">winner</span><span class="p">)</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="n">team1</span><span class="p">,</span> <span class="n">team2</span><span class="p">,</span> <span class="n">team3</span><span class="p">})</span>
+  <span class="kr">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="kr">in</span> <span class="nb">ipairs</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">())</span> <span class="kr">do</span>
+    <span class="c1">-- You can teleport them back to the hub here, I just kick them</span>
+    <span class="n">v</span><span class="p">:</span><span class="n">Kick</span><span class="p">()</span>
+  <span class="kr">end</span>
+<span class="kr">end</span>
+</code></pre></div></p>
+<p>The line we'll be focusing on is as follows:
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="n">team1</span><span class="p">,</span> <span class="n">team2</span><span class="p">,</span> <span class="n">team3</span><span class="p">})</span>
+</code></pre></div>
+- <code>_G.ratingType</code> is the rating type they queued for. This is passed in teleport data
+- <code>{2, 1, 3}</code> is the positional placements of each team (order is important, <code>rankings[1]</code> is paired to <code>teams[1]</code>). Lower is better. <code>1</code> means first place, <code>2</code> is second and so on. This supports any number of rankings, but it must match the number of teams.
+-  <code>{team1, team2, team3}</code> are the teams themselves. Each team is a table of players on that team (even if there is only 1 player, it must be in a table). The order is important as they are paired to the same index as their ranking.
+<br /><br /><br /></p>
+<p>That's really it for server instances. The only things you are required to do for a smooth experience is denoting the server as a game server and removing the game on close. Updating ratings is optional.</p>
+<h2 id="full-example-scripts">Full example scripts</h2>
+<p>Extremely basic 1v1 game hub server:
+<div class="highlight"><pre><span></span><code><span class="c1">-- Obtain the service</span>
+<span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetPlayerRange</span><span class="p">(</span><span class="s2">&quot;Map 1&quot;</span><span class="p">,</span> <span class="n">NumberRange</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="c1">-- 2, 2 means min players 2, max players 2 (or 1v1)</span>
+
+<span class="c1">-- Set the game place, this game must exist in the same universe</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetGamePlace</span><span class="p">(</span><span class="s2">&quot;Map 1&quot;</span><span class="p">,</span> <span class="n">gamePlaceIdHere</span><span class="p">)</span>
+
+<span class="c1">-- Queue players (you can call QueuePlayer from anywhere)</span>
+<span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerAdded</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">QueuePlayer</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;queue&quot;</span><span class="p">,</span> <span class="s2">&quot;Map 1&quot;</span><span class="p">)</span> <span class="c1">-- &quot;queue&quot; can be any string you want, so can the map</span>
+<span class="kr">end</span><span class="p">)</span>
+
+<span class="kr">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="kr">in</span> <span class="nb">ipairs</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">())</span> <span class="kr">do</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">QueuePlayer</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s2">&quot;queue&quot;</span><span class="p">,</span> <span class="s2">&quot;Map 1&quot;</span><span class="p">)</span> <span class="c1">-- &quot;queue&quot; can be any string you want, so can the map</span>
+<span class="kr">end</span>
+</code></pre></div></p>
+<p>Extremely basic 1v1 game instance server (EndGame is not called in this example):
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+
+<span class="c1">-- Tell the service this is a game server</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetIsGameServer</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+
+<span class="kd">local</span> <span class="n">t1</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="kd">local</span> <span class="n">t2</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="c1">-- Basic start function</span>
+<span class="kr">function</span> <span class="nf">Start</span><span class="p">()</span>
+  <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Started&quot;</span><span class="p">)</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">StartGame</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
+  <span class="c1">-- Simple teams for a 1v1.</span>
+  <span class="kd">local</span> <span class="n">p</span> <span class="o">=</span> <span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">()</span>
+  <span class="nb">table.insert</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+  <span class="nb">table.insert</span><span class="p">(</span><span class="n">t2</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="kr">end</span>
+
+<span class="c1">-- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!</span>
+<span class="kr">function</span> <span class="nf">EndGame</span><span class="p">(</span><span class="n">winner</span><span class="p">)</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="kr">if</span> <span class="n">winner</span> <span class="o">==</span> <span class="mi">1</span> <span class="kr">then</span> <span class="mi">1</span> <span class="kr">else</span> <span class="mi">2</span><span class="p">,</span> <span class="kr">if</span> <span class="n">winner</span> <span class="o">==</span> <span class="mi">2</span> <span class="kr">then</span> <span class="mi">1</span><span class="p">,</span> <span class="kr">else</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">})</span>
+  <span class="kr">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="kr">in</span> <span class="nb">ipairs</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">())</span> <span class="kr">do</span>
+    <span class="c1">-- You can teleport them back to the hub here, I just kick them</span>
+    <span class="n">v</span><span class="p">:</span><span class="n">Kick</span><span class="p">()</span>
+  <span class="kr">end</span>
+<span class="kr">end</span>
+
+<span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerAdded</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+  <span class="kd">local</span> <span class="n">joinData</span> <span class="o">=</span> <span class="n">player</span><span class="p">:</span><span class="n">GetJoinData</span><span class="p">()</span>
+  <span class="kr">if</span> <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span> <span class="o">==</span> <span class="kc">nil</span> <span class="ow">and</span> <span class="n">joinData</span> <span class="kr">then</span>
+    <span class="c1">-- Global so its accessible from other scripts if it needs to be.</span>
+    <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span> <span class="o">=</span> <span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">gameCode</span>
+    <span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span> <span class="o">=</span> <span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">ratingType</span>
+  <span class="kr">end</span>
+  <span class="kr">if</span> <span class="o">#</span><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="kr">then</span>
+    <span class="n">Start</span><span class="p">()</span>
+  <span class="kr">end</span>
+<span class="kr">end</span><span class="p">)</span>
+
+<span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerRemoving</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayerFromGame</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
+<span class="kr">end</span><span class="p">)</span>
+
+<span class="c1">-- THIS IS EXTREMELY IMPORTANT</span>
+<span class="n">game</span><span class="p">:</span><span class="n">BindToClose</span><span class="p">(</span><span class="kr">function</span><span class="p">()</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemoveGame</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
+<span class="kr">end</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="conclusion">Conclusion</h2>
+<p>As you can see, with under 50 lines of code, you can have fully functional cross-server match making. This is just the tip of the iceberg with Matchmaking Service as well. For more in-depth documentation see the <a href="../maindocs/">main docs</a>. If you encounter any issues don't hesitate to <a href="https://github.com/steven4547466/MatchmakingService/issues/new">open an issue</a>. If you need assistance, feel free to <a href="https://devforum.roblox.com/u/steven4547466/summary">contact me</a> on dev forum.</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href=".." class="md-footer__link md-footer__link--prev" aria-label="Previous: Home" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Home
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../maindocs/" class="md-footer__link md-footer__link--next" aria-label="Next: Main Documentation" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Main Documentation
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        
+          Made with
+          <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+            Material for MkDocs
+          </a>
+        
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.1e84347e.min.js"></script>
+      
+    
+  </body>
+</html>
