@@ -1,0 +1,32 @@
+site_name: Matchmaking Service
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      media: "(prefers-color-scheme: dark)"
+      primary: light blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - scheme: default
+      media: "(prefers-color-scheme: light)"
+      primary: light blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+site_url: https://example.com/
+repo_url: https://github.com/steven4547466/MatchmakingService
+nav:
+    - Home: index.md
+    - Getting Started: gettingstarted.md
+    - Main Documentation: maindocs.md
+    # - Parent:
+    #   - "Nested": index.md
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - def_list
+  - admonition
+  - pymdownx.details
