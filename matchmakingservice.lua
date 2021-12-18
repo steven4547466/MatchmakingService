@@ -200,6 +200,8 @@ end
 
 
 --- Gets or creates the top level singleton of the matchmaking service.
+-- @param options - The options to provide matchmaking service.
+-- @param options.DisableRatingSystem - Whether or not to disable the rating system.
 -- @return MatchmakingService - The matchmaking service singleton.
 function MatchmakingService.GetSingleton(options)
   print("Retrieving MatchmakingService ("..MatchmakingService.Version..") Singleton.")
@@ -273,7 +275,8 @@ function MatchmakingService:SetPlayerRange(map, newPlayerRange)
 end
 
 --- Add a new game place.
--- @param newPlace The place id to teleport to.
+-- @param name The name of the map.
+-- @param id The place id to teleport to.
 function MatchmakingService:AddGamePlace(name, id)
   self.GamePlaceIds[name] = id
   self.PlayerRanges[name] = NumberRange.new(6, 10)
@@ -301,7 +304,7 @@ function MatchmakingService:SetStartingStandardDeviation(newStartingStandardDevi
 end
 
 --- Sets the max gap in rating between party members.
--- @param newMaxGap The new starting volatility.
+-- @param newMaxGap The new max gap between party members.
 function MatchmakingService:SetMaxPartySkillGap(newMaxGap)
   self.MaxPartySkillGap = newMaxGap
 end
@@ -573,7 +576,7 @@ end
 --- Gets or initializes a players OpenSkill object.
 -- You should not edit this directly unless you
 -- know what you're doing.
--- @param player The player id to get the glicko object of
+-- @param player The player id to get the OpenSkill object of.
 -- @param ratingType The rating type to get.
 -- @return The OpenSkill object (which is just 2 numbers).
 function MatchmakingService:GetPlayerRatingId(player, ratingType)
@@ -590,7 +593,7 @@ end
 --- Gets or initializes a players OpenSkill object.
 -- You should not edit this directly unless you
 -- know what you're doing.
--- @param player The player id to get the glicko object of
+-- @param player The player to get the OpenSkill object of.
 -- @param ratingType The rating type to get.
 -- @return The OpenSkill object (which is just 2 numbers).
 function MatchmakingService:GetPlayerRating(player, ratingType)
@@ -600,8 +603,8 @@ end
 --- Sets a player's skill.
 -- You should not edit this directly unless you
 -- know what you're doing.
--- @param player The player id to get the glicko object of
--- @param ratingType The rating type to get.
+-- @param player The player to set the rating of.
+-- @param ratingType The rating type to set.
 -- @param rating The new OpenSkill object.
 function MatchmakingService:SetPlayerRatingId(player, ratingType, rating)
   if self.Options.DisableRatingSystem then return nil end
@@ -611,8 +614,8 @@ end
 --- Sets a player's skill.
 -- You should not edit this directly unless you
 -- know what you're doing.
--- @param player The player id to get the glicko object of
--- @param ratingType The rating type to get.
+-- @param player The player to set the rating of.
+-- @param ratingType The rating type to set.
 -- @param rating The new OpenSkill object.
 function MatchmakingService:SetPlayerRating(player, ratingType, rating)
   self:SetPlayerSkillId(player.UserId, ratingType, rating)
@@ -625,7 +628,7 @@ function MatchmakingService:ClearPlayerInfoId(playerId)
 end
 
 --- Clears the player info.
--- @param player The player id to clear.
+-- @param player The player to clear.
 function MatchmakingService:ClearPlayerInfo(player)
   self:ClearPlayerInfoId(player.UserId)
 end
@@ -653,12 +656,14 @@ end
 
 --- Gets the player info.
 -- @param player The player to get.
+-- @return The player info.
 function MatchmakingService:GetPlayerInfoId(player)
   return getFromMemory(memory, player, 3)
 end
 
 --- Gets the player info.
 -- @param player The player to get.
+-- @return The player info.
 function MatchmakingService:GetPlayerInfo(player)
   return self:GetPlayerInfoId(player.UserId)
 end
@@ -683,7 +688,7 @@ end
 --	end)
 --end
 
---- Gets a table of user ids in a specific queue.
+--- Gets a table of user ids, ratingTypes, and skillLevels in a specific queue.
 -- @param map The map to get the queue of.
 -- @return A dictionary of {ratingType: {skillLevel: queue}} where rating type is the rating type, skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
 function MatchmakingService:GetQueue(map)
@@ -1189,6 +1194,7 @@ end
 --- Adds a player id to a specific existing game.
 -- @param player The player id to add to the game.
 -- @param gameId The id of the game to add the player to.
+-- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:AddPlayerToGameId(player, gameId, updateJoinable)
   if updateJoinable == nil then updateJoinable = true end
@@ -1212,6 +1218,7 @@ end
 --- Adds a player to a specific existing game.
 -- @param player The player to add to the game.
 -- @param gameId The id of the game to add the player to.
+-- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:AddPlayerToGame(player, gameId, updateJoinable)
   return self:AddPlayerToGameId(player.UserId, gameId, updateJoinable)
@@ -1220,6 +1227,7 @@ end
 --- Adds a table of player ids to a specific existing game.
 -- @param players The player ids to add to the game.
 -- @param gameId The id of the game to add the players to.
+-- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:AddPlayersToGameId(players, gameId, updateJoinable)
   local success, errorMessage = pcall(function()
@@ -1244,6 +1252,7 @@ end
 --- Adds a table of players to a specific existing game.
 -- @param players The players to add to the game.
 -- @param gameId The id of the game to add the players to.
+-- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:AddPlayersToGame(players, gameId, updateJoinable)
   return self:AddPlayersToGameId(tableSelect(players, "UserId"), gameId, updateJoinable)
@@ -1252,6 +1261,7 @@ end
 --- Removes a specific player id from an existing game.
 -- @param player The player id to remove from the game.
 -- @param gameId The id of the game to remove the player from.
+-- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayerFromGameId(player, gameId, updateJoinable)
   local success, errorMessage = pcall(function()
@@ -1279,6 +1289,7 @@ end
 --- Removes a specific player from an existing game.
 -- @param player The player to remove from the game.
 -- @param gameId The id of the game to remove the player from.
+-- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayerFromGame(player, gameId, updateJoinable)
   return self:RemovePlayerFromGameId(player.UserId, gameId, updateJoinable)
@@ -1287,6 +1298,7 @@ end
 --- Removes multiple players from an existing game.
 -- @param players The player ids to remove from the game.
 -- @param gameId The id of the game to remove the player from.
+-- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayersFromGameId(players, gameId, updateJoinable)
   local success, errorMessage = pcall(function()
@@ -1314,6 +1326,7 @@ end
 --- Removes multiple players from an existing game.
 -- @param players The players to remove from the game.
 -- @param gameId The id of the game to remove the player from.
+-- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayersFromGame(players, gameId, updateJoinable)
   self:RemovePlayersFromGameId(tableSelect(players, "UserId"), gameId, updateJoinable)
@@ -1427,7 +1440,7 @@ end
 
 --- Starts a game.
 -- @param gameId The game to start.
--- @param joinable Whether or not the game is still joinable
+-- @param joinable Whether or not the game is still joinable.
 -- @return true if there was no error.
 function MatchmakingService:StartGame(gameId, joinable)
   if joinable == nil then joinable = false end
