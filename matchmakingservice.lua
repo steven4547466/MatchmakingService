@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.1.2-beta";
+  Version = "4.1.3-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -210,50 +210,51 @@ function MatchmakingService.GetSingleton(options)
       MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
     end)
     MatchmakingService.Singleton = MatchmakingService.new(options)
-    local mainJobId = getFromMemory(memory, "MainJobId", 3)
-    local now = DateTime.now().UnixTimestampMillis
-    local isMain = mainJobId == nil or mainJobId[2] + 25000 <= now
-    if isMain and not CLOSED then
-      memory:UpdateAsync("MainJobId", function(old)
-        if old == nil or old[1] == mainJobId then
-          return {game.JobId, now}
-        end
-        return nil
-      end, 86400)
-    end
-
-
-    MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
-      for _, v in ipairs(players) do
-        if Players:GetPlayerByUserId(v) ~= nil then continue end
-
-        MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], v[2], v[3], v[4])
-      end
-    end)
-
-    MessagingService:SubscribeAsync("MatchmakingServicePlayersRemovedFromQueue", function(players)
-      for _, v in ipairs(players) do
-        if Players:GetPlayerByUserId(v) ~= nil then continue end
-        MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3], v[4])
-      end
-    end)
-
     task.spawn(function()
-      task.wait(5) -- ~12 messages a minute.
-      if #PLAYERSADDED > 0 then
-        MessagingService:PublishAsync("MatchmakingServicePlayersAddedToQueue", PLAYERSADDED)
-        table.clear(PLAYERSADDED)
+      local mainJobId = getFromMemory(memory, "MainJobId", 3)
+      local now = DateTime.now().UnixTimestampMillis
+      local isMain = mainJobId == nil or mainJobId[2] + 25000 <= now
+      if isMain and not CLOSED then
+        memory:UpdateAsync("MainJobId", function(old)
+          if old == nil or old[1] == mainJobId then
+            return {game.JobId, now}
+          end
+          return nil
+        end, 86400)
       end
 
-      if #PLAYERSREMOVED > 0 then
-        MessagingService:PublishAsync("MatchmakingServicePlayersRemovedFromQueue", PLAYERSREMOVED)
-        table.clear(PLAYERSREMOVED)
+
+      MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
+        for _, v in ipairs(players) do
+          if Players:GetPlayerByUserId(v) ~= nil then continue end
+
+          MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], v[2], v[3], v[4])
+        end
+      end)
+
+      MessagingService:SubscribeAsync("MatchmakingServicePlayersRemovedFromQueue", function(players)
+        for _, v in ipairs(players) do
+          if Players:GetPlayerByUserId(v) ~= nil then continue end
+          MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3], v[4])
+        end
+      end)
+      
+      while not CLOSED do
+        task.wait(5) -- ~12 messages a minute.
+        if #PLAYERSADDED > 0 then
+          MessagingService:PublishAsync("MatchmakingServicePlayersAddedToQueue", PLAYERSADDED)
+          table.clear(PLAYERSADDED)
+        end
+
+        if #PLAYERSREMOVED > 0 then
+          MessagingService:PublishAsync("MatchmakingServicePlayersRemovedFromQueue", PLAYERSREMOVED)
+          table.clear(PLAYERSREMOVED)
+        end
+
+        table.clear(PLAYERSADDEDTHISWAVE)
       end
-
-      table.clear(PLAYERSADDEDTHISWAVE)
-
+      
     end)
-
   end
   return MatchmakingService.Singleton
 end

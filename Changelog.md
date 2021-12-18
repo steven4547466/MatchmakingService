@@ -1,5 +1,15 @@
 Changelog
 
+Version 4.1.3-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] `GetSingleton` should no longer yield.
+
 Version 4.1.2-beta
 Changes (breaking):
 * None
