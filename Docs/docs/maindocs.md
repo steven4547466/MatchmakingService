@@ -108,6 +108,7 @@ MatchmakingService:SetStartingStandardDeviation(newStartingStandardDeviation)
 
 ## Setting the Max Skill Gap Between Party Members
 Sets the max gap in rating between party members.
+
 | Parameter Name | Type | Description | Default Value |
 | -------------- | ---- | ----------- | ------------- |
 | newMaxGap | number | The new max gap between party members |  |
@@ -118,6 +119,7 @@ MatchmakingService:SetMaxPartySkillGap(newMaxGap)
 
 ## Obtaining a Rating Value from an OpenSkill Object
 Turns an OpenSkill object into a single rating number.
+
 | Parameter Name | Type | Description | Default Value |
 | -------------- | ---- | ----------- | ------------- |
 | openSkillObject | OpenSkill object | The OpenSkill object |  |
