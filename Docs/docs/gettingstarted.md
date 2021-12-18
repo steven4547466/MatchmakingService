@@ -81,6 +81,7 @@ It's important to denote a server as a game instance as this removes the ability
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()
 MatchmakingService:SetIsGameServer(true)
+MatchmakingService:SetPlayerRange("Map 1", NumberRange.new(2, 2))
 ```
 
 ### Obtaining teleport data from the server
@@ -173,6 +174,10 @@ end
 Extremely basic 1v1 game instance server (EndGame is not called in this example):
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()
+
+-- It's important game servers know how large they can get. You don't really need every map here,
+-- but you do need whichever map this is.
+MatchmakingService:SetPlayerRange("Map 1", NumberRange.new(2, 2))
 
 -- Tell the service this is a game server
 MatchmakingService:SetIsGameServer(true)

@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.1.0-beta";
+  Version = "4.1.1-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -279,7 +279,9 @@ end
 -- @param id The place id to teleport to.
 function MatchmakingService:AddGamePlace(name, id)
   self.GamePlaceIds[name] = id
-  self.PlayerRanges[name] = NumberRange.new(6, 10)
+  if not self.PlayerRanges[name] then
+    self.PlayerRanges[name] = NumberRange.new(6, 10)
+  end
 end
 
 --- Sets whether or not this is a game server.
@@ -320,6 +322,7 @@ function MatchmakingService:Clear()
           memory:RemoveAsync(code)
         end
       end
+      memory:RemoveAsync("RunningGames"..tostring(i))
     end
   end
   memory:RemoveAsync("RunningGames")
@@ -446,14 +449,14 @@ function MatchmakingService.new(options)
         -- Main matchmaking
         local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
         if queuedMaps == nil then continue end
-
+        
         for i, map in ipairs(queuedMaps) do
           local mapQueue = Service:GetQueue(map)
           if mapQueue == nil then continue end
+          
           for ratingType, skillLevelAndQueue in pairs(mapQueue) do
             for skillLevel, queue in pairs(skillLevelAndQueue) do
               local values = first(queue, Service.PlayerRanges[map].Max)
-
               if values ~= nil then
                 local acc = #values
                 while not checkForParties(values) do
@@ -501,21 +504,36 @@ function MatchmakingService.new(options)
                   for i = 1, runningGamesCount do
                     success, err = pcall(function()
                       memory:UpdateAsync("RunningGames"..tostring(i), function(old)
-                        if not old then old = {reservedCode} end
+                        if not old then old = {} end
                         table.insert(old, reservedCode)
                         return old
                       end, 86400)
                     end)
 
-                    if not success and incremented then
-                      print("Error adding game to running games after incrementing:")
-                      print(err)
-                    elseif not success and runningGamesCount then
+                    if success then
+                      print("Successfully added running game")
+                      break
+                    elseif not success and i == runningGamesCount then
                       incremented = true
                       memory:SetAsync("RunningGamesCount", runningGamesCount + 1, 86400)
                       runningGamesCount += 1
-                    elseif not success and not runningGamesCount then
-                      print("Error adding game to running games:")
+                      break
+                    end
+                  end
+                  
+                  if incremented then
+                    success, err = pcall(function()
+                      memory:UpdateAsync("RunningGames"..tostring(runningGamesCount), function(old)
+                        if not old then old = {} end
+                        table.insert(old, reservedCode)
+                        return old
+                      end, 86400)
+                    end)
+
+                    if success then
+                      print("Successfully added running game")
+                    else
+                      print("Error adding running game (1):")
                       print(err)
                     end
                   end
@@ -916,7 +934,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
   local hasErrors = false
   local success, errorMessage
 
-  local queuedMaps = getFromMemory(memory, "QueuedMaps", 3)
+  local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
 
   if queuedMaps == nil then return end
 
@@ -924,11 +942,11 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
     local queue = self:GetQueue(map)
     for ratingType, skillLevelAndQueue in pairs(queue) do
       for skillLevel, levelQueue in pairs(skillLevelAndQueue) do
-        if table.find(levelQueue, player) then
+        if find(levelQueue, function(v) return v[1] == player end) then
           success, errorMessage = pcall(function()
             memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..skillLevel, function(old)
               if old == nil then return nil end
-              local index = table.find(old, player)
+              local index = find(levelQueue, function(v) return v[1] == player end)
               if index == nil then return nil end
               table.remove(old, index)
               if #old == 0 then 
@@ -1037,7 +1055,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
     table.remove(toRemove, i)
   end
 
-  return hasErrors
+  return not hasErrors
 end
 
 --- Removes a specific player from the queue.
@@ -1056,7 +1074,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
   local hasErrors = false
   local success, errorMessage
 
-  local queuedMaps = getFromMemory(memory, "QueuedMaps", 3)
+  local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
 
   if queuedMaps == nil then return end
 
@@ -1065,11 +1083,11 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
     for ratingType, skillLevelAndQueue in pairs(queue) do
       for skillLevel, levelQueue in pairs(skillLevelAndQueue) do
         for i, player in ipairs(players) do
-          if table.find(levelQueue, player) then
+          if find(levelQueue, function(v) return v[1] == player end) then
             success, errorMessage = pcall(function()
               memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..skillLevel, function(old)
                 if old == nil then return nil end
-                local index = table.find(old, player)
+                local index = find(levelQueue, function(v) return v[1] == player end)
                 if index == nil then return nil end
                 table.remove(old, index)
                 if #old == 0 then 
@@ -1181,7 +1199,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
     table.remove(toRemove, i)
   end
 
-  return hasErrors
+  return not hasErrors
 end
 
 --- Removes a table of players from the queue.
