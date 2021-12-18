@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.1.1-beta";
+  Version = "4.1.2-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -449,11 +449,11 @@ function MatchmakingService.new(options)
         -- Main matchmaking
         local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
         if queuedMaps == nil then continue end
-        
+
         for i, map in ipairs(queuedMaps) do
           local mapQueue = Service:GetQueue(map)
           if mapQueue == nil then continue end
-          
+
           for ratingType, skillLevelAndQueue in pairs(mapQueue) do
             for skillLevel, queue in pairs(skillLevelAndQueue) do
               local values = first(queue, Service.PlayerRanges[map].Max)
@@ -496,7 +496,7 @@ function MatchmakingService.new(options)
                   print("Error adding new game:")
                   print(err)
                 else
-		  if not runningGamesCount or runningGamesCount == 0 then
+                  if not runningGamesCount or runningGamesCount == 0 then
                     memory:SetAsync("RunningGamesCount", 1, 86400)
                     runningGamesCount = 1
                   end
@@ -520,7 +520,7 @@ function MatchmakingService.new(options)
                       break
                     end
                   end
-                  
+
                   if incremented then
                     success, err = pcall(function()
                       memory:UpdateAsync("RunningGames"..tostring(runningGamesCount), function(old)
