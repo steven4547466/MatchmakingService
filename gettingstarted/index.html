@@ -696,6 +696,7 @@ Note: This function is more efficient on memory updates if all of the users are 
 <p>It's important to denote a server as a game instance as this removes the ability for it to become the central server, and removes logic that may impact game performance. <strong>You should set the player range to match that of the hub server</strong> You can choose to set the field directly, but I recommend that you use the built in method in case anything changes in the future:
 <div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
 <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetIsGameServer</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetPlayerRange</span><span class="p">(</span><span class="s2">&quot;Map 1&quot;</span><span class="p">,</span> <span class="n">NumberRange</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 </code></pre></div></p>
 <h3 id="obtaining-teleport-data-from-the-server">Obtaining teleport data from the server</h3>
 <p>Data about the match is sent over the players' teleport data. This prevents additional calls to the memory store which means queues can run faster. I recommend doing this right in player join, but you could theoretically do it at any time you'd like.
@@ -770,6 +771,10 @@ Note: This function is more efficient on memory updates if all of the users are 
 </code></pre></div></p>
 <p>Extremely basic 1v1 game instance server (EndGame is not called in this example):
 <div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
+
+<span class="c1">-- It&#39;s important game servers know how large they can get. You don&#39;t really need every map here,</span>
+<span class="c1">-- but you do need whichever map this is.</span>
+<span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetPlayerRange</span><span class="p">(</span><span class="s2">&quot;Map 1&quot;</span><span class="p">,</span> <span class="n">NumberRange</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
 <span class="c1">-- Tell the service this is a game server</span>
 <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetIsGameServer</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
