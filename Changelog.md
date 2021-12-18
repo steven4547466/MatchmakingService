@@ -1,5 +1,15 @@
 Changelog
 
+Version 4.1.2-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Prevented runningGamesCount from going to 0 which caused issues.
+
 Version 4.1.1-beta
 Changes (breaking):
 * None
