@@ -171,7 +171,7 @@ function updateQueue(map, ratingType, stringRoundedRating)
       if old == nil then 
         old = {}
         old[ratingType] = {{stringRoundedRating, now}}
-      elseif old[ratingType] ~= nil then
+      elseif old[ratingType] == nil then
         old[ratingType] = {{stringRoundedRating, now}}
       else
         if find(old[ratingType], function(v)
