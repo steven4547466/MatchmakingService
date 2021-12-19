@@ -399,6 +399,23 @@ MatchmakingService:UpdateRatings(ratingType, ranks, teams)
     | ---- | ----------- |
     | boolean | A boolean indicating if there was no error (true if there was no error) |
 
+## Set the Game's Joinable Status
+Sets the joinable status of a game.
+
+| Parameter Name | Type | Description | Default Value |
+| -------------- | ---- | ----------- | ------------- |
+| gameId | string | The id of the game to update |  |
+| joinable | boolean | Whether or not the game will be joinable |  |
+
+```lua
+MatchmakingService:SetJoinable(gameId, joinable)
+```
+
+!!! info "Returns"
+    | Type | Description |
+    | ---- | ----------- |
+    | boolean | A boolean indicating if there was no error (true if there was no error) |
+
 ## Remove a Game from Memory
 Removes a game from memory.
 

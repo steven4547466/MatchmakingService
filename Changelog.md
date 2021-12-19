@@ -1,5 +1,15 @@
 Changelog
 
+Version 4.2.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] `SetJoinable(gameId, joinable)` allows you to explicitly set the joinable state of the game.
+
+Fixes:
+* [Fix] A fix for [#10](https://github.com/steven4547466/MatchmakingService/issues/10) has been merged.
+
 Version 4.1.3-beta
 Changes (breaking):
 * None

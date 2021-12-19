@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.1.3-beta";
+  Version = "4.2.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -1396,6 +1396,27 @@ function MatchmakingService:UpdateRatings(ratingType, ranks, teams)
     table.insert(teamsIds, tableSelect(team, "UserId"))
   end
   return self:UpdateRatingsId(ratingType, ranks, teamsIds)
+end
+
+--- Sets the joinable status of a game.
+-- @param gameId The id of the game to update.
+-- @param joinable Whether or not the game will be joinable.
+-- @return true if there was no error.
+function MatchmakingService:SetJoinable(gameId, joinable)
+  local success, errorMessage = pcall(function()
+    memory:UpdateAsync(gameId, function(old)
+      if old ~= nil then
+        old.joinable = joinable
+        return old
+      end
+    end, 86400)
+  end)
+
+  if not success then
+    print("Unable to update Running Games (Update Joinable):")
+    error(errorMessage)
+  end
+  return true
 end
 
 --- Removes a game from memory.
