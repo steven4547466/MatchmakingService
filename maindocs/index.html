@@ -488,6 +488,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#set-the-games-joinable-status" class="md-nav__link">
+    Set the Game's Joinable Status
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#remove-a-game-from-memory" class="md-nav__link">
     Remove a Game from Memory
   </a>
@@ -723,6 +730,13 @@
         <li class="md-nav__item">
   <a href="#updating-ratings" class="md-nav__link">
     Updating Ratings
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#set-the-games-joinable-status" class="md-nav__link">
+    Set the Game's Joinable Status
   </a>
   
 </li>
@@ -1712,6 +1726,52 @@ Let’s say team2 came first, team1 came second and team3 came third. To update 
 <p><code>MatchmakingService:UpdateRatings("ranked", {2, 1, 3}, {team1, team2, team3})</code></p>
 <p><code>{2,1,3}</code> is important, and so is order. Order is extremely important here. Because I passed the teams in order, I can give the position of each team in order. As previously stated team1 placed second, therefore because team1 is the first team in the teams table, it also has the first value in the rankings table.</p>
 </div>
+<div class="admonition info">
+<p class="admonition-title">Returns</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>boolean</td>
+<td>A boolean indicating if there was no error (true if there was no error)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="set-the-games-joinable-status">Set the Game's Joinable Status</h2>
+<p>Sets the joinable status of a game.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gameId</td>
+<td>string</td>
+<td>The id of the game to update</td>
+<td></td>
+</tr>
+<tr>
+<td>joinable</td>
+<td>boolean</td>
+<td>Whether or not the game will be joinable</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetJoinable</span><span class="p">(</span><span class="n">gameId</span><span class="p">,</span> <span class="n">joinable</span><span class="p">)</span>
+</code></pre></div>
+
 <div class="admonition info">
 <p class="admonition-title">Returns</p>
 <table>
