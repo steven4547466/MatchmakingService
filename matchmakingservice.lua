@@ -118,7 +118,7 @@ end
 
 function checkForParties(values)
   for i, v in ipairs(values) do
-    if v[2] ~= nil and i + v[2] > #values then
+    if v[3] ~= nil and i + v[3] > #values then
       for j = #values, i, -1 do
         table.remove(values, j)
       end
@@ -238,7 +238,7 @@ function MatchmakingService.GetSingleton(options)
           MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3], v[4])
         end
       end)
-      
+
       while not CLOSED do
         task.wait(5) -- ~12 messages a minute.
         if #PLAYERSADDED > 0 then
@@ -253,7 +253,7 @@ function MatchmakingService.GetSingleton(options)
 
         table.clear(PLAYERSADDEDTHISWAVE)
       end
-      
+
     end)
   end
   return MatchmakingService.Singleton
@@ -421,13 +421,13 @@ function MatchmakingService.new(options)
                   end
 
                   -- Remove all newly queued
-                  --if values ~= nil then 
-                  --	for j = #values, 1, -1 do
-                  --		if values[j][2] >= now - Service.MatchmakingInterval*1000 then
-                  --			table.remove(values, j)
-                  --		end
-                  --	end
-                  --end
+                  if values ~= nil then 
+                    for j = #values, 1, -1 do
+                      if values[j][2] >= now - Service.MatchmakingInterval*1000 then
+                        table.remove(values, j)
+                      end
+                    end
+                  end
 
                   if values ~= nil and #values > 0 then
                     local plrs = {}
@@ -436,7 +436,7 @@ function MatchmakingService.new(options)
                       table.insert(plrs, v[1])
                       Service:SetPlayerInfoId(v[1], code, mem.ratingType, parties ~= nil and parties[v] or {}, mem.map)
                     end
-
+                    
                     Service:AddPlayersToGameId(plrs, code)
 
                     Service:RemovePlayersFromQueueId(tableSelect(values, 1))
@@ -467,6 +467,17 @@ function MatchmakingService.new(options)
                   end
                   acc += #f
                   append(values, f)
+                end
+              end
+              
+              -- Remove all newly queued
+              if values ~= nil then 
+                for j = #values, 1, -1 do
+                  print(values[j][2])
+                  print(now - Service.MatchmakingInterval*1000)
+                  if values[j][2] >= now - Service.MatchmakingInterval*1000 then
+                    table.remove(values, j)
+                  end
                 end
               end
 
@@ -546,7 +557,6 @@ function MatchmakingService.new(options)
                   Service:RemovePlayersFromQueueId(userIds)
                 end
               end
-
             end
           end
         end
@@ -729,6 +739,7 @@ end
 -- @param map The map to queue them on.
 -- @return A boolean that is true if the player was queued.
 function MatchmakingService:QueuePlayerId(player, ratingType, map)
+  local now = DateTime.now().UnixTimestampMillis
   local deserializedRating = nil
   local roundedRating = 0
   if self.Options.DisableRatingSystem then 
@@ -746,9 +757,9 @@ function MatchmakingService:QueuePlayerId(player, ratingType, map)
   success, errorMessage = pcall(function()
     new = memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..stringRoundedRating, function(old)
       if old == nil then 
-        old = {{player}}
+        old = {{player, now}}
       else
-        table.insert(old, {player})
+        table.insert(old, {player, now})
       end
       return old
     end, 86400)
@@ -802,6 +813,7 @@ end
 -- @param map The map to queue them on.
 -- @return A boolean that is true if the party was queued.
 function MatchmakingService:QueuePartyId(players, ratingType, map)
+  local now = DateTime.now().UnixTimestampMillis
   local ratingValues = nil
   local avg = 0
   if self.Options.DisableRatingSystem then 
@@ -829,7 +841,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
   local tbl = {}
 
   for i, v in ipairs(players) do
-    table.insert(tbl, {v, #players - i})
+    table.insert(tbl, {v, now, #players - i})
   end
 
   success, errorMessage = pcall(function()
@@ -1078,6 +1090,8 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
   local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
 
   if queuedMaps == nil then return end
+  
+  local playersToQueues = {}
 
   for i, map in ipairs(queuedMaps) do
     local queue = self:GetQueue(map)
@@ -1085,48 +1099,57 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
       for skillLevel, levelQueue in pairs(skillLevelAndQueue) do
         for i, player in ipairs(players) do
           if find(levelQueue, function(v) return v[1] == player end) then
-            success, errorMessage = pcall(function()
-              memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..skillLevel, function(old)
-                if old == nil then return nil end
-                local index = find(levelQueue, function(v) return v[1] == player end)
-                if index == nil then return nil end
-                table.remove(old, index)
-                if #old == 0 then 
-                  table.insert(toRemove, map.."_"..ratingType.."_"..skillLevel)
-                end
-
-                self.PlayerRemovedFromQueue:Fire(player, map, ratingType, skillLevel)
-
-                if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
-                  local index = find(PLAYERSREMOVED, function(x)
-                    return x[1] == player
-                  end)
-                  if index == nil then
-                    table.insert(PLAYERSREMOVED, {player, map, ratingType, skillLevel})
-                  end
-                  table.insert(PLAYERSADDEDTHISWAVE, player)
-                end
-
-                local index = find(PLAYERSADDED, function(x)
-                  return x[1] == player
-                end)
-                if index ~= nil then
-                  table.remove(PLAYERSADDED, index)
-                end
-
-                return old
-              end, 86400)
-            end)
-
-            if not success then
-              hasErrors = true
-              print("Unable to remove player from queue:")
-              print(errorMessage)
-            end					
+            if not playersToQueues[map.."_"..ratingType.."_"..skillLevel] then
+              playersToQueues[map.."_"..ratingType.."_"..skillLevel] = {}
+            end
+            table.insert(playersToQueues[map.."_"..ratingType.."_"..skillLevel], player)
           end
         end
       end
     end
+  end
+  
+  for id, plrs in pairs(playersToQueues) do
+    success, errorMessage = pcall(function()
+      memoryQueue:UpdateAsync(id, function(old)
+        if old == nil then return nil end
+        local map, ratingType, skillLevel = string.split(id, "_")
+        for i, player in ipairs(plrs) do
+          local index = find(old, function(v) return v[1] == player end)
+          if index == nil then return nil end
+          table.remove(old, index)	
+          self.PlayerRemovedFromQueue:Fire(player, map, ratingType, skillLevel)
+          if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
+            local index = find(PLAYERSREMOVED, function(x)
+              return x[1] == player
+            end)
+            if index == nil then
+              table.insert(PLAYERSREMOVED, {player, map, ratingType, skillLevel})
+            end
+            table.insert(PLAYERSADDEDTHISWAVE, player)
+          end
+
+          local index = find(PLAYERSADDED, function(x)
+            return x[1] == player
+          end)
+          if index ~= nil then
+            table.remove(PLAYERSADDED, index)
+          end
+        end
+        
+        if #old == 0 then 
+          table.insert(toRemove, id)
+        end
+
+        return old
+      end, 86400)
+    end)
+
+    if not success then
+      hasErrors = true
+      print("Unable to remove player from queue:")
+      print(errorMessage)			
+    end		
   end
 
   success, errorMessage = pcall(function()
@@ -1222,7 +1245,7 @@ function MatchmakingService:AddPlayerToGameId(player, gameId, updateJoinable)
       if old ~= nil then
         table.insert(old.players, player)
         old.full = #old.players == self.PlayerRanges[old.map].Max
-        old.joinable = updateJoinable and #old.players ~= self.PlayerRanges[old.map].Max or old.joinable
+        old.joinable = if updateJoinable then #old.players ~= self.PlayerRanges[old.map].Max else old.joinable
         return old
       end
     end, 86400)
@@ -1256,7 +1279,7 @@ function MatchmakingService:AddPlayersToGameId(players, gameId, updateJoinable)
           table.insert(old.players, v)
         end
         old.full = #old.players == self.PlayerRanges[old.map].Max
-        old.joinable = updateJoinable and #old.players ~= self.PlayerRanges[old.map].Max or old.joinable
+        old.joinable = if updateJoinable then #old.players ~= self.PlayerRanges[old.map].Max else old.joinable
         return old
       end
     end, 86400)
@@ -1293,7 +1316,7 @@ function MatchmakingService:RemovePlayerFromGameId(player, gameId, updateJoinabl
           return nil
         end
         old.full = #old.players == self.PlayerRanges[old.map].Max
-        old.joinable = updateJoinable and #old.players ~= self.PlayerRanges[old.map].Max or old.joinable
+        old.joinable = if updateJoinable then #old.players ~= self.PlayerRanges[old.map].Max else old.joinable
         return old
       end
     end, 86400)
@@ -1329,7 +1352,7 @@ function MatchmakingService:RemovePlayersFromGameId(players, gameId, updateJoina
           table.remove(old.players, index)
         end
         old.full = #old.players == self.PlayerRanges[old.map].Max
-        old.joinable = updateJoinable and #old.players ~= self.PlayerRanges[old.map].Max or old.joinable
+        old.joinable = if updateJoinable then #old.players ~= self.PlayerRanges[old.map].Max else old.joinable
         return old
       end
     end, 86400)
