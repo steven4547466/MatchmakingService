@@ -1,5 +1,15 @@
 Changelog
 
+Version 4.2.1-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed an issue that causes players to not be removed from queue when finding a game.
+
 Version 4.2.0-beta
 Changes (breaking):
 * None
