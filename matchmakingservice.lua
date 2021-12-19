@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.2.0-beta";
+  Version = "4.2.1-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -314,6 +314,7 @@ end
 
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
+  print("Clearing memory")
   local count = getFromMemory(memory, "RunningGamesCount", 3)
   if count then
     for i = 1, count do
@@ -361,7 +362,6 @@ function MatchmakingService.new(options)
   -- Clears the store in studio 
   if RunService:IsStudio() then 
     Service:Clear()
-    print("Cleared")
   end
 
   task.spawn(function()
@@ -436,7 +436,7 @@ function MatchmakingService.new(options)
                       table.insert(plrs, v[1])
                       Service:SetPlayerInfoId(v[1], code, mem.ratingType, parties ~= nil and parties[v] or {}, mem.map)
                     end
-                    
+
                     Service:AddPlayersToGameId(plrs, code)
 
                     Service:RemovePlayersFromQueueId(tableSelect(values, 1))
@@ -469,7 +469,7 @@ function MatchmakingService.new(options)
                   append(values, f)
                 end
               end
-              
+
               -- Remove all newly queued
               if values ~= nil then 
                 for j = #values, 1, -1 do
@@ -1090,7 +1090,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
   local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
 
   if queuedMaps == nil then return end
-  
+
   local playersToQueues = {}
 
   for i, map in ipairs(queuedMaps) do
@@ -1108,7 +1108,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
       end
     end
   end
-  
+
   for id, plrs in pairs(playersToQueues) do
     success, errorMessage = pcall(function()
       memoryQueue:UpdateAsync(id, function(old)
@@ -1136,7 +1136,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
             table.remove(PLAYERSADDED, index)
           end
         end
-        
+
         if #old == 0 then 
           table.insert(toRemove, id)
         end
