@@ -1,5 +1,15 @@
 Changelog
 
+Version 4.2.2-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed an issue that caused party queueing to break.
+
 Version 4.2.1-beta
 Changes (breaking):
 * None

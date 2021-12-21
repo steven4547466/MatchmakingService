@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.2.1-beta";
+  Version = "4.2.2-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -849,7 +849,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
       if old == nil then 
         old = {}
       end
-      for i, v in ipairs(players) do
+      for i, v in ipairs(tbl) do
         table.insert(old, v)
       end
       return old
