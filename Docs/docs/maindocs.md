@@ -265,6 +265,9 @@ MatchmakingService:QueueParty(players, ratingType, map)
     | Player | The player that caused the queue to not start |
     | string | The reason the queue did not start |
 
+!!! note "Note"
+    The second and third return values are nil if the first value is true.
+
 ## Getting a Player's Party
 Gets a player's party.
 

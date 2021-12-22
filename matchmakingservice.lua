@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.2.3-beta";
+  Version = "4.2.4-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -886,7 +886,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
 
   for _, v in ipairs(players) do
     if find(new, function(t) return t[1] == v end) == nil then
-      return false
+      return false, v, "Player not added to queue"
     end
   end
 
