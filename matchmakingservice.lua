@@ -885,7 +885,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
   updateQueue(map, ratingType, stringRoundedRating)
 
   for _, v in ipairs(players) do
-    if table.find(new, v) == nil then
+    if find(new, function(t) return t[1] == v end) == nil then
       return false
     end
   end
