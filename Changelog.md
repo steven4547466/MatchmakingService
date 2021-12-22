@@ -1,5 +1,16 @@
 Changelog
 
+Version 4.2.3-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed an issue that caused the PlayerAddedToQueue event to not fire when queueing a party.
+* [Fix] Fixed an issue that caused `QueueParty` to always return false.
+
 Version 4.2.2-beta
 Changes (breaking):
 * None

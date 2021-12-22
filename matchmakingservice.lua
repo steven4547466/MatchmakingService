@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.2.2-beta";
+  Version = "4.2.3-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -361,7 +361,7 @@ function MatchmakingService.new(options)
 
   -- Clears the store in studio 
   if RunService:IsStudio() then 
-    Service:Clear()
+    task.spawn(Service.Clear, Service)
   end
 
   task.spawn(function()
