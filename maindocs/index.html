@@ -327,6 +327,27 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#listening-for-players-being-added-to-queue" class="md-nav__link">
+    Listening for Players Being Added to Queue
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listening-for-players-being-removed-from-the-queue" class="md-nav__link">
+    Listening for Players Being Removed from the Queue
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#applying-custom-teleport-data" class="md-nav__link">
+    Applying Custom Teleport Data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#setting-matchmaking-interval" class="md-nav__link">
     Setting Matchmaking Interval
   </a>
@@ -569,6 +590,27 @@
         <li class="md-nav__item">
   <a href="#clearing-the-memory" class="md-nav__link">
     Clearing the Memory
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listening-for-players-being-added-to-queue" class="md-nav__link">
+    Listening for Players Being Added to Queue
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listening-for-players-being-removed-from-the-queue" class="md-nav__link">
+    Listening for Players Being Removed from the Queue
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#applying-custom-teleport-data" class="md-nav__link">
+    Applying Custom Teleport Data
   </a>
   
 </li>
@@ -828,6 +870,104 @@
 <p>Clears all memory aside from player data.
 <div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">Clear</span><span class="p">()</span>
 </code></pre></div></p>
+<h2 id="listening-for-players-being-added-to-queue">Listening for Players Being Added to Queue</h2>
+<p>You can listen to players being added to the queue globally. This will fire in waves when coming from other servers. This is a signal, so you need to connect to it. Below is a table of what it passes, in order.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>number</td>
+<td>The player's UserId</td>
+</tr>
+<tr>
+<td>string</td>
+<td>The map the player queued for</td>
+</tr>
+<tr>
+<td>string</td>
+<td>The rating type the player queued for</td>
+</tr>
+<tr>
+<td>number</td>
+<td>The rounded rating value of the player. <strong>CAN BE NIL</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Connecting to the listener is simple:
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">.</span><span class="n">PlayerAddedToQueue</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">map</span><span class="p">,</span> <span class="n">ratingType</span><span class="p">,</span> <span class="n">roundedRating</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">map</span><span class="p">,</span> <span class="n">ratingType</span><span class="p">,</span> <span class="n">roundedRating</span><span class="p">)</span>
+<span class="kr">end</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="listening-for-players-being-removed-from-the-queue">Listening for Players Being Removed from the Queue</h2>
+<p>You can listen to players being removed from the queue globally. This will fire in waves when coming from other servers. This is a signal, so you need to connect to it. Below is a table of what it passes, in order.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>number</td>
+<td>The player's UserId</td>
+</tr>
+<tr>
+<td>string</td>
+<td>The map the player queued for</td>
+</tr>
+<tr>
+<td>string</td>
+<td>The rating type the player queued for</td>
+</tr>
+<tr>
+<td>number</td>
+<td>The rounded rating value of the player. <strong>CAN BE NIL</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Connecting to the listener is simple:
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">.</span><span class="n">PlayerRemovedFromQueue</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">map</span><span class="p">,</span> <span class="n">ratingType</span><span class="p">,</span> <span class="n">roundedRating</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">map</span><span class="p">,</span> <span class="n">ratingType</span><span class="p">,</span> <span class="n">roundedRating</span><span class="p">)</span>
+<span class="kr">end</span><span class="p">)</span>
+</code></pre></div></p>
+<h2 id="applying-custom-teleport-data">Applying Custom Teleport Data</h2>
+<p>You can apply custom teleport data to players to access it in the game when they are teleported. This is a function that you can bind to. You may only bind to it once. Below is a table of what it passes, in order. This function can return anything, but some things won't be replicated to other servers. Metatables and instances will not be passed correctly. This should mainly return strings and numbers, or a table of them so that you can reconstruct instances on the server, or just obtain general data that you need in the game.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Player</td>
+<td>The Player</td>
+</tr>
+<tr>
+<td>table</td>
+<td>The game data</td>
+</tr>
+</tbody>
+</table>
+<p>You can bind this function like so:
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">.</span><span class="n">ApplyCustomTeleportData</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">gameData</span><span class="p">)</span>
+    <span class="kr">return</span> <span class="p">{[</span><span class="s2">&quot;Some&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;Custom&quot;</span><span class="p">,[</span><span class="s2">&quot;Data&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;Table&quot;</span><span class="p">}</span>
+<span class="kr">end</span>
+</code></pre></div></p>
+<p>To retrieve it <strong>on the instance server</strong> where players are teleported to, you'll need to do something like thisthis:
+<div class="highlight"><pre><span></span><code><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerAdded</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">joinData</span> <span class="o">=</span> <span class="n">player</span><span class="p">:</span><span class="n">GetJoinData</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">customData</span><span class="p">[</span><span class="nb">tostring</span><span class="p">(</span><span class="n">player</span><span class="p">.</span><span class="n">UserId</span><span class="p">)])</span>
+<span class="kr">end</span><span class="p">)</span>
+</code></pre></div>
+The user id is passed as a string (this is out of our control, it is converted to a string when passed), so you must use <code>tostring</code> on <code>player.UserId</code> to properly get their data.</p>
 <h2 id="setting-matchmaking-interval">Setting Matchmaking Interval</h2>
 <p>Sets the matchmaking interval.</p>
 <table>
