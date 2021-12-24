@@ -6,6 +6,7 @@ Changes (breaking):
 
 Changes (non-breaking):
 * [Addition] Added `ApplyCustomTeleportData` which is a function you can bind to give users custom teleport data.
+* [Addition] Added `ApplyGeneralTeleportData` which is a function you can bind to give the game custom teleport data.
 
 Fixes:
 * [Fix] `PlayerRemovedFromQueue` will now be passed a number as the fourth parameter, instead of its string representation.

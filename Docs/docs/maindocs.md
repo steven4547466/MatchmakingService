@@ -63,7 +63,7 @@ MatchmakingService.PlayerRemovedFromQueue:Connect(function(player, map, ratingTy
 end)
 ```
 
-## Applying Custom Teleport Data
+## Applying Custom Teleport Data to Players
 You can apply custom teleport data to players to access it in the game when they are teleported. This is a function that you can bind to. You may only bind to it once. Below is a table of what it passes, in order. This function can return anything, but some things won't be replicated to other servers. Metatables and instances will not be passed correctly. This should mainly return strings and numbers, or a table of them so that you can reconstruct instances on the server, or just obtain general data that you need in the game.
 
 | Type | Description |
@@ -78,11 +78,34 @@ MatchmakingService.ApplyCustomTeleportData = function(player, gameData)
 end
 ```
 
-To retrieve it **on the instance server** where players are teleported to, you'll need to do something like thisthis:
+To retrieve it **on the instance server** where players are teleported to, you'll need to do something like this:
 ```lua
 game.Players.PlayerAdded:Connect(function(player)
 	local joinData = player:GetJoinData()
     print(joinData.TeleportData.customData[tostring(player.UserId)])
+end)
+```
+The user id is passed as a string (this is out of our control, it is converted to a string when passed), so you must use `tostring` on `player.UserId` to properly get their data.
+
+## Applying Custom Teleport Data to the Game
+You can apply custom teleport data to the game overall (which may be conditional). This is a function that you can bind to. You may only bind to it once. Below is a table of what it passes, in order. This function can return anything, but some things won't be replicated to other servers. Metatables and instances will not be passed correctly. This should mainly return strings and numbers, or a table of them so that you can reconstruct instances on the server, or just obtain general data that you need in the game.
+
+| Type | Description |
+| ---- | ----------- | 
+| table | The game data |
+
+You can bind this function like so:
+```lua
+MatchmakingService.ApplyGeneralTeleportData = function(gameData)
+	return {["Some"]="Custom",["Data"]="Table"}
+end
+```
+
+To retrieve it **on the instance server** where players are teleported to, you'll need to do something like this:
+```lua
+game.Players.PlayerAdded:Connect(function(player)
+	local joinData = player:GetJoinData() -- Teleport data is linked to players, so every player will have this data.
+    print(joinData.TeleportData.gameData)
 end)
 ```
 The user id is passed as a string (this is out of our control, it is converted to a string when passed), so you must use `tostring` on `player.UserId` to properly get their data.

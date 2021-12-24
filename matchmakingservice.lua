@@ -359,6 +359,7 @@ function MatchmakingService.new(options)
   Service.PlayerAddedToQueue = Signal:Create()
   Service.PlayerRemovedFromQueue = Signal:Create()
   Service.ApplyCustomTeleportData = nil
+  Service.ApplyGeneralTeleportData = nil
 
   -- Clears the store in studio 
   if RunService:IsStudio() then 
@@ -587,11 +588,17 @@ function MatchmakingService.new(options)
       for code, players in pairs(playersToTeleport) do
         if code ~= "TEST" then
           local data = {gameCode=code, ratingType=playersToRatings[players[1].UserId], customData={}}
+
           if Service.ApplyCustomTeleportData ~= nil then
             for i, player in ipairs(players) do
               data.customData[player.UserId] = Service.ApplyCustomTeleportData(player, getFromMemory(memory, code, 3))
             end
           end
+          
+          if Service.ApplyGeneralTeleportData ~= nil then
+            data.gameData = Service.ApplyGeneralTeleportData(getFromMemory(memory, code, 3))
+          end
+
           TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil, data)
         end
       end
