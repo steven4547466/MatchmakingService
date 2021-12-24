@@ -29,6 +29,64 @@ Clears all memory aside from player data.
 MatchmakingService:Clear()
 ```
 
+## Listening for Players Being Added to Queue
+You can listen to players being added to the queue globally. This will fire in waves when coming from other servers. This is a signal, so you need to connect to it. Below is a table of what it passes, in order.
+
+| Type | Description |
+| ---- | ----------- | 
+| number | The player's UserId |
+| string | The map the player queued for |
+| string | The rating type the player queued for |
+| number | The rounded rating value of the player. **CAN BE NIL** |
+
+Connecting to the listener is simple:
+```lua
+MatchmakingService.PlayerAddedToQueue:Connect(function(player, map, ratingType, roundedRating)
+	print(player, map, ratingType, roundedRating)
+end)
+```
+
+## Listening for Players Being Removed from the Queue
+You can listen to players being removed from the queue globally. This will fire in waves when coming from other servers. This is a signal, so you need to connect to it. Below is a table of what it passes, in order.
+
+| Type | Description |
+| ---- | ----------- | 
+| number | The player's UserId |
+| string | The map the player queued for |
+| string | The rating type the player queued for |
+| number | The rounded rating value of the player. **CAN BE NIL** |
+
+Connecting to the listener is simple:
+```lua
+MatchmakingService.PlayerRemovedFromQueue:Connect(function(player, map, ratingType, roundedRating)
+	print(player, map, ratingType, roundedRating)
+end)
+```
+
+## Applying Custom Teleport Data
+You can apply custom teleport data to players to access it in the game when they are teleported. This is a function that you can bind to. You may only bind to it once. Below is a table of what it passes, in order. This function can return anything, but some things won't be replicated to other servers. Metatables and instances will not be passed correctly. This should mainly return strings and numbers, or a table of them so that you can reconstruct instances on the server, or just obtain general data that you need in the game.
+
+| Type | Description |
+| ---- | ----------- | 
+| Player | The Player |
+| table | The game data |
+
+You can bind this function like so:
+```lua
+MatchmakingService.ApplyCustomTeleportData = function(player, gameData)
+	return {["Some"]="Custom",["Data"]="Table"}
+end
+```
+
+To retrieve it **on the instance server** where players are teleported to, you'll need to do something like thisthis:
+```lua
+game.Players.PlayerAdded:Connect(function(player)
+	local joinData = player:GetJoinData()
+    print(joinData.TeleportData.customData[tostring(player.UserId)])
+end)
+```
+The user id is passed as a string (this is out of our control, it is converted to a string when passed), so you must use `tostring` on `player.UserId` to properly get their data.
+
 ## Setting Matchmaking Interval
 Sets the matchmaking interval.
 

@@ -1,5 +1,15 @@
 Changelog
 
+Version 4.3.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] Added `ApplyCustomTeleportData` which is a function you can bind to give users custom teleport data.
+
+Fixes:
+* [Fix] `PlayerRemovedFromQueue` will now be passed a number as the fourth parameter, instead of its string representation.
+
 Version 4.2.3-beta
 Changes (breaking):
 * None

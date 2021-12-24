@@ -971,14 +971,14 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
                 table.insert(toRemove, map.."_"..ratingType.."_"..skillLevel)
               end
 
-              self.PlayerRemovedFromQueue:Fire(player, map, ratingType, skillLevel)
+              self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
 
               if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
                 local index = find(PLAYERSREMOVED, function(x)
                   return x[1] == player
                 end)
                 if index == nil then
-                  table.insert(PLAYERSREMOVED, {player, map, ratingType, skillLevel})
+                  table.insert(PLAYERSREMOVED, {player, map, ratingType, tonumber(skillLevel)})
                 end
                 table.insert(PLAYERSADDEDTHISWAVE, player)
               end
@@ -1123,13 +1123,13 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
           local index = find(old, function(v) return v[1] == player end)
           if index == nil then return nil end
           table.remove(old, index)	
-          self.PlayerRemovedFromQueue:Fire(player, map, ratingType, skillLevel)
+          self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
           if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
             local index = find(PLAYERSREMOVED, function(x)
               return x[1] == player
             end)
             if index == nil then
-              table.insert(PLAYERSREMOVED, {player, map, ratingType, skillLevel})
+              table.insert(PLAYERSREMOVED, {player, map, ratingType, tonumber(skillLevel)})
             end
             table.insert(PLAYERSADDEDTHISWAVE, player)
           end
