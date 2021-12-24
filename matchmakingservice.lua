@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.2.4-beta";
+  Version = "4.3.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -358,6 +358,7 @@ function MatchmakingService.new(options)
   Service.MaxPartySkillGap = 50
   Service.PlayerAddedToQueue = Signal:Create()
   Service.PlayerRemovedFromQueue = Signal:Create()
+  Service.ApplyCustomTeleportData = nil
 
   -- Clears the store in studio 
   if RunService:IsStudio() then 
@@ -473,8 +474,6 @@ function MatchmakingService.new(options)
               -- Remove all newly queued
               if values ~= nil then 
                 for j = #values, 1, -1 do
-                  print(values[j][2])
-                  print(now - Service.MatchmakingInterval*1000)
                   if values[j][2] >= now - Service.MatchmakingInterval*1000 then
                     table.remove(values, j)
                   end
@@ -586,8 +585,14 @@ function MatchmakingService.new(options)
       end
 
       for code, players in pairs(playersToTeleport) do
-        if code ~= "TEST" then 
-          TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil, {gameCode=code, ratingType=playersToRatings[players[1].UserId]})
+        if code ~= "TEST" then
+          local data = {gameCode=code, ratingType=playersToRatings[players[1].UserId], customData={}}
+          if Service.ApplyCustomTeleportData ~= nil then
+            for i, player in ipairs(players) do
+              data.customData[player.UserId] = Service.ApplyCustomTeleportData(player, getFromMemory(memory, code, 3))
+            end
+          end
+          TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil, data)
         end
       end
     end
