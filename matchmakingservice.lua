@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.3.0-beta";
+  Version = "4.4.0-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -441,7 +441,7 @@ function MatchmakingService.new(options)
                     append(values, queueUp)
                     append(values, queueDown)
                   end
-                  
+
                   if values ~= nil then
                     for j = #values, 1, -1 do
                       if values[j][2] >= now - Service.MatchmakingInterval*1000 then
@@ -481,7 +481,8 @@ function MatchmakingService.new(options)
         -- Main matchmaking
         local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
         if queuedMaps == nil then continue end
-
+        
+        local playersAdded = {}
         for i, map in ipairs(queuedMaps) do
           local mapQueue = Service:GetQueue(map)
           if mapQueue == nil then continue end
@@ -490,7 +491,7 @@ function MatchmakingService.new(options)
             for skillLevel, queue in pairs(skillLevelAndQueue) do
               local values = first(queue, Service.PlayerRanges[map].Max)
               local expansions = math.floor((now-values[1][2])/(Service.SecondsPerExpansion*1000))
-
+              
               for i = 1, expansions do
                 local skillUp = tostring(tonumber(skillLevel)+10*i)
                 local skillDown = tostring(tonumber(skillLevel)-10*i)
@@ -523,6 +524,13 @@ function MatchmakingService.new(options)
                   acc += #f
                   append(values, f)
                 end
+                
+                -- Remove players that already found a game (prevents double games with expansions)
+                for j = #values, 1, -1 do
+                  if table.find(playersAdded, values[j][1]) then
+                    table.remove(values, j)
+                  end
+                end
               end
 
               -- If there aren't enough players than skip this skill level
@@ -530,6 +538,7 @@ function MatchmakingService.new(options)
                 continue
               else
                 local userIds = tableSelect(values, 1)
+                append(playersAdded, userIds)
                 -- Otherwise reserve a server and tell all servers the player is ready to join
                 local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceIds[map]) or "TEST"
                 local success, err
@@ -639,7 +648,7 @@ function MatchmakingService.new(options)
               data.customData[player.UserId] = Service.ApplyCustomTeleportData(player, getFromMemory(memory, code, 3))
             end
           end
-          
+
           if Service.ApplyGeneralTeleportData ~= nil then
             data.gameData = Service.ApplyGeneralTeleportData(getFromMemory(memory, code, 3))
           end
