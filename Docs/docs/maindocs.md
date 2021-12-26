@@ -198,6 +198,20 @@ Sets the max gap in rating between party members.
 MatchmakingService:SetMaxPartySkillGap(newMaxGap)
 ```
 
+## Setting the Seconds Between Queue Expansions
+Sets the number of seconds between each queue expansion.
+
+| Parameter Name | Type | Description | Default Value |
+| -------------- | ---- | ----------- | ------------- |
+| newValue | number | The new value, in seconds, of seconds between each queue expansion |  |
+
+```lua
+MatchmakingService:SetSecondsBetweenExpansion(newValue)
+```
+
+!!! info "Explaination"
+    An expansion is 10 rounded skill level in each direction. If a player is skill level 25, they get rounded to 30. A signle expansion from the 30 skill level queue will search also in 20 and 40.
+
 ## Obtaining a Rating Value from an OpenSkill Object
 Turns an OpenSkill object into a single rating number.
 

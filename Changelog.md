@@ -1,5 +1,16 @@
 Changelog
 
+Version 4.4.0-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Readdition] Readded queue expansions.
+* [Addition] Added `SetSecondsBetweenExpansion` which allows you to set the time between queue expansions. A queue's are rounded off at every 10 skill level. A single expansion allows players from the next and previous 10 to be matched together. If a player is queued at 10 skill level, a single expansion will look in 0 and 20 as well.
+
+Fixes:
+* None
+
 Version 4.3.0-beta
 Changes (breaking):
 * None

@@ -112,7 +112,6 @@ end
 
 -- Rounds a value to the nearest 10
 function roundSkill(skill)
-  if skill <= 0 then return 0 end
   return math.round(skill/10) * 10
 end
 
@@ -312,6 +311,14 @@ function MatchmakingService:SetMaxPartySkillGap(newMaxGap)
   self.MaxPartySkillGap = newMaxGap
 end
 
+--- Sets the number of seconds between each queue expansion.
+-- An expansion is 10 rounded skill level in each direction.
+-- If a player is skill level 25, they get rounded to 30
+-- @param newValue The new value, in seconds, of seconds between each queue expansion.
+function MatchmakingService:SetSecondsBetweenExpansion(newValue)
+  self.SecondsPerExpansion = newValue
+end
+
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
   print("Clearing memory")
@@ -360,6 +367,7 @@ function MatchmakingService.new(options)
   Service.PlayerRemovedFromQueue = Signal:Create()
   Service.ApplyCustomTeleportData = nil
   Service.ApplyGeneralTeleportData = nil
+  Service.SecondsPerExpansion = 10
 
   -- Clears the store in studio 
   if RunService:IsStudio() then 
@@ -405,12 +413,42 @@ function MatchmakingService.new(options)
                 local mem = getFromMemory(memory, code, 3)
                 if mem == nil then continue end
                 if mem.joinable then
-                  local queue = Service:GetQueue(mem.map)[mem.ratingType][mem.skillLevel]
-                  if queue == nil or #queue == 0 then continue end
+                  local queue = Service:GetQueue(mem.map)
+                  if queue ~= nil then
+                    queue = queue[mem.ratingType]
+                  end
+                  if queue ~= nil then
+                    queue = queue[tostring(mem.skillLevel)]
+                  end
 
-                  local values = first(queue, Service.PlayerRanges[mem.map].Max - #mem.players)
+                  local expansions = math.floor((now-mem.createTime)/(Service.SecondsPerExpansion*1000))
 
+                  if queue == nil and expansions == 0 then continue end
+
+                  local values = first(queue or {}, Service.PlayerRanges[mem.map].Max - #mem.players)
+
+                  for i = 1, expansions do
+                    local skillUp = tostring(tonumber(mem.ratingType)+10*i)
+                    local skillDown = tostring(tonumber(mem.ratingType)-10*i)
+                    local queueUp = nil
+                    local queueDown = nil
+                    queueUp = queue[mem.ratingType]
+                    queueDown = queue[mem.ratingType]
+                    if queueUp ~= nil then
+                      queueUp = queueUp[skillUp]
+                      queueDown = queueDown[skillDown]
+                    end
+                    append(values, queueUp)
+                    append(values, queueDown)
+                  end
+                  
                   if values ~= nil then
+                    for j = #values, 1, -1 do
+                      if values[j][2] >= now - Service.MatchmakingInterval*1000 then
+                        table.remove(values, j)
+                      end
+                    end
+
                     local acc = #values
                     while not checkForParties(values) do
                       local f = first(queue, Service.PlayerRanges[mem.map].Max - #mem.players, acc + 1)
@@ -419,15 +457,6 @@ function MatchmakingService.new(options)
                       end
                       acc += #f
                       append(values, f)
-                    end
-                  end
-
-                  -- Remove all newly queued
-                  if values ~= nil then 
-                    for j = #values, 1, -1 do
-                      if values[j][2] >= now - Service.MatchmakingInterval*1000 then
-                        table.remove(values, j)
-                      end
                     end
                   end
 
@@ -460,7 +489,31 @@ function MatchmakingService.new(options)
           for ratingType, skillLevelAndQueue in pairs(mapQueue) do
             for skillLevel, queue in pairs(skillLevelAndQueue) do
               local values = first(queue, Service.PlayerRanges[map].Max)
+              local expansions = math.floor((now-values[1][2])/(Service.SecondsPerExpansion*1000))
+
+              for i = 1, expansions do
+                local skillUp = tostring(tonumber(skillLevel)+10*i)
+                local skillDown = tostring(tonumber(skillLevel)-10*i)
+                local queueUp = nil
+                local queueDown = nil
+                queueUp = mapQueue[ratingType]
+                queueDown = mapQueue[ratingType]
+                if queueUp ~= nil then
+                  queueUp = queueUp[skillUp]
+                  queueDown = queueDown[skillDown]
+                end
+                if values == nil then values = {} end
+                append(values, queueUp)
+                append(values, queueDown)
+              end
+
               if values ~= nil then
+                for j = #values, 1, -1 do
+                  if values[j][2] >= now - Service.MatchmakingInterval*1000 then
+                    table.remove(values, j)
+                  end
+                end
+
                 local acc = #values
                 while not checkForParties(values) do
                   local f = first(queue, Service.PlayerRanges[map].Max, acc + 1)
@@ -469,15 +522,6 @@ function MatchmakingService.new(options)
                   end
                   acc += #f
                   append(values, f)
-                end
-              end
-
-              -- Remove all newly queued
-              if values ~= nil then 
-                for j = #values, 1, -1 do
-                  if values[j][2] >= now - Service.MatchmakingInterval*1000 then
-                    table.remove(values, j)
-                  end
                 end
               end
 
@@ -494,12 +538,13 @@ function MatchmakingService.new(options)
                     return 
                       {
                         ["full"] = #values == Service.PlayerRanges[map].Max;
-                        ["skillLevel"] = skillLevel;
+                        ["skillLevel"] = tonumber(skillLevel);
                         ["players"] = userIds;
                         ["started"] = false;
                         ["joinable"] = #values ~= Service.PlayerRanges[map].Max;
                         ["ratingType"] = ratingType;
-                        ["map"] = map
+                        ["map"] = map;
+                        ["createTime"] = now;
                       }
                   end, 86400)
                 end)
@@ -1542,54 +1587,6 @@ function MatchmakingService:StartGame(gameId, joinable)
     error(errorMessage)
   end
   return true
-end
-
---- Expands the search of a specific rating queue.
--- @param skillLevel The ratingType to expand.
--- @param skillLevel The rating to expand.
-function MatchmakingService:ExpandSearch(ratingType, skillLevel)
-  if self.Options.DisableRatingSystem then 
-    return
-  end
-  local success, errorMessage = pcall(function()
-    memory:UpdateAsync("QueuedSkillLevels", function(old)
-      if old == nil or old[ratingType] == nil then return nil end
-      local index = find(old[ratingType], function(entry)
-        return entry[1] == skillLevel
-      end)
-      if index == nil then return nil end
-      local pre = old[ratingType][index][3]
-      if pre == nil then pre = 0 end
-      old[ratingType][index] = {skillLevel, DateTime.now().UnixTimestampMillis, pre+1}
-      table.sort(old[ratingType], function(a, b)
-        return b[1] > a[1]
-      end)
-      return old
-    end, 86400)
-  end)
-end
-
---- Removes expansions of the search of a specific rating queue.
--- @param skillLevel The ratingType to remove expansions from.
--- @param skillLevel The rating to to remove expansions from.
-function MatchmakingService:RemoveExpansions(ratingType, skillLevel)
-  if self.Options.DisableRatingSystem then 
-    return
-  end
-  local success, errorMessage = pcall(function()
-    memory:UpdateAsync("QueuedSkillLevels", function(old)
-      if old == nil or old[ratingType] == nil then return nil end
-      local index = find(old[ratingType], function(entry)
-        return entry[1] == skillLevel
-      end)
-      if index == nil then return nil end
-      old[ratingType][index] = {skillLevel, DateTime.now().UnixTimestampMillis}
-      table.sort(old[ratingType], function(a, b)
-        return b[1] > a[1]
-      end)
-      return old
-    end, 86400)
-  end)
 end
 
 game:BindToClose(function()
