@@ -404,6 +404,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#setting-the-seconds-between-queue-expansions" class="md-nav__link">
+    Setting the Seconds Between Queue Expansions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#obtaining-a-rating-value-from-an-openskill-object" class="md-nav__link">
     Obtaining a Rating Value from an OpenSkill Object
   </a>
@@ -674,6 +681,13 @@
         <li class="md-nav__item">
   <a href="#setting-the-max-skill-gap-between-party-members" class="md-nav__link">
     Setting the Max Skill Gap Between Party Members
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-the-seconds-between-queue-expansions" class="md-nav__link">
+    Setting the Seconds Between Queue Expansions
   </a>
   
 </li>
@@ -1195,6 +1209,33 @@ The user id is passed as a string (this is out of our control, it is converted t
 <div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetMaxPartySkillGap</span><span class="p">(</span><span class="n">newMaxGap</span><span class="p">)</span>
 </code></pre></div>
 
+<h2 id="setting-the-seconds-between-queue-expansions">Setting the Seconds Between Queue Expansions</h2>
+<p>Sets the number of seconds between each queue expansion.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>newValue</td>
+<td>number</td>
+<td>The new value, in seconds, of seconds between each queue expansion</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetSecondsBetweenExpansion</span><span class="p">(</span><span class="n">newValue</span><span class="p">)</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Explaination</p>
+<p>An expansion is 10 rounded skill level in each direction. If a player is skill level 25, they get rounded to 30. A signle expansion from the 30 skill level queue will search also in 20 and 40.</p>
+</div>
 <h2 id="obtaining-a-rating-value-from-an-openskill-object">Obtaining a Rating Value from an OpenSkill Object</h2>
 <p>Turns an OpenSkill object into a single rating number.</p>
 <table>
