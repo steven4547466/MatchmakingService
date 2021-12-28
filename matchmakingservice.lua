@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.4.1-beta";
+  Version = "4.4.2-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -413,14 +413,11 @@ function MatchmakingService.new(options)
                 local mem = getFromMemory(memory, code, 3)
                 if mem == nil then continue end
                 if mem.joinable then
-                  local queue = Service:GetQueue(mem.map)
-                  if queue ~= nil then
-                    queue = queue[mem.ratingType]
-                  end
-                  if queue ~= nil then
-                    queue = queue[tostring(mem.skillLevel)]
-                  end
-
+                  local q = Service:GetQueue(mem.map)
+                  if q == nil then continue end
+                  local queue = q[mem.ratingType]
+                  if queue == nil then continue end
+                  queue = queue[tostring(mem.skillLevel)]
                   local expansions = math.floor((now-mem.createTime)/(Service.SecondsPerExpansion*1000))
 
                   if queue == nil and expansions == 0 then continue end
@@ -432,8 +429,8 @@ function MatchmakingService.new(options)
                     local skillDown = tostring(mem.skillLevel-10*i)
                     local queueUp = nil
                     local queueDown = nil
-                    queueUp = queue[mem.ratingType]
-                    queueDown = queue[mem.ratingType]
+                    queueUp = q[mem.ratingType]
+                    queueDown = q[mem.ratingType]
                     if queueUp ~= nil then
                       queueUp = queueUp[skillUp]
                       queueDown = queueDown[skillDown]
