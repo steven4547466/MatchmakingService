@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.4.0-beta";
+  Version = "4.4.1-beta";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -428,8 +428,8 @@ function MatchmakingService.new(options)
                   local values = first(queue or {}, Service.PlayerRanges[mem.map].Max - #mem.players)
 
                   for i = 1, expansions do
-                    local skillUp = tostring(tonumber(mem.ratingType)+10*i)
-                    local skillDown = tostring(tonumber(mem.ratingType)-10*i)
+                    local skillUp = tostring(mem.skillLevel+10*i)
+                    local skillDown = tostring(mem.skillLevel-10*i)
                     local queueUp = nil
                     local queueDown = nil
                     queueUp = queue[mem.ratingType]
