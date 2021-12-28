@@ -1,5 +1,15 @@
 Changelog
 
+Version 4.4.1-beta
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed queue expansions for already running games
+
 Version 4.4.0-beta
 Changes (breaking):
 * None
