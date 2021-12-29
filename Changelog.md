@@ -5,7 +5,8 @@ Changes (breaking):
 * None
 
 Changes (non-breaking):
-* [Addition] Added `DisableExpansions` to the options table when using `GetSingleton()`
+* [Addition] Added `DisableExpansions` to the options table when using `GetSingleton()`.
+* [Addition] Added more comments to the code.
 
 Fixes:
 * None
