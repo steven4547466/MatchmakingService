@@ -1,5 +1,15 @@
 Changelog
 
+Version 1.0.0
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] Added `DisableExpansions` to the options table when using `GetSingleton()`
+
+Fixes:
+* None
+
 Version 4.4.2-beta
 Changes (breaking):
 * None

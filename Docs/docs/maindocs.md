@@ -13,6 +13,7 @@ Gets or creates the top level singleton of the matchmaking service.
 | -------------- | ---- | ----------- | ------------- |
 | options | table | The options to provide matchmaking service | {} |
 | options.DisableRatingSystem | boolean | Wheter or not to disable the rating system | false |
+| options.DisableExpansions | boolean | Wheter or not to disable the rating system | false |
 
 ```lua
 MatchmakingService.GetSingleton(options)

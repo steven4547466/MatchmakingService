@@ -21,7 +21,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "4.4.2-beta";
+  Version = "1.0.0";
 }
 
 MatchmakingService.__index = MatchmakingService
@@ -410,42 +410,79 @@ function MatchmakingService.new(options)
             local runningGames = getFromMemory(memory, "RunningGames"..tostring(i), 3)
             if runningGames ~= nil then
               for _, code in ipairs(runningGames) do
+
+                -- If this game isn't in memory... for some reason, skip it
                 local mem = getFromMemory(memory, code, 3)
                 if mem == nil then continue end
+
+                -- Only try to add players to joinable games
                 if mem.joinable then
+
+                  -- Get the queue for this map, if there is no one left in the queue, skip it
                   local q = Service:GetQueue(mem.map)
                   if q == nil then continue end
+
+                  -- Get the queue for this rating type, if there is no one left in the queue, skip it
                   local queue = q[mem.ratingType]
                   if queue == nil then continue end
-                  queue = queue[tostring(mem.skillLevel)]
-                  local expansions = math.floor((now-mem.createTime)/(Service.SecondsPerExpansion*1000))
 
+                  -- Finally get the queue for the skill level
+                  queue = queue[tostring(mem.skillLevel)]
+
+                  -- Get the number of expansions
+                  local expansions = if not Service.Options.DisableExpansions then math.floor((now-mem.createTime)/(Service.SecondsPerExpansion*1000)) else 0
+
+                  -- If there is no one queued at this skill level, and there are no expansions, skip it
                   if queue == nil and expansions == 0 then continue end
 
+                  -- Get the first values of the queue up to until the game is full
                   local values = first(queue or {}, Service.PlayerRanges[mem.map].Max - #mem.players)
 
-                  for i = 1, expansions do
-                    local skillUp = tostring(mem.skillLevel+10*i)
-                    local skillDown = tostring(mem.skillLevel-10*i)
-                    local queueUp = nil
-                    local queueDown = nil
-                    queueUp = q[mem.ratingType]
-                    queueDown = q[mem.ratingType]
-                    if queueUp ~= nil then
-                      queueUp = queueUp[skillUp]
-                      queueDown = queueDown[skillDown]
+                  -- Check for, and apply, expansions
+                  if #values < Service.PlayerRanges[mem.map].Max - #mem.players then
+                    for i = 1, expansions do
+
+                      -- Skill difference is 10 per expansion in both directions
+                      local skillUp = tostring(mem.skillLevel+10*i)
+                      local skillDown = tostring(mem.skillLevel-10*i)
+                      local queueUp = nil
+                      local queueDown = nil
+
+                      -- Get the queue at the rating type again
+                      queueUp = q[mem.ratingType]
+                      queueDown = q[mem.ratingType]
+
+                      -- If there is anyone queued at the rating type, get the queue at the expanded skill level
+                      if queueUp ~= nil then
+                        queueUp = queueUp[skillUp]
+                        queueDown = queueDown[skillDown]
+                      end
+
+                      -- Append these players to the end of the queue
+                      append(values, queueUp)
+                      append(values, queueDown)
+
+                      -- Remove values that go past our necessary amount of players
+                      if #values > Service.PlayerRanges[mem.map].Max - #mem.players then
+                        for i = #values, Service.PlayerRanges[mem.map].Max - #mem.players, -1 do
+                          table.remove(values, i)
+                        end
+                        break
+                      end
                     end
-                    append(values, queueUp)
-                    append(values, queueDown)
                   end
 
+                  -- If there is anyone, add them to the game
                   if values ~= nil then
+
+                    -- Remove all newly queued players
                     for j = #values, 1, -1 do
                       if values[j][2] >= now - Service.MatchmakingInterval*1000 then
                         table.remove(values, j)
                       end
                     end
 
+                    -- Remove parties that won't fit into the game and skip them
                     local acc = #values
                     while not checkForParties(values) do
                       local f = first(queue, Service.PlayerRanges[mem.map].Max - #mem.players, acc + 1)
@@ -457,6 +494,7 @@ function MatchmakingService.new(options)
                     end
                   end
 
+                  -- If there are any players left, add them to the game
                   if values ~= nil and #values > 0 then
                     local plrs = {}
 
@@ -476,42 +514,76 @@ function MatchmakingService.new(options)
         end
 
         -- Main matchmaking
+
+        -- Get all of the queued maps, if there are none, skip everything
         local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
         if queuedMaps == nil then continue end
-        
+
         local playersAdded = {}
+
+        -- For every map, execute the matchmaking loop
         for i, map in ipairs(queuedMaps) do
+
+          -- Get the queue for this map, if there is none, skip it
           local mapQueue = Service:GetQueue(map)
           if mapQueue == nil then continue end
 
+          -- For every rating type queued...
           for ratingType, skillLevelAndQueue in pairs(mapQueue) do
+
+            -- For every skill level queued...
             for skillLevel, queue in pairs(skillLevelAndQueue) do
+
+              -- Get up to the maximum number of players for this map from the queue
               local values = first(queue, Service.PlayerRanges[map].Max)
-              local expansions = math.floor((now-values[1][2])/(Service.SecondsPerExpansion*1000))
+
+              -- Get any expansions to the queue
+              local expansions = if not Service.Options.DisableExpansions then math.floor((now-values[1][2])/(Service.SecondsPerExpansion*1000)) else 0
               
-              for i = 1, expansions do
-                local skillUp = tostring(tonumber(skillLevel)+10*i)
-                local skillDown = tostring(tonumber(skillLevel)-10*i)
-                local queueUp = nil
-                local queueDown = nil
-                queueUp = mapQueue[ratingType]
-                queueDown = mapQueue[ratingType]
-                if queueUp ~= nil then
-                  queueUp = queueUp[skillUp]
-                  queueDown = queueDown[skillDown]
+              -- Check for, and apply, expansions
+              if values == nil or #values < Service.PlayerRanges[map].Max then
+                for i = 1, expansions do
+
+                  -- Skill difference is 10 per expansion in both directions
+                  local skillUp = tostring(tonumber(skillLevel)+10*i)
+                  local skillDown = tostring(tonumber(skillLevel)-10*i)
+                  local queueUp = nil
+                  local queueDown = nil
+
+                  -- Get the queue at the rating type
+                  queueUp = mapQueue[ratingType]
+                  queueDown = mapQueue[ratingType]
+                  
+                  -- If there is anyone queued at the rating type, get the queue at the expanded skill level
+                  if queueUp ~= nil then
+                    queueUp = queueUp[skillUp]
+                    queueDown = queueDown[skillDown]
+                  end
+
+                  -- Append these players to the end of the queue
+                  if values == nil then values = {} end
+                  append(values, queueUp)
+                  append(values, queueDown)
                 end
-                if values == nil then values = {} end
-                append(values, queueUp)
-                append(values, queueDown)
+
+                -- Remove values that go past our necessary amount of players
+                if #values > Service.PlayerRanges[map].Max then
+                  for i = #values, Service.PlayerRanges[map].Max, -1 do
+                    table.remove(values, i)
+                  end
+                  break
+                end
               end
 
               if values ~= nil then
+                -- Remove all newly queued players
                 for j = #values, 1, -1 do
                   if values[j][2] >= now - Service.MatchmakingInterval*1000 then
                     table.remove(values, j)
                   end
                 end
 
+                -- Remove parties that won't fit into the game and skip them
                 local acc = #values
                 while not checkForParties(values) do
                   local f = first(queue, Service.PlayerRanges[map].Max, acc + 1)
@@ -521,7 +593,7 @@ function MatchmakingService.new(options)
                   acc += #f
                   append(values, f)
                 end
-                
+
                 -- Remove players that already found a game (prevents double games with expansions)
                 for j = #values, 1, -1 do
                   if table.find(playersAdded, values[j][1]) then
@@ -534,9 +606,12 @@ function MatchmakingService.new(options)
               if values == nil or #values < Service.PlayerRanges[map].Min then
                 continue
               else
+
+                -- Get only the user ids from the players and add all of them to the playersAdded table
                 local userIds = tableSelect(values, 1)
                 append(playersAdded, userIds)
-                -- Otherwise reserve a server and tell all servers the player is ready to join
+
+                -- Reserve a server and tell all servers the player is ready to join
                 local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceIds[map]) or "TEST"
                 local success, err
                 success, err = pcall(function()
@@ -559,6 +634,8 @@ function MatchmakingService.new(options)
                   print("Error adding new game:")
                   print(err)
                 else
+
+                  -- Update running games
                   if not runningGamesCount or runningGamesCount == 0 then
                     memory:SetAsync("RunningGamesCount", 1, 86400)
                     runningGamesCount = 1
@@ -626,7 +703,7 @@ function MatchmakingService.new(options)
             table.insert(playersToTeleport[playerData.curGame], v)
             playersToRatings[v.UserId] = playerData.ratingType
             playersToMaps[v.UserId] = playerData.map
-            local new = memory:UpdateAsync(v.UserId, function(old)
+            memory:UpdateAsync(v.UserId, function(old)
               if old then
                 old.teleported = true
               end

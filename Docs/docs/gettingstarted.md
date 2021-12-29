@@ -159,7 +159,7 @@ local MatchmakingService = require(7567983240).GetSingleton()
 MatchmakingService:SetPlayerRange("Map 1", NumberRange.new(2, 2)) -- 2, 2 means min players 2, max players 2 (or 1v1)
 
 -- Set the game place, this game must exist in the same universe
-MatchmakingService:SetGamePlace("Map 1", gamePlaceIdHere)
+MatchmakingService:AddGamePlace("Map 1", gamePlaceIdHere)
 
 -- Queue players (you can call QueuePlayer from anywhere)
 game.Players.PlayerAdded:Connect(function(p)
