@@ -451,6 +451,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#getting-all-running-games" class="md-nav__link">
+    Getting all running games
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-running-games" class="md-nav__link">
+    Getting running games
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#getting-the-queue" class="md-nav__link">
     Getting the Queue
   </a>
@@ -728,6 +742,20 @@
         <li class="md-nav__item">
   <a href="#getting-a-players-info" class="md-nav__link">
     Getting a Player's Info
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-all-running-games" class="md-nav__link">
+    Getting all running games
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-running-games" class="md-nav__link">
+    Getting running games
   </a>
   
 </li>
@@ -1475,6 +1503,74 @@ The user id is passed as a string (this is out of our control, it is converted t
 <tr>
 <td>table or nil</td>
 <td>The player info</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="getting-all-running-games">Getting all running games</h2>
+<p>Gets all running games from memory.</p>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetAllRunningGames</span><span class="p">()</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Returns</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>table</td>
+<td>An array of <code>{key: gameCode, value: gameData}</code> dictionaries</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="getting-running-games">Getting running games</h2>
+<p>Gets running games up to a specificed amount that pass a filter function.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>max</td>
+<td>number</td>
+<td>The maximum number of games to get</td>
+<td></td>
+</tr>
+<tr>
+<td>filter</td>
+<td>function</td>
+<td>A filter function which is passed the game data. Should return true if passed</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetRunningGames</span><span class="p">(</span><span class="n">max</span><span class="p">,</span> <span class="n">filter</span><span class="p">)</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Returns</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>table</td>
+<td>An array of <code>{key: gameCode, value: gameData}</code> dictionaries</td>
 </tr>
 </tbody>
 </table>
