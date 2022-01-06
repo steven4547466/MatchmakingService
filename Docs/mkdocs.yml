@@ -14,7 +14,6 @@ theme:
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
-site_url: https://example.com/
 repo_url: https://github.com/steven4547466/MatchmakingService
 nav:
     - Home: index.md

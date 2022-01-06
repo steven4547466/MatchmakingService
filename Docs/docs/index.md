@@ -12,3 +12,24 @@ Of course because not everybody likes skill-based matchmaking, it is completely 
 
 ## Getting started
 Check out our [getting started](gettingstarted.md) page for more information on how basic implementation of this system works.
+
+## Getting a specific major version
+Major versions have breaking changes. Because of this, we've added a way to get a specific major version.
+
+When using `GetSingleton()`, you can pass an options table. One of these options is `MajorVersion`. This will ensure that you don't automatically update to a version with a breaking change. Previous major versions will usually not be updated, so it's recommended to update to the latest version when you have time.
+
+Current allowed values:
+- "v1"
+
+Example:
+`local MatchmakingService = require(7567983240).GetSingleton({["MajorVersion"]="v1"})`
+
+## Quick fix for many issues
+If you encounter an issue, it is best to first note the issue, take a screenshot of any errors and send it to me in a private message on devforum. To quickly fix issues that pop up, just clear the memory.
+
+1. Open your game in roblox (not studio)
+2. Press F9 to open the console and navigate to the server logs
+3. In the command line type `require(7567983240).GetSingleton():Clear()`
+4. Shutdown all running servers to restart your game
+
+This is just a quick fix for many issues that pop up. It might not always work, but if I can't fix the issue at the time, it's a good place to start.
