@@ -643,7 +643,7 @@
 <h2 id="hub-logic">Hub logic</h2>
 <h3 id="obtaining-the-matchmakingservice-singleton">Obtaining the MatchmakingService Singleton</h3>
 <p>Matchmaking Service utilizes a top-level singleton. This means every time you require it and invoke <code>GetSingleton</code> in the same server the same singleton is returned. Getting this singleton is really simple:
-<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span> 
+<div class="highlight"><pre><span></span><code><span class="kd">local</span> <span class="n">MatchmakingService</span> <span class="o">=</span> <span class="nb">require</span><span class="p">(</span><span class="mi">7567983240</span><span class="p">).</span><span class="n">GetSingleton</span><span class="p">()</span>
 <span class="c1">-- You may opt to use a direct path to it if you don&#39;t want to require by id</span>
 </code></pre></div></p>
 <h3 id="setting-the-instance-server">Setting the instance server</h3>
