@@ -426,8 +426,10 @@
 <h2 id="getting-a-specific-major-version">Getting a specific major version</h2>
 <p>Major versions have breaking changes. Because of this, we've added a way to get a specific major version.</p>
 <p>When using <code>GetSingleton()</code>, you can pass an options table. One of these options is <code>MajorVersion</code>. This will ensure that you don't automatically update to a version with a breaking change. Previous major versions will usually not be updated, so it's recommended to update to the latest version when you have time.</p>
-<p>Current allowed values:
-- "v1"</p>
+<p>Current allowed values:</p>
+<ul>
+<li>"v1"</li>
+</ul>
 <p>Example:
 <code>local MatchmakingService = require(7567983240).GetSingleton({["MajorVersion"]="v1"})</code></p>
 <h2 id="quick-fix-for-many-issues">Quick fix for many issues</h2>
