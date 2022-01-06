@@ -1,5 +1,18 @@
 Changelog
 
+Version 1.1.0
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] Added `MajorVersion` to the options table when using `GetSingleton()`. [More info](https://steven4547466.github.io/MatchmakingService/#getting-a-specific-major-version).
+* [Addition] Added `MatchmakingService:GetAllRunningGames()`.
+* [Addition] Added `MatchmakingService:GetRunningGames(max, filter)`.
+* [Change] Changed how matchmaking works internally. It's no longer as complex and should save a lot of memory calls.
+
+Fixes:
+* [Fix] Fixed `PlayerRemovedFromQueue` firing with a table as the second value, rather than the values inside the table.
+
 Version 1.0.0
 Changes (breaking):
 * None

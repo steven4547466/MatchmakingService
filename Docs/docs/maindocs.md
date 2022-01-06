@@ -307,6 +307,35 @@ MatchmakingService:GetPlayerInfo(player)
     | ---- | ----------- |
     | table or nil | The player info |
 
+## Getting all running games
+Gets all running games from memory.
+
+```lua
+MatchmakingService:GetAllRunningGames()
+```
+
+!!! info "Returns"
+    | Type | Description |
+    | ---- | ----------- |
+    | table | An array of `{key: gameCode, value: gameData}` dictionaries |
+
+## Getting running games
+Gets running games up to a specificed amount that pass a filter function.
+
+| Parameter Name | Type | Description | Default Value |
+| -------------- | ---- | ----------- | ------------- |
+| max | number | The maximum number of games to get |  |
+| filter | function | A filter function which is passed the game data. Should return true if passed |  |
+
+```lua
+MatchmakingService:GetRunningGames(max, filter)
+```
+
+!!! info "Returns"
+    | Type | Description |
+    | ---- | ----------- |
+    | table | An array of `{key: gameCode, value: gameData}` dictionaries |
+
 ## Getting the Queue
 Gets a table of user ids, ratingTypes, and skillLevels in a specific queue.
 

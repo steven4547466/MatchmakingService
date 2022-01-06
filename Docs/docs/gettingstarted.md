@@ -13,7 +13,7 @@ Matchmaking Service currently utilizes a central server to handle all matchmakin
 ### Obtaining the MatchmakingService Singleton
 Matchmaking Service utilizes a top-level singleton. This means every time you require it and invoke `GetSingleton` in the same server the same singleton is returned. Getting this singleton is really simple:
 ```lua
-local MatchmakingService = require(7567983240).GetSingleton() 
+local MatchmakingService = require(7567983240).GetSingleton()
 -- You may opt to use a direct path to it if you don't want to require by id
 ```
 
