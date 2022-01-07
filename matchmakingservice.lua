@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "1.1.0";
+  Version = "1.1.1";
   Versions = {
     ["v1"] = 8470858629;
   };
@@ -140,7 +140,7 @@ function getFromMemory(m, k, retries)
     count += 1
     if not success then task.wait(3) end
   end
-  if not success then error(response) end
+  if not success then warn(response) end
   return response
 end
 
@@ -166,7 +166,7 @@ function updateQueue(map, ratingType, stringRoundedRating)
 
   if not success then
     print("Unable to update queued maps:")
-    error(errorMessage)
+    warn(errorMessage)
   end
 
   success, errorMessage = pcall(function()
@@ -190,7 +190,7 @@ function updateQueue(map, ratingType, stringRoundedRating)
 
   if not success then
     print("Unable to update queued rating types:")
-    error(errorMessage)
+    warn(errorMessage)
   end
 end
 
@@ -213,7 +213,7 @@ function MatchmakingService.GetSingleton(options)
     options.MajorVersion = nil
     local id = MatchmakingService.Versions[versionToGet]
     if id == nil then
-      error("Major version " .. tostring(options.MajorVersion) .. " not found.")
+      warn("Major version " .. tostring(options.MajorVersion) .. " not found.")
     end
     return require(id).GetSingleton(options)
   end
@@ -283,7 +283,7 @@ end
 -- @param newPlayerRange The NumberRange with the min and max players.
 function MatchmakingService:SetPlayerRange(map, newPlayerRange)
   if newPlayerRange.Max > 100 then
-    error("Maximum players has a cap of 100.")
+    warn("Maximum players has a cap of 100.")
   end
   self.PlayerRanges[map] = newPlayerRange
 end
@@ -625,7 +625,7 @@ function MatchmakingService.new(options)
 
                 if not success then
                   print("Error adding new game:")
-                  print(err)
+                  warn(err)
                 else
                   print("Added game")
                   for _, v in ipairs(userIds) do
@@ -916,7 +916,7 @@ function MatchmakingService:QueuePlayerId(player, ratingType, map)
 
   if not success then
     print("Unable to queue player:")
-    error(errorMessage)
+    warn(errorMessage)
   end
 
   updateQueue(map, ratingType, stringRoundedRating)
@@ -1007,7 +1007,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
 
   if not success then
     print("Unable to queue party:")
-    error(errorMessage)
+    warn(errorMessage)
   end
 
   local t = {}
@@ -1028,7 +1028,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
 
   if not success then
     print("Unable to update Queued Parties:")
-    error(errorMessage)
+    warn(errorMessage)
   end
 
   updateQueue(map, ratingType, stringRoundedRating)
@@ -1141,7 +1141,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
           if not success then
             hasErrors = true
             print("Unable to remove player from queue:")
-            print(errorMessage)
+            warn(errorMessage)
           end					
         end
       end
@@ -1158,7 +1158,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
 
   if not success then
     print("Unable to update Queued Parties:")
-    error(errorMessage)
+    warn(errorMessage)
   end
 
   for i = #toRemove, 1, -1 do
@@ -1187,7 +1187,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
     if not success then
       hasErrors = true
       print("Unable to update Queued Rating Types:")
-      print(errorMessage)
+      warn(errorMessage)
     end
     table.remove(toRemove, i)
   end
@@ -1212,7 +1212,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
     if not success then
       hasErrors = true
       print("Unable to update Queued Maps:")
-      print(errorMessage)
+      warn(errorMessage)
     end
     table.remove(toRemove, i)
   end
@@ -1309,7 +1309,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
     if not success then
       hasErrors = true
       print("Unable to remove player from queue:")
-      print(errorMessage)			
+      warn(errorMessage)			
     end		
   end
 
@@ -1325,7 +1325,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
 
   if not success then
     print("Unable to update Queued Parties:")
-    error(errorMessage)
+    warn(errorMessage)
   end
 
   for i = #toRemove, 1, -1 do
@@ -1354,7 +1354,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
     if not success then
       hasErrors = true
       print("Unable to update Queued Rating Types:")
-      print(errorMessage)
+      warn(errorMessage)
     end
     table.remove(toRemove, i)
   end
@@ -1379,7 +1379,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
     if not success then
       hasErrors = true
       print("Unable to update Queued Maps:")
-      print(errorMessage)
+      warn(errorMessage)
     end
     table.remove(toRemove, i)
   end
@@ -1415,7 +1415,7 @@ function MatchmakingService:AddPlayerToGameId(player, gameId, updateJoinable)
   end)
   if not success then
     print("Unable to update Running Games (Add player to game:")
-    error(errorMessage)
+    warn(errorMessage)
   end
   return true
 end
@@ -1451,7 +1451,7 @@ function MatchmakingService:AddPlayersToGameId(players, gameId, updateJoinable)
   end) 
   if not success then
     print("Unable to update Running Games (Add players to game):")
-    error(errorMessage)
+    warn(errorMessage)
   end
   return true
 end
@@ -1490,7 +1490,7 @@ function MatchmakingService:RemovePlayerFromGameId(player, gameId, updateJoinabl
   end)
   if not success then
     print("Unable to update Running Games (Remove player from game):")
-    error(errorMessage)
+    warn(errorMessage)
   end
   return true
 end
@@ -1529,7 +1529,7 @@ function MatchmakingService:RemovePlayersFromGameId(players, gameId, updateJoina
 
   if not success then
     print("Unable to update Running Games (Remove players from game):")
-    error(errorMessage)
+    warn(errorMessage)
   end
   return true
 end
@@ -1572,7 +1572,7 @@ function MatchmakingService:UpdateRatingsId(ratingType, ranks, teams)
   end)
   if not success then
     print("Unable to update Ratings:")
-    error(errorMessage)
+    warn(errorMessage)
   end
   return true
 end
@@ -1608,7 +1608,7 @@ function MatchmakingService:SetJoinable(gameId, joinable)
 
   if not success then
     print("Unable to update Running Games (Update Joinable):")
-    error(errorMessage)
+    warn(errorMessage)
   end
   return true
 end
@@ -1623,7 +1623,7 @@ function MatchmakingService:RemoveGame(gameId)
   end)
   if not success then
     print("Unable to update Running Games (Remove game):")
-    error(errorMessage)
+    warn(errorMessage)
   end
 
   if gameData then
@@ -1661,7 +1661,7 @@ function MatchmakingService:StartGame(gameId, joinable)
 
   if not success then
     print("Unable to update Running Games (Start game):")
-    error(errorMessage)
+    warn(errorMessage)
   end
   return true
 end

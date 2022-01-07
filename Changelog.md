@@ -1,5 +1,16 @@
 Changelog
 
+Version 1.1.1
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Change] Changed all `error` calls to `warn` calls to prevent code execution from stopping.
+
+Fixes:
+* None
+
+
 Version 1.1.0
 Changes (breaking):
 * None

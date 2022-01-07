@@ -19,6 +19,7 @@ Major versions have breaking changes. Because of this, we've added a way to get 
 When using `GetSingleton()`, you can pass an options table. One of these options is `MajorVersion`. This will ensure that you don't automatically update to a version with a breaking change. Previous major versions will usually not be updated, so it's recommended to update to the latest version when you have time.
 
 Current allowed values:
+
 - "v1"
 
 Example:

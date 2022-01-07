@@ -407,7 +407,7 @@ MatchmakingService:GetPlayerParty(player)
 !!! info "Returns"
     | Type | Description |
     | ---- | ----------- |
-    | table<​string> | A table of player id's of players in the party including this player |
+    | table<​number> | A table of player id's of players in the party including this player |
 
 ## Remove a Single Player from the Queue
 Removes a specific player from the queue.
