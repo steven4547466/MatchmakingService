@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "1.1.1";
+  Version = "1.1.2";
   Versions = {
     ["v1"] = 8470858629;
   };
@@ -860,6 +860,9 @@ function MatchmakingService:GetRunningGames(max, filter)
 
     for _, v in ipairs(runningGames) do
       table.insert(toReturn, v)
+      if #toReturn == max then
+        break
+      end
     end
   until #toReturn == max or shouldBreak
 
