@@ -260,6 +260,21 @@
 
   
   
+  
+    <li class="md-nav__item">
+      <a href="../faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
     
   
   
@@ -411,6 +426,13 @@
         <li class="md-nav__item">
   <a href="#setting-the-seconds-between-queue-expansions" class="md-nav__link">
     Setting the Seconds Between Queue Expansions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-the-seconds-to-delay-teleporting" class="md-nav__link">
+    Setting the Seconds to Delay Teleporting
   </a>
   
 </li>
@@ -721,6 +743,13 @@
         <li class="md-nav__item">
   <a href="#setting-the-seconds-between-queue-expansions" class="md-nav__link">
     Setting the Seconds Between Queue Expansions
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-the-seconds-to-delay-teleporting" class="md-nav__link">
+    Setting the Seconds to Delay Teleporting
   </a>
   
 </li>
@@ -1325,6 +1354,29 @@ The user id is passed as a string (this is out of our control, it is converted t
 <p class="admonition-title">Explaination</p>
 <p>An expansion is 10 rounded skill level in each direction. If a player is skill level 25, they get rounded to 30. A signle expansion from the 30 skill level queue will search also in 20 and 40.</p>
 </div>
+<h2 id="setting-the-seconds-to-delay-teleporting">Setting the Seconds to Delay Teleporting</h2>
+<p>Sets the number of seconds to delay teleporting after finding a game. If you want to so a UI, or something along those lines.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>newValue</td>
+<td>number</td>
+<td>The new value, in seconds, of the delay</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetFoundGameDelay</span><span class="p">(</span><span class="n">newValue</span><span class="p">)</span>
+</code></pre></div>
+
 <h2 id="obtaining-a-rating-value-from-an-openskill-object">Obtaining a Rating Value from an OpenSkill Object</h2>
 <p>Turns an OpenSkill object into a single rating number.</p>
 <table>
@@ -1519,9 +1571,15 @@ The user id is passed as a string (this is out of our control, it is converted t
 <td>The player's queued map, if any</td>
 <td></td>
 </tr>
+<tr>
+<td>teleportAfter</td>
+<td>number</td>
+<td>The time after which the player will be teleported</td>
+<td></td>
+</tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetPlayerInfo</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">ratingType</span><span class="p">,</span> <span class="n">party</span><span class="p">,</span> <span class="n">map</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetPlayerInfo</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">ratingType</span><span class="p">,</span> <span class="n">party</span><span class="p">,</span> <span class="n">map</span><span class="p">,</span> <span class="n">teleportAfter</span><span class="p">)</span>
 </code></pre></div>
 
 <h2 id="getting-a-players-info">Getting a Player's Info</h2>
@@ -2333,7 +2391,7 @@ Let’s say team2 came first, team1 came second and team3 came third. To update 
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../gettingstarted/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Getting Started" rel="prev">
+        <a href="../faq/" class="md-footer__link md-footer__link--prev" aria-label="Previous: FAQ" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -2342,7 +2400,7 @@ Let’s say team2 came first, team1 came second and team3 came third. To update 
               <span class="md-footer__direction">
                 Previous
               </span>
-              Getting Started
+              FAQ
             </div>
           </div>
         </a>
