@@ -1,14 +1,15 @@
 Changelog
 
-Version 1.1.1
+Version 1.2.0
 Changes (breaking):
 * None
 
 Changes (non-breaking):
+* [Addition] Added `MatchmakingService.FoundGame` signal which is fired when a player finds a game and is going to be teleported. It is fired with the arguments `userId, gameCode, gameData`. [More info](https://steven4547466.github.io/MatchmakingService/maindocs/#listening-for-finding-games).
 * [Change] Changed all `error` calls to `warn` calls to prevent code execution from stopping.
 
 Fixes:
-* None
+* [Fix] `GetRunningGames` will properly return up to `max` games.
 
 
 Version 1.1.0

@@ -64,6 +64,35 @@ MatchmakingService.PlayerRemovedFromQueue:Connect(function(player, map, ratingTy
 end)
 ```
 
+## Listening for Finding Games
+You can listen for when players find games. This signal is not global. Below is a table of what it passes, in order.
+
+| Type | Description |
+| ---- | ----------- | 
+| number | The player's UserId |
+| string | The unique code which identifies the game |
+| table | The game data |
+
+Example game data:
+```lua
+{
+  ["full"] = true
+  ["skillLevel"] = 10
+  ["players"] = {123145, 6243345, 3457681, 3543457};
+  ["started"] = false;
+  ["joinable"] = true;
+  ["ratingType"] = "ranked";
+  ["map"] = "Map 1";
+  ["createTime"] = 12364617414699;
+}
+```
+
+```lua
+MatchmakingService.FoundGame:Connect(function(player, gameCode, gameData)
+    print(player, gameCode, gameData)
+end)
+```
+
 ## Applying Custom Teleport Data to Players
 You can apply custom teleport data to players to access it in the game when they are teleported. This is a function that you can bind to. You may only bind to it once. Below is a table of what it passes, in order. This function can return anything, but some things won't be replicated to other servers. Metatables and instances will not be passed correctly. This should mainly return strings and numbers, or a table of them so that you can reconstruct instances on the server, or just obtain general data that you need in the game.
 
@@ -319,6 +348,21 @@ MatchmakingService:GetAllRunningGames()
     | ---- | ----------- |
     | table | An array of `{key: gameCode, value: gameData}` dictionaries |
 
+!!! info "gameData"
+    Game data is the information tied to a game. Game data has this format:
+    ```lua
+    {
+        ["full"] = boolean
+        ["skillLevel"] = number
+        ["players"] = table<​PlayerId>
+        ["started"] = boolean
+        ["joinable"] = boolean
+        ["ratingType"] = string
+        ["map"] = string
+        ["createTime"] = number
+    }
+    ```
+
 ## Getting running games
 Gets running games up to a specificed amount that pass a filter function.
 
@@ -335,6 +379,22 @@ MatchmakingService:GetRunningGames(max, filter)
     | Type | Description |
     | ---- | ----------- |
     | table | An array of `{key: gameCode, value: gameData}` dictionaries |
+
+## Getting a single running game
+Gets a single running game from memory.
+
+| Parameter Name | Type | Description | Default Value |
+| -------------- | ---- | ----------- | ------------- |
+| code | string | The unique code of the game |  |
+
+```lua
+MatchmakingService:GetRunningGame(code)
+```
+
+!!! info "Returns"
+    | Type | Description |
+    | ---- | ----------- |
+    | table | A single game data dictionary or nil |
 
 ## Getting the Queue
 Gets a table of user ids, ratingTypes, and skillLevels in a specific queue.

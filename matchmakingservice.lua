@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "1.1.2";
+  Version = "1.2.0";
   Versions = {
     ["v1"] = 8470858629;
   };
@@ -369,6 +369,7 @@ function MatchmakingService.new(options)
   Service.MaxPartySkillGap = 50
   Service.PlayerAddedToQueue = Signal:Create()
   Service.PlayerRemovedFromQueue = Signal:Create()
+  Service.FoundGame = Signal:Create()
   Service.ApplyCustomTeleportData = nil
   Service.ApplyGeneralTeleportData = nil
   Service.SecondsPerExpansion = 10
@@ -500,6 +501,9 @@ function MatchmakingService.new(options)
               end
 
               Service:AddPlayersToGameId(plrs, g.key)
+              for _, v in ipairs(plrs) do
+                Service.FoundGame:Fire(v, g.key, g.value)
+              end
 
               Service:RemovePlayersFromQueueId(tableSelect(values, 1))
             end
@@ -606,20 +610,20 @@ function MatchmakingService.new(options)
 
                 -- Reserve a server and tell all servers the player is ready to join
                 local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceIds[map]) or "TEST"
+                local gameData = {
+                  ["full"] = #values == Service.PlayerRanges[map].Max;
+                  ["skillLevel"] = tonumber(skillLevel);
+                  ["players"] = userIds;
+                  ["started"] = false;
+                  ["joinable"] = #values ~= Service.PlayerRanges[map].Max;
+                  ["ratingType"] = ratingType;
+                  ["map"] = map;
+                  ["createTime"] = now;
+                }
                 local success, err
                 success, err = pcall(function()
                   runningGamesMemory:UpdateAsync(reservedCode, function()
-                    return 
-                      {
-                        ["full"] = #values == Service.PlayerRanges[map].Max;
-                        ["skillLevel"] = tonumber(skillLevel);
-                        ["players"] = userIds;
-                        ["started"] = false;
-                        ["joinable"] = #values ~= Service.PlayerRanges[map].Max;
-                        ["ratingType"] = ratingType;
-                        ["map"] = map;
-                        ["createTime"] = now;
-                      }
+                    return gameData
                   end, 86400)
                 end)
 
@@ -629,6 +633,7 @@ function MatchmakingService.new(options)
                 else
                   print("Added game")
                   for _, v in ipairs(userIds) do
+                    Service.FoundGame:Fire(v, reservedCode, gameData)
                     Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {}, map)
                   end
                   --Service:RemoveExpansions(ratingType, skillLevel)
@@ -867,6 +872,14 @@ function MatchmakingService:GetRunningGames(max, filter)
   until #toReturn == max or shouldBreak
 
   return toReturn
+end
+
+--- Gets a running game from memory by its code.
+-- @param code The unique code of the game.
+-- @return The game data, or nil if there is no data.
+function MatchmakingService:GetRunningGame(code)
+  local gameData = getFromMemory(runningGamesMemory, code, 2)
+  return if typeof(gameData) == "table" then gameData else nil
 end
 
 --- Gets a table of user ids, ratingTypes, and skillLevels in a specific queue.
