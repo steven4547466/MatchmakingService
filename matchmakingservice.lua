@@ -879,7 +879,7 @@ end
 -- @return The game data, or nil if there is no data.
 function MatchmakingService:GetRunningGame(code)
   local gameData = getFromMemory(runningGamesMemory, code, 2)
-  return if typeof(gameData) == "table" then gameData else nil
+  if typeof(gameData) == "table" then return gameData else return nil end
 end
 
 --- Gets a table of user ids, ratingTypes, and skillLevels in a specific queue.
