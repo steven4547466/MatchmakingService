@@ -11,7 +11,6 @@ Changes (non-breaking):
 Fixes:
 * [Fix] `GetRunningGames` will properly return up to `max` games.
 
-
 Version 1.1.0
 Changes (breaking):
 * None
