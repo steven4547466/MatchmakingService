@@ -73,20 +73,6 @@ You can listen for when players find games. This signal is not global. Below is 
 | string | The unique code which identifies the game |
 | table | The game data |
 
-Example game data:
-```lua
-{
-  ["full"] = true
-  ["skillLevel"] = 10
-  ["players"] = {123145, 6243345, 3457681, 3543457};
-  ["started"] = false;
-  ["joinable"] = true;
-  ["ratingType"] = "ranked";
-  ["map"] = "Map 1";
-  ["createTime"] = 12364617414699;
-}
-```
-
 ```lua
 MatchmakingService.FoundGame:Connect(function(player, gameCode, gameData)
     print(player, gameCode, gameData)
