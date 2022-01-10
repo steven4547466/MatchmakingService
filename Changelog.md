@@ -6,6 +6,8 @@ Changes (breaking):
 
 Changes (non-breaking):
 * [Addition] Added `MatchmakingService.FoundGame` signal which is fired when a player finds a game and is going to be teleported. It is fired with the arguments `userId, gameCode, gameData`. [More info](https://steven4547466.github.io/MatchmakingService/maindocs/#listening-for-finding-games).
+* [Addition]  Added `MatchmakingService:SetFoundGameDelay(newValue)` which will delay players teleporting to their game for the number of seconds provided so that you can show a UI, etc.
+* [Change] `SetPlayerInfo` now accepts a `teleportAfeter` parameter which is the unix timestamp milliseconds after which the player will teleport.
 * [Change] Changed all `error` calls to `warn` calls to prevent code execution from stopping.
 
 Fixes:
