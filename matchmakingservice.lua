@@ -333,6 +333,12 @@ function MatchmakingService:SetSecondsBetweenExpansion(newValue)
   self.SecondsPerExpansion = newValue
 end
 
+--- Sets the delay, in seconds, for players before being put into the teleport queue.
+-- @param newValue The new value, in seconds, of the delay
+function MatchmakingService:SetFoundGameDelay(newValue)
+  self.FoundGameDelay = newValue
+end
+
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
   print("Clearing memory")
@@ -370,6 +376,7 @@ function MatchmakingService.new(options)
   Service.PlayerAddedToQueue = Signal:Create()
   Service.PlayerRemovedFromQueue = Signal:Create()
   Service.FoundGame = Signal:Create()
+  Service.FoundGameDelay = 0
   Service.ApplyCustomTeleportData = nil
   Service.ApplyGeneralTeleportData = nil
   Service.SecondsPerExpansion = 10
@@ -497,7 +504,7 @@ function MatchmakingService.new(options)
 
               for _, v in ipairs(values) do
                 table.insert(plrs, v[1])
-                Service:SetPlayerInfoId(v[1], g.key, mem.ratingType, parties ~= nil and parties[v] or {}, mem.map)
+                Service:SetPlayerInfoId(v[1], g.key, mem.ratingType, parties ~= nil and parties[v] or {}, mem.map, now + (Service.FoundGameDelay*1000))
               end
 
               Service:AddPlayersToGameId(plrs, g.key)
@@ -634,7 +641,7 @@ function MatchmakingService.new(options)
                   print("Added game")
                   for _, v in ipairs(userIds) do
                     Service.FoundGame:Fire(v, reservedCode, gameData)
-                    Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {}, map)
+                    Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {}, map, now + (Service.FoundGameDelay*1000))
                   end
                   --Service:RemoveExpansions(ratingType, skillLevel)
                   Service:RemovePlayersFromQueueId(userIds)
@@ -652,7 +659,7 @@ function MatchmakingService.new(options)
       local playersToMaps = {}
       for _, v  in ipairs(Players:GetPlayers()) do
         local playerData = Service:GetPlayerInfoId(v.UserId)
-        if playerData ~= nil then
+        if playerData ~= nil and now >= playerData.teleportAfter then
           if not playerData.teleported and playerData.curGame ~= nil then
             if playersToTeleport[playerData.curGame] == nil then playersToTeleport[playerData.curGame] = {} end
             table.insert(playersToTeleport[playerData.curGame], v)
@@ -763,9 +770,17 @@ end
 -- @param ratingType The rating type of their current game, if any.
 -- @param party The player's party (table of user ids including the player).
 -- @param map The player's queued map, if any.
-function MatchmakingService:SetPlayerInfoId(player, code, ratingType, party, map)
+-- @param teleportAfter The time after which the player will be teleported.
+function MatchmakingService:SetPlayerInfoId(player, code, ratingType, party, map, teleportAfter)
   if self.Options.DisableRatingSystem then ratingType = "MMS_RatingDisabled" end
-  mainMemory:SetAsync(player, {curGame=code,teleported=false,ratingType=ratingType,party=party,map=map}, 7200)
+  mainMemory:SetAsync(player, {
+    curGame = code,
+    teleported = false,
+    ratingType = ratingType,
+    party = party,
+    map = map,
+    teleportAfter = (teleportAfter or 0)
+  }, 7200)
 end
 
 --- Sets the player info.
@@ -774,8 +789,9 @@ end
 -- @param ratingType The rating type of their current game, if any.
 -- @param party The player's party (table of user ids including the player).
 -- @param map The player's queued map, if any.
-function MatchmakingService:SetPlayerInfo(player, code, ratingType, party, map)
-  self:SetPlayerInfoId(player.UserId, code, ratingType, party, map)
+-- @param teleportAfter The time after which the player will be teleported.
+function MatchmakingService:SetPlayerInfo(player, code, ratingType, party, map, teleportAfter)
+  self:SetPlayerInfoId(player.UserId, code, ratingType, party, map, teleportAfter)
 end
 
 --- Gets the player info.
