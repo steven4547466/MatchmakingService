@@ -472,6 +472,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#getting-a-single-running-game" class="md-nav__link">
+    Getting a single running game
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#getting-the-queue" class="md-nav__link">
     Getting the Queue
   </a>
@@ -770,6 +777,13 @@
         <li class="md-nav__item">
   <a href="#getting-running-games" class="md-nav__link">
     Getting running games
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-a-single-running-game" class="md-nav__link">
+    Getting a single running game
   </a>
   
 </li>
@@ -1584,6 +1598,21 @@ The user id is passed as a string (this is out of our control, it is converted t
 </tbody>
 </table>
 </div>
+<div class="admonition info">
+<p class="admonition-title">gameData</p>
+<p>Game data is the information tied to a game. Game data has this format:
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+    <span class="p">[</span><span class="s2">&quot;full&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boolean</span>
+    <span class="p">[</span><span class="s2">&quot;skillLevel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">number</span>
+    <span class="p">[</span><span class="s2">&quot;players&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">table</span><span class="o">&lt;</span><span class="err">​</span><span class="n">PlayerId</span><span class="o">&gt;</span>
+    <span class="p">[</span><span class="s2">&quot;started&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boolean</span>
+    <span class="p">[</span><span class="s2">&quot;joinable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">boolean</span>
+    <span class="p">[</span><span class="s2">&quot;ratingType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">string</span>
+    <span class="p">[</span><span class="s2">&quot;map&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">string</span>
+    <span class="p">[</span><span class="s2">&quot;createTime&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">number</span>
+<span class="p">}</span>
+</code></pre></div></p>
+</div>
 <h2 id="getting-running-games">Getting running games</h2>
 <p>Gets running games up to a specificed amount that pass a filter function.</p>
 <table>
@@ -1626,6 +1655,46 @@ The user id is passed as a string (this is out of our control, it is converted t
 <tr>
 <td>table</td>
 <td>An array of <code>{key: gameCode, value: gameData}</code> dictionaries</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="getting-a-single-running-game">Getting a single running game</h2>
+<p>Gets a single running game from memory.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>code</td>
+<td>string</td>
+<td>The unique code of the game</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetRunningGame</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Returns</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>table</td>
+<td>A single game data dictionary or nil</td>
 </tr>
 </tbody>
 </table>
