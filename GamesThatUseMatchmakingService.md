@@ -6,6 +6,6 @@ Check out these games that use MatchmakingService! If you want to get your game 
 
 ---
 
-[![Survival Games](https://t1.rbxcdn.com/e8165ef0c85be933668c34fcdcb5ba99)](https://www.roblox.com/games/7594662441/Survival-Games-CODE-RELEASE)
+[![Survival Games](https://tr.rbxcdn.com/8a6971cc28ec2e270bf72e83e8c3d975/768/432/Image/Png)](https://www.roblox.com/games/7594662441/Survival-Games-CODE-RELEASE)
 
 In [Survival Games](https://www.roblox.com/games/7594662441/Survival-Games-CODE-RELEASE) you gather loot across the map, battle it out against your friends, and fight any threats in your way to become the best! Can you become the ultimate survivor?⚔️
