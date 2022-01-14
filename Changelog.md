@@ -1,5 +1,16 @@
 Changelog
 
+Version 1.2.1
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] `FoundGame` should now fire properly on all servers, not just the main handler.
+
+
 Version 1.2.0
 Changes (breaking):
 * None
