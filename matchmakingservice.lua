@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "1.2.0";
+  Version = "1.2.1";
   Versions = {
     ["v1"] = 8470858629;
   };
@@ -508,9 +508,6 @@ function MatchmakingService.new(options)
               end
 
               Service:AddPlayersToGameId(plrs, g.key)
-              for _, v in ipairs(plrs) do
-                Service.FoundGame:Fire(v, g.key, g.value)
-              end
 
               Service:RemovePlayersFromQueueId(tableSelect(values, 1))
             end
@@ -540,10 +537,10 @@ function MatchmakingService.new(options)
 
               -- Get up to the maximum number of players for this map from the queue
               local values = first(queue, Service.PlayerRanges[map].Max)
-              
+
               -- Get any expansions to the queue
               local expansions = if not Service.Options.DisableExpansions then math.floor((now-values[1][2])/(Service.SecondsPerExpansion*1000)) else 0
-              
+
               -- Check for, and apply, expansions
               if values == nil or #values < Service.PlayerRanges[map].Max then
                 for i = 1, expansions do
@@ -640,7 +637,6 @@ function MatchmakingService.new(options)
                 else
                   print("Added game")
                   for _, v in ipairs(userIds) do
-                    Service.FoundGame:Fire(v, reservedCode, gameData)
                     Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {}, map, now + (Service.FoundGameDelay*1000))
                   end
                   --Service:RemoveExpansions(ratingType, skillLevel)
@@ -657,10 +653,18 @@ function MatchmakingService.new(options)
       local playersToTeleport = {}
       local playersToRatings = {}
       local playersToMaps = {}
+      local gameCodesToData = {}
       for _, v  in ipairs(Players:GetPlayers()) do
         local playerData = Service:GetPlayerInfoId(v.UserId)
         if playerData ~= nil and now >= playerData.teleportAfter then
-          if not playerData.teleported and playerData.curGame ~= nil then
+          if not playerData.teleported and playerData.curGame ~= nil then                        
+            local gameData = gameCodesToData[playerData.curGame]                        
+            if not gameData then
+              gameData = Service:GetRunningGame(playerData.curGame)
+              gameCodesToData[playerData.curGame] = gameData
+            end
+            Service.FoundGame:Fire(v.UserId, playerData.curGame, gameData)
+
             if playersToTeleport[playerData.curGame] == nil then playersToTeleport[playerData.curGame] = {} end
             table.insert(playersToTeleport[playerData.curGame], v)
             playersToRatings[v.UserId] = playerData.ratingType
@@ -1146,7 +1150,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
               if #old == 0 then 
                 table.insert(toRemove, map.."_"..ratingType.."_"..skillLevel)
               end
-              
+
               self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
 
               if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
@@ -1310,7 +1314,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
         for i, player in ipairs(plrs) do
           local index = find(old, function(v) return v[1] == player end)
           if index == nil then return nil end
-          table.remove(old, index)	
+          table.remove(old, index)
           self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
           if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
             local index = find(PLAYERSREMOVED, function(x)
