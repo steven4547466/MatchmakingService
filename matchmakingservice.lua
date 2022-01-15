@@ -446,6 +446,8 @@ function MatchmakingService.new(options)
             -- Get the first values of the queue up to until the game is full
             local values = first(queue or {}, Service.PlayerRanges[mem.map].Max - #mem.players)
 
+            if not values or #values == 0 then continue end
+
             -- Check for, and apply, expansions
             if #values < Service.PlayerRanges[mem.map].Max - #mem.players then
               for i = 1, expansions do
@@ -541,6 +543,8 @@ function MatchmakingService.new(options)
 
               -- Get up to the maximum number of players for this map from the queue
               local values = first(queue, Service.PlayerRanges[map].Max)
+
+              if not values or #values == 0 then continue end
 
               -- Get any expansions to the queue
               local expansions = if not Service.Options.DisableExpansions then math.floor((now-values[1][2])/(Service.SecondsPerExpansion*1000)) else 0
