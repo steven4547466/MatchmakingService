@@ -1,5 +1,16 @@
 Changelog
 
+Version 1.3.1
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed a bug that would prevent global events from working if you passed nothing into `GetSingleton`
+* [Fix] Fixed a bug that would happen if the main job was set to an empty table.
+
 Version 1.3.0
 Changes (breaking):
 * None
