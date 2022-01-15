@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "1.3.0";
+  Version = "1.3.1";
   Versions = {
     ["v1"] = 8470858629;
   };
@@ -204,8 +204,10 @@ end
 
 --- Gets or creates the top level singleton of the matchmaking service.
 -- @param options - The options to provide matchmaking service.
+-- @param options.MajorVersion - The major version to obtain.
 -- @param options.DisableRatingSystem - Whether or not to disable the rating system.
 -- @param options.DisableExpansions - Whether or not to disable queue expansions.
+-- @param options.DisableGlobalEvents - Whether or not to disable global events.
 -- @return MatchmakingService - The matchmaking service singleton.
 function MatchmakingService.GetSingleton(options)
   if options and options.MajorVersion ~= nil then
@@ -236,38 +238,38 @@ function MatchmakingService.GetSingleton(options)
         end, 86400)
       end
 
-      if not options.DisableGlobalEvents then
+      if options == nil or not options.DisableGlobalEvents then
         MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
           for _, v in ipairs(players) do
             if Players:GetPlayerByUserId(v) ~= nil then continue end
-  
+
             MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], v[2], v[3], v[4])
           end
         end)
-  
+
         MessagingService:SubscribeAsync("MatchmakingServicePlayersRemovedFromQueue", function(players)
           for _, v in ipairs(players) do
             if Players:GetPlayerByUserId(v) ~= nil then continue end
             MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3], v[4])
           end
         end)
-  
+
         while not CLOSED do
           task.wait(5) -- ~12 messages a minute.
           if #PLAYERSADDED > 0 then
             MessagingService:PublishAsync("MatchmakingServicePlayersAddedToQueue", PLAYERSADDED)
             table.clear(PLAYERSADDED)
           end
-  
+
           if #PLAYERSREMOVED > 0 then
             MessagingService:PublishAsync("MatchmakingServicePlayersRemovedFromQueue", PLAYERSREMOVED)
             table.clear(PLAYERSREMOVED)
           end
-  
+
           table.clear(PLAYERSADDEDTHISWAVE)
         end
-  
-      
+
+
       end
     end)
   end
@@ -1079,7 +1081,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
 
   for _, v in ipairs(players) do
     self.PlayerAddedToQueue:Fire(v, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating)
-    if not self.DisableGlobalEvents then
+    if not self.Options.DisableGlobalEvents then
       if table.find(PLAYERSADDEDTHISWAVE, v) == nil then
         local index = find(PLAYERSADDED, function(x)
           return x[1] == v
@@ -1089,7 +1091,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
         end
         table.insert(PLAYERSADDEDTHISWAVE, v)
       end
-  
+
       local index = find(PLAYERSREMOVED, function(x)
         return x[1] == v
       end)
@@ -1167,7 +1169,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
                   end
                   table.insert(PLAYERSADDEDTHISWAVE, player)
                 end
-  
+
                 local index = find(PLAYERSADDED, function(x)
                   return x[1] == player
                 end)
@@ -1332,7 +1334,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
               end
               table.insert(PLAYERSADDEDTHISWAVE, player)
             end
-  
+
             local index = find(PLAYERSADDED, function(x)
               return x[1] == player
             end)
