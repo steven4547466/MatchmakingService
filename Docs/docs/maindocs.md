@@ -12,8 +12,10 @@ Gets or creates the top level singleton of the matchmaking service.
 | Parameter Name | Type | Description | Default Value |
 | -------------- | ---- | ----------- | ------------- |
 | options | table | The options to provide matchmaking service | {} |
+| options.MajorVersion | string | The major version to use | nil |
 | options.DisableRatingSystem | boolean | Wheter or not to disable the rating system | false |
-| options.DisableExpansions | boolean | Wheter or not to disable the rating system | false |
+| options.DisableExpansions | boolean | Wheter or not to disable expansions | false |
+| options.DisableGlobalEvents | boolean | Whether or not to disable global events | false |
 
 ```lua
 MatchmakingService.GetSingleton(options)
@@ -228,6 +230,17 @@ MatchmakingService:SetSecondsBetweenExpansion(newValue)
 !!! info "Explaination"
     An expansion is 10 rounded skill level in each direction. If a player is skill level 25, they get rounded to 30. A signle expansion from the 30 skill level queue will search also in 20 and 40.
 
+## Setting the Seconds to Delay Teleporting
+Sets the number of seconds to delay teleporting after finding a game. If you want to so a UI, or something along those lines.
+
+| Parameter Name | Type | Description | Default Value |
+| -------------- | ---- | ----------- | ------------- |
+| newValue | number | The new value, in seconds, of the delay |  |
+
+```lua
+MatchmakingService:SetFoundGameDelay(newValue)
+```
+
 ## Obtaining a Rating Value from an OpenSkill Object
 Turns an OpenSkill object into a single rating number.
 
@@ -301,9 +314,10 @@ Sets the player info.
 | ratingType | string | The rating type of their current game, if any |  |
 | party | table | The player's party (table of user ids including the player) |  |
 | map | string | The player's queued map, if any | |
+| teleportAfter | number | The time after which the player will be teleported |
 
 ```lua
-MatchmakingService:SetPlayerInfo(player, code, ratingType, party, map)
+MatchmakingService:SetPlayerInfo(player, code, ratingType, party, map, teleportAfter)
 ```
 
 ## Getting a Player's Info

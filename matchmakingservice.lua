@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "1.2.1";
+  Version = "1.3.0";
   Versions = {
     ["v1"] = 8470858629;
   };
@@ -236,37 +236,39 @@ function MatchmakingService.GetSingleton(options)
         end, 86400)
       end
 
-
-      MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
-        for _, v in ipairs(players) do
-          if Players:GetPlayerByUserId(v) ~= nil then continue end
-
-          MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], v[2], v[3], v[4])
+      if not options.DisableGlobalEvents then
+        MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
+          for _, v in ipairs(players) do
+            if Players:GetPlayerByUserId(v) ~= nil then continue end
+  
+            MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], v[2], v[3], v[4])
+          end
+        end)
+  
+        MessagingService:SubscribeAsync("MatchmakingServicePlayersRemovedFromQueue", function(players)
+          for _, v in ipairs(players) do
+            if Players:GetPlayerByUserId(v) ~= nil then continue end
+            MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3], v[4])
+          end
+        end)
+  
+        while not CLOSED do
+          task.wait(5) -- ~12 messages a minute.
+          if #PLAYERSADDED > 0 then
+            MessagingService:PublishAsync("MatchmakingServicePlayersAddedToQueue", PLAYERSADDED)
+            table.clear(PLAYERSADDED)
+          end
+  
+          if #PLAYERSREMOVED > 0 then
+            MessagingService:PublishAsync("MatchmakingServicePlayersRemovedFromQueue", PLAYERSREMOVED)
+            table.clear(PLAYERSREMOVED)
+          end
+  
+          table.clear(PLAYERSADDEDTHISWAVE)
         end
-      end)
-
-      MessagingService:SubscribeAsync("MatchmakingServicePlayersRemovedFromQueue", function(players)
-        for _, v in ipairs(players) do
-          if Players:GetPlayerByUserId(v) ~= nil then continue end
-          MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3], v[4])
-        end
-      end)
-
-      while not CLOSED do
-        task.wait(5) -- ~12 messages a minute.
-        if #PLAYERSADDED > 0 then
-          MessagingService:PublishAsync("MatchmakingServicePlayersAddedToQueue", PLAYERSADDED)
-          table.clear(PLAYERSADDED)
-        end
-
-        if #PLAYERSREMOVED > 0 then
-          MessagingService:PublishAsync("MatchmakingServicePlayersRemovedFromQueue", PLAYERSREMOVED)
-          table.clear(PLAYERSREMOVED)
-        end
-
-        table.clear(PLAYERSADDEDTHISWAVE)
+  
+      
       end
-
     end)
   end
   return MatchmakingService.Singleton
@@ -959,7 +961,7 @@ function MatchmakingService:QueuePlayerId(player, ratingType, map)
 
   local s = find(new, function(v) return v[1] == player end) ~= nil
 
-  if s then
+  if s and not self.Options.DisableGlobalEvents then
     self.PlayerAddedToQueue:Fire(player, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating)
 
     if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
@@ -1077,21 +1079,23 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
 
   for _, v in ipairs(players) do
     self.PlayerAddedToQueue:Fire(v, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating)
-    if table.find(PLAYERSADDEDTHISWAVE, v) == nil then
-      local index = find(PLAYERSADDED, function(x)
+    if not self.DisableGlobalEvents then
+      if table.find(PLAYERSADDEDTHISWAVE, v) == nil then
+        local index = find(PLAYERSADDED, function(x)
+          return x[1] == v
+        end)
+        if index == nil then
+          table.insert(PLAYERSADDED, {v, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating})
+        end
+        table.insert(PLAYERSADDEDTHISWAVE, v)
+      end
+  
+      local index = find(PLAYERSREMOVED, function(x)
         return x[1] == v
       end)
-      if index == nil then
-        table.insert(PLAYERSADDED, {v, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating})
+      if index ~= nil then
+        table.remove(PLAYERSREMOVED, index)
       end
-      table.insert(PLAYERSADDEDTHISWAVE, v)
-    end
-
-    local index = find(PLAYERSREMOVED, function(x)
-      return x[1] == v
-    end)
-    if index ~= nil then
-      table.remove(PLAYERSREMOVED, index)
     end
   end
 
@@ -1153,21 +1157,23 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
 
               self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
 
-              if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
-                local index = find(PLAYERSREMOVED, function(x)
+              if not self.Options.DisableGlobalEvents then
+                if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
+                  local index = find(PLAYERSREMOVED, function(x)
+                    return x[1] == player
+                  end)
+                  if index == nil then
+                    table.insert(PLAYERSREMOVED, {player, map, ratingType, tonumber(skillLevel)})
+                  end
+                  table.insert(PLAYERSADDEDTHISWAVE, player)
+                end
+  
+                local index = find(PLAYERSADDED, function(x)
                   return x[1] == player
                 end)
-                if index == nil then
-                  table.insert(PLAYERSREMOVED, {player, map, ratingType, tonumber(skillLevel)})
+                if index ~= nil then
+                  table.remove(PLAYERSADDED, index)
                 end
-                table.insert(PLAYERSADDEDTHISWAVE, player)
-              end
-
-              local index = find(PLAYERSADDED, function(x)
-                return x[1] == player
-              end)
-              if index ~= nil then
-                table.remove(PLAYERSADDED, index)
               end
 
               return old
@@ -1316,21 +1322,23 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
           if index == nil then return nil end
           table.remove(old, index)
           self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
-          if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
-            local index = find(PLAYERSREMOVED, function(x)
+          if not self.Options.DisableGlobalEvents then
+            if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
+              local index = find(PLAYERSREMOVED, function(x)
+                return x[1] == player
+              end)
+              if index == nil then
+                table.insert(PLAYERSREMOVED, {player, map, ratingType, tonumber(skillLevel)})
+              end
+              table.insert(PLAYERSADDEDTHISWAVE, player)
+            end
+  
+            local index = find(PLAYERSADDED, function(x)
               return x[1] == player
             end)
-            if index == nil then
-              table.insert(PLAYERSREMOVED, {player, map, ratingType, tonumber(skillLevel)})
+            if index ~= nil then
+              table.remove(PLAYERSADDED, index)
             end
-            table.insert(PLAYERSADDEDTHISWAVE, player)
-          end
-
-          local index = find(PLAYERSADDED, function(x)
-            return x[1] == player
-          end)
-          if index ~= nil then
-            table.remove(PLAYERSADDED, index)
           end
         end
 

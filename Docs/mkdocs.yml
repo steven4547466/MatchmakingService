@@ -18,6 +18,7 @@ repo_url: https://github.com/steven4547466/MatchmakingService
 nav:
     - Home: index.md
     - Getting Started: gettingstarted.md
+    - FAQ: faq.md
     - Main Documentation: maindocs.md
     # - Parent:
     #   - "Nested": index.md

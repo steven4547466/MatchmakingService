@@ -1,5 +1,15 @@
 Changelog
 
+Version 1.3.0
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] Added `DisableGlobalEvents` to the options table when using `GetSingleton`. Setting this to true will disable `PlayerAddedToQueue` and `PlayerRemovedFromQueue` from firing for users not in the server and will save you messaging service quota.
+
+Fixes:
+* None
+
 Version 1.2.1
 Changes (breaking):
 * None
