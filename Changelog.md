@@ -8,9 +8,10 @@ Changes (non-breaking):
 * None
 
 Fixes:
-* [Fix] Fixed a bug that would prevent global events from working if you passed nothing into `GetSingleton`
+* [Fix] Fixed a bug that would prevent global events from working if you passed nothing into `GetSingleton`.
 * [Fix] Fixed a bug that would happen if the main job was set to an empty table.
 * [Fix] Fixed a bug that would happen if the last players in queue were removed from queue while MMS is finding a game. 
+* [Fix] Fixed `GetRunningGames` with max > 200.
 
 Version 1.3.0
 Changes (breaking):

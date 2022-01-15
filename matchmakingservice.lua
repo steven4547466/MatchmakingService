@@ -873,13 +873,13 @@ function MatchmakingService:GetRunningGames(max, filter)
   local shouldBreak = false
   local toReturn = {}
   repeat
-    local runningGames = runningGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, max, bound)
+    local runningGames = runningGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, if max > 200 then 200 else max, bound)
     if #runningGames == 0 then
       break
     end
     bound = runningGames[#runningGames].key
 
-    if #runningGames < max then
+    if (max <= 200 and #runningGames <= max) or (max > 200 and #runningGames < 200) then
       shouldBreak = true
     end
 
@@ -894,6 +894,7 @@ function MatchmakingService:GetRunningGames(max, filter)
     for _, v in ipairs(runningGames) do
       table.insert(toReturn, v)
       if #toReturn == max then
+        shouldBreak = true
         break
       end
     end
