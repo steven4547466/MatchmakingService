@@ -435,7 +435,7 @@ function MatchmakingService.new(options)
                 if index == nil then return nil end
                 table.remove(old, index)
                 return old
-              end)
+              end, 86400)
               continue
             end
 
@@ -549,7 +549,7 @@ function MatchmakingService.new(options)
               if index == nil then return nil end
               table.remove(old, index)
               return old
-            end)
+            end, 86400)
             continue
           end
 
@@ -1174,7 +1174,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
         if index == nil then return nil end
         table.remove(old, index)
         return old
-      end)
+      end, 86400)
       continue
     end
     for ratingType, skillLevelAndQueue in pairs(queue) do
