@@ -22,7 +22,7 @@ local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "1.3.1";
+  Version = "1.3.2";
   Versions = {
     ["v1"] = 8470858629;
   };
@@ -170,7 +170,7 @@ function updateQueue(map, ratingType, stringRoundedRating)
   end
 
   success, errorMessage = pcall(function()
-    memoryQueue:UpdateAsync(map.."_QueuedRatingTypes", function(old)
+    memoryQueue:UpdateAsync(map.."__QueuedRatingTypes", function(old)
       if old == nil then 
         old = {}
         old[ratingType] = {{stringRoundedRating, now}}
@@ -358,11 +358,11 @@ function MatchmakingService:Clear()
 
   for i, map in ipairs(queuedMaps) do
     local mapQueue = self:GetQueue(map)
-    memoryQueue:RemoveAsync(map.."_QueuedRatingTypes")
+    memoryQueue:RemoveAsync(map.."__QueuedRatingTypes")
     if mapQueue == nil then continue end
     for ratingType, skillLevelAndQueue in pairs(mapQueue) do
       for skillLevel, queue in pairs(skillLevelAndQueue) do
-        memoryQueue:RemoveAsync(map.."_"..ratingType.."_"..skillLevel)
+        memoryQueue:RemoveAsync(map.."__"..ratingType.."__"..skillLevel)
       end
     end
   end
@@ -428,7 +428,16 @@ function MatchmakingService.new(options)
 
             -- Get the queue for this map, if there is no one left in the queue, skip it
             local q = Service:GetQueue(mem.map)
-            if q == nil then continue end
+            if q == nil then 
+              memoryQueue:UpdateAsync("QueuedMaps", function(old)
+                if old == nil then return nil end
+                local index = table.find(old, mem.map)
+                if index == nil then return nil end
+                table.remove(old, index)
+                return old
+              end)
+              continue
+            end
 
             -- Get the queue for this rating type, if there is no one left in the queue, skip it
             local queue = q[mem.ratingType]
@@ -533,7 +542,16 @@ function MatchmakingService.new(options)
 
           -- Get the queue for this map, if there is none, skip it
           local mapQueue = Service:GetQueue(map)
-          if mapQueue == nil then continue end
+          if mapQueue == nil then 
+            memoryQueue:UpdateAsync("QueuedMaps", function(old)
+              if old == nil then return nil end
+              local index = table.find(old, map)
+              if index == nil then return nil end
+              table.remove(old, index)
+              return old
+            end)
+            continue
+          end
 
           -- For every rating type queued...
           for ratingType, skillLevelAndQueue in pairs(mapQueue) do
@@ -724,10 +742,10 @@ end
 -- @return The OpenSkill object (which is just 2 numbers).
 function MatchmakingService:GetPlayerRatingId(player, ratingType)
   if self.Options.DisableRatingSystem then return nil end
-  local skill = SkillDatastore:GetAsync(ratingType.."_"..tostring(player))
+  local skill = SkillDatastore:GetAsync(ratingType.."__"..tostring(player))
   if not skill then
     local rating = OpenSkill.Rating(self.StartingMean, self.StartingStandardDeviation)
-    SkillDatastore:SetAsync(ratingType.."_"..tostring(player), rating, {player})
+    SkillDatastore:SetAsync(ratingType.."__"..tostring(player), rating, {player})
     skill = rating
   end
   return skill
@@ -751,7 +769,7 @@ end
 -- @param rating The new OpenSkill object.
 function MatchmakingService:SetPlayerRatingId(player, ratingType, rating)
   if self.Options.DisableRatingSystem then return nil end
-  SkillDatastore:SetAsync(ratingType.."_"..tostring(player), rating, {player})
+  SkillDatastore:SetAsync(ratingType.."__"..tostring(player), rating, {player})
 end
 
 --- Sets a player's skill.
@@ -915,13 +933,13 @@ end
 -- @param map The map to get the queue of.
 -- @return A dictionary of {ratingType: {skillLevel: queue}} where rating type is the rating type, skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
 function MatchmakingService:GetQueue(map)
-  local queuedRatingTypes = getFromMemory(memoryQueue, map.."_QueuedRatingTypes", 3)
+  local queuedRatingTypes = getFromMemory(memoryQueue, map.."__QueuedRatingTypes", 3)
   if queuedRatingTypes == nil then return nil end
   local queue = {}
   for ratingType, ratingObj in pairs(queuedRatingTypes) do
     queue[ratingType] = {}
     for i, v in ipairs(ratingObj) do
-      queue[ratingType][v[1]] = getFromMemory(memoryQueue, map.."_"..ratingType.."_"..v[1], 3)
+      queue[ratingType][v[1]] = getFromMemory(memoryQueue, map.."__"..ratingType.."__"..v[1], 3)
     end
   end
   return queue
@@ -949,7 +967,7 @@ function MatchmakingService:QueuePlayerId(player, ratingType, map)
   local new = nil
 
   success, errorMessage = pcall(function()
-    new = memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..stringRoundedRating, function(old)
+    new = memoryQueue:UpdateAsync(map.."__"..ratingType.."__"..stringRoundedRating, function(old)
       if old == nil then 
         old = {{player, now}}
       else
@@ -1039,7 +1057,7 @@ function MatchmakingService:QueuePartyId(players, ratingType, map)
   end
 
   success, errorMessage = pcall(function()
-    new = memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..stringRoundedRating, function(old)
+    new = memoryQueue:UpdateAsync(map.."__"..ratingType.."__"..stringRoundedRating, function(old)
       if old == nil then 
         old = {}
       end
@@ -1149,17 +1167,27 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
 
   for i, map in ipairs(queuedMaps) do
     local queue = self:GetQueue(map)
+    if queue == nil then 
+      memoryQueue:UpdateAsync("QueuedMaps", function(old)
+        if old == nil then return nil end
+        local index = table.find(old, map)
+        if index == nil then return nil end
+        table.remove(old, index)
+        return old
+      end)
+      continue
+    end
     for ratingType, skillLevelAndQueue in pairs(queue) do
       for skillLevel, levelQueue in pairs(skillLevelAndQueue) do
         if find(levelQueue, function(v) return v[1] == player end) then
           success, errorMessage = pcall(function()
-            memoryQueue:UpdateAsync(map.."_"..ratingType.."_"..skillLevel, function(old)
+            memoryQueue:UpdateAsync(map.."__"..ratingType.."__"..skillLevel, function(old)
               if old == nil then return nil end
               local index = find(levelQueue, function(v) return v[1] == player end)
               if index == nil then return nil end
               table.remove(old, index)
               if #old == 0 then 
-                table.insert(toRemove, map.."_"..ratingType.."_"..skillLevel)
+                table.insert(toRemove, map.."__"..ratingType.."__"..skillLevel)
               end
 
               self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
@@ -1213,9 +1241,9 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
   for i = #toRemove, 1, -1 do
     local str = toRemove[i]
     memoryQueue:RemoveAsync(str)
-    local map, ratingType, skillLevel = table.unpack(string.split(str, "_"))
+    local map, ratingType, skillLevel = table.unpack(string.split(str, "__"))
 
-    memoryQueue:UpdateAsync(map.."_QueuedRatingTypes", function(old)
+    memoryQueue:UpdateAsync(map.."__QueuedRatingTypes", function(old)
       if old == nil then 
         return nil
       elseif old[ratingType] ~= nil then
@@ -1227,7 +1255,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
           old[ratingType] = nil
         end
         if dictlen(old) == 0 then
-          table.insert(toRemove, map.."_QueuedRatingTypes")
+          table.insert(toRemove, map.."__QueuedRatingTypes")
         end
       end
       return old
@@ -1244,7 +1272,7 @@ function MatchmakingService:RemovePlayerFromQueueId(player)
   for i = #toRemove, 1, -1 do
     local str = toRemove[i]
     memoryQueue:RemoveAsync(str)
-    local map = table.unpack(string.split(str, "_"))
+    local map = table.unpack(string.split(str, "__"))
 
     memoryQueue:UpdateAsync("QueuedMaps", function(old)
       if old == nil then 
@@ -1302,10 +1330,10 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
       for skillLevel, levelQueue in pairs(skillLevelAndQueue) do
         for i, player in ipairs(players) do
           if find(levelQueue, function(v) return v[1] == player end) then
-            if not playersToQueues[map.."_"..ratingType.."_"..skillLevel] then
-              playersToQueues[map.."_"..ratingType.."_"..skillLevel] = {}
+            if not playersToQueues[map.."__"..ratingType.."__"..skillLevel] then
+              playersToQueues[map.."__"..ratingType.."__"..skillLevel] = {}
             end
-            table.insert(playersToQueues[map.."_"..ratingType.."_"..skillLevel], player)
+            table.insert(playersToQueues[map.."__"..ratingType.."__"..skillLevel], player)
           end
         end
       end
@@ -1323,7 +1351,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
     success, errorMessage = pcall(function()
       memoryQueue:UpdateAsync(id, function(old)
         if old == nil then return nil end
-        local map, ratingType, skillLevel = table.unpack(string.split(id, "_"))
+        local map, ratingType, skillLevel = table.unpack(string.split(id, "__"))
         for i, player in ipairs(plrs) do
           local index = find(old, function(v) return v[1] == player end)
           if index == nil then return nil end
@@ -1382,9 +1410,9 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
   for i = #toRemove, 1, -1 do
     local str = toRemove[i]
     memoryQueue:RemoveAsync(str)
-    local map, ratingType, skillLevel = table.unpack(string.split(str, "_"))
+    local map, ratingType, skillLevel = table.unpack(string.split(str, "__"))
 
-    memoryQueue:UpdateAsync(map.."_QueuedRatingTypes", function(old)
+    memoryQueue:UpdateAsync(map.."__QueuedRatingTypes", function(old)
       if old == nil then 
         return nil
       elseif old[ratingType] ~= nil then
@@ -1396,7 +1424,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
           old[ratingType] = nil
         end
         if dictlen(old) == 0 then
-          table.insert(toRemove, map.."_QueuedRatingTypes")
+          table.insert(toRemove, map.."__QueuedRatingTypes")
         end
       end
       return old
@@ -1413,7 +1441,7 @@ function MatchmakingService:RemovePlayersFromQueueId(players)
   for i = #toRemove, 1, -1 do
     local str = toRemove[i]
     memoryQueue:RemoveAsync(str)
-    local map = table.unpack(string.split(str, "_"))
+    local map = table.unpack(string.split(str, "__"))
 
     memoryQueue:UpdateAsync("QueuedMaps", function(old)
       if old == nil then 

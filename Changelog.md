@@ -1,5 +1,16 @@
 Changelog
 
+Version 1.3.2
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Delimiter for memory is now two underscores. This allows maps to have names with a single underscore.
+* [Fix] Added a quick fix for an issue where queue would not be removed if no one was in it, which caused an error.
+
 Version 1.3.1
 Changes (breaking):
 * None
