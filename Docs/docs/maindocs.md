@@ -13,8 +13,8 @@ Gets or creates the top level singleton of the matchmaking service.
 | -------------- | ---- | ----------- | ------------- |
 | options | table | The options to provide matchmaking service | {} |
 | options.MajorVersion | string | The major version to use | nil |
-| options.DisableRatingSystem | boolean | Wheter or not to disable the rating system | false |
-| options.DisableExpansions | boolean | Wheter or not to disable expansions | false |
+| options.DisableRatingSystem | boolean | Whether or not to disable the rating system | false |
+| options.DisableExpansions | boolean | Whether or not to disable expansions | false |
 | options.DisableGlobalEvents | boolean | Whether or not to disable global events | false |
 
 ```lua
