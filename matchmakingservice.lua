@@ -26,6 +26,7 @@ local MatchmakingService = {
   Version = "2.0.0";
   Versions = {
     ["v1"] = 8470858629;
+    ["v2"] = 8898097654;
   };
 }
 
