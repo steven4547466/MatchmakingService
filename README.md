@@ -2,7 +2,7 @@
 # MatchmakingService
 
 # Preface
-Current Version: V1.2.0
+Current Version: V2.0.0
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 [Check out these games that use the service](https://github.com/steven4547466/MatchmakingService/blob/master/GamesThatUseMatchmakingService.md)
@@ -33,7 +33,6 @@ end
 
 On the game where players are teleported to:
 ```lua
--- Obtain the singleton
 local MatchmakingService = require(7567983240).GetSingleton()
 
 -- It's important game servers know how large they can get. You don't really need every map here,
@@ -43,12 +42,13 @@ MatchmakingService:SetPlayerRange("Map 1", NumberRange.new(2, 2))
 -- Tell the service this is a game server
 MatchmakingService:SetIsGameServer(true)
 
+local gameData = nil
 local t1 = {}
 local t2 = {}
 -- Basic start function
 function Start()
   print("Started")
-  MatchmakingService:StartGame(_G.gameId)
+  MatchmakingService:StartGame(gameData.gameCode)
   -- Simple teams for a 1v1.
   local p = game.Players:GetPlayers()
   table.insert(t1, p[1])
@@ -57,35 +57,24 @@ end
 
 -- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!
 function EndGame(winner)
-  MatchmakingService:UpdateRatings(_G.ratingType, {if winner == 1 then 1 else 2, if winner == 2 then 1, else 2}, {t1, t2})
+  MatchmakingService:UpdateRatings(gameData.ratingType, {if winner == 1 then 1 else 2, if winner == 2 then 1, else 2}, {t1, t2})
   for i, v in ipairs(game.Players:GetPlayers()) do
     -- You can teleport them back to the hub here, I just kick them
     v:Kick()
   end
 end
 
--- Basic start game function. Will start the game once both players connect
 game.Players.PlayerAdded:Connect(function(player)
-  local joinData = player:GetJoinData()
-  -- You should obtain the join data that you need here
-  if _G.gameId == nil and joinData then
-    -- Global so its accessible from other scripts if it needs to be.
-    _G.gameId = joinData.TeleportData.gameCode
-    _G.ratingType = joinData.TeleportData.ratingType
+  if not gameData then
+    gameData = MatchmakingService:GetGameData()
   end
   if #game.Players:GetPlayers() >= 2 then
     Start()
   end
 end)
 
--- You can remove them if they leave
 game.Players.PlayerRemoving:Connect(function(player)
-  MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
-end)
-
--- THIS IS EXTREMELY IMPORTANT
-game:BindToClose(function()
-  MatchmakingService:RemoveGame(_G.gameId)
+  MatchmakingService:RemovePlayerFromGame(player, gameData.gameCode)
 end)
 ```
 
