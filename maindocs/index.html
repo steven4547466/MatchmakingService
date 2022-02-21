@@ -438,6 +438,27 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#getting-the-current-games-code" class="md-nav__link">
+    Getting the Current Game's Code
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-game-data" class="md-nav__link">
+    Getting Game Data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-user-data" class="md-nav__link">
+    Getting User Data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#obtaining-a-rating-value-from-an-openskill-object" class="md-nav__link">
     Obtaining a Rating Value from an OpenSkill Object
   </a>
@@ -578,8 +599,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#remove-a-game-from-memory" class="md-nav__link">
-    Remove a Game from Memory
+  <a href="#remove-the-current-game-from-memory" class="md-nav__link">
+    Remove the Current Game from Memory
   </a>
   
 </li>
@@ -755,6 +776,27 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#getting-the-current-games-code" class="md-nav__link">
+    Getting the Current Game's Code
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-game-data" class="md-nav__link">
+    Getting Game Data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-user-data" class="md-nav__link">
+    Getting User Data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#obtaining-a-rating-value-from-an-openskill-object" class="md-nav__link">
     Obtaining a Rating Value from an OpenSkill Object
   </a>
@@ -895,8 +937,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#remove-a-game-from-memory" class="md-nav__link">
-    Remove a Game from Memory
+  <a href="#remove-the-current-game-from-memory" class="md-nav__link">
+    Remove the Current Game from Memory
   </a>
   
 </li>
@@ -1389,6 +1431,120 @@ The user id is passed as a string (this is out of our control, it is converted t
 <div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetFoundGameDelay</span><span class="p">(</span><span class="n">newValue</span><span class="p">)</span>
 </code></pre></div>
 
+<h2 id="getting-the-current-games-code">Getting the Current Game's Code</h2>
+<p>Gets the current game's code. This only works on game servers!</p>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetCurrentGameCode</span><span class="p">()</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Returns</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>string</td>
+<td>The game code of the current game</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="getting-game-data">Getting Game Data</h2>
+<p>Gets a running game's data. This includes its code, ratingType, and any general game data you applied through the ApplyGeneralTeleportData function. This will not return custom player data, for that use GetUserData(player).</p>
+<table>
+<thead>
+<tr>
+<th>Parameter Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>code</td>
+<td>string</td>
+<td>The game's code</td>
+<td><code>MatchmakingService:GetCurrentGameCode()</code></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetGameData</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Returns</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>table</td>
+<td>The game's data, if there is any</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition info">
+<p class="admonition-title">gameData</p>
+<p>This game data should not be confused with the game data returned by <code>GetRunningGame</code>. This data has the following format, and includes custom data:
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+    <span class="p">[</span><span class="s2">&quot;gameCode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">string</span>
+    <span class="p">[</span><span class="s2">&quot;ratingType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">string</span>
+    <span class="c1">-- This table includes the data set by `ApplyGeneralTeleportData`. </span>
+    <span class="c1">-- If you `return {[&quot;key&quot;]=&quot;value&quot;}` in `ApplyGeneralTeleportData`, </span>
+    <span class="c1">-- then this table will include `[&quot;key&quot;] = &quot;value&quot;` as well.</span>
+<span class="p">}</span>
+</code></pre></div></p>
+</div>
+<h2 id="getting-user-data">Getting User Data</h2>
+<p>Gets a user's custom data for the game they are currently in. This will return nil if they're not in a game, or if you haven't applied any custom data.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>player</td>
+<td>Player</td>
+<td>The player to get the data of</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetUserData</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+</code></pre></div>
+
+<div class="admonition info">
+<p class="admonition-title">Returns</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Variant</td>
+<td>The data set by <code>ApplyCustomTeleportData</code> for this player</td>
+</tr>
+</tbody>
+</table>
+</div>
 <h2 id="obtaining-a-rating-value-from-an-openskill-object">Obtaining a Rating Value from an OpenSkill Object</h2>
 <p>Turns an OpenSkill object into a single rating number.</p>
 <table>
@@ -2298,27 +2454,9 @@ Let’s say team2 came first, team1 came second and team3 came third. To update 
 </tbody>
 </table>
 </div>
-<h2 id="remove-a-game-from-memory">Remove a Game from Memory</h2>
-<p>Removes a game from memory.</p>
-<table>
-<thead>
-<tr>
-<th>Parameter Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>gameId</td>
-<td>string</td>
-<td>The game to remove</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemoveGame</span><span class="p">(</span><span class="n">gameId</span><span class="p">)</span>
+<h2 id="remove-the-current-game-from-memory">Remove the Current Game from Memory</h2>
+<p>Removes the current game from memory. This is called by MMS automatically since v2. You should only call this to remove a game, but keep the server running.</p>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemoveGame</span><span class="p">()</span>
 </code></pre></div>
 
 <div class="admonition info">

@@ -371,8 +371,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#obtaining-teleport-data-from-the-server" class="md-nav__link">
-    Obtaining teleport data from the server
+  <a href="#obtaining-game-data" class="md-nav__link">
+    Obtaining game data
   </a>
   
 </li>
@@ -387,13 +387,6 @@
           <li class="md-nav__item">
   <a href="#manually-removing-a-player-from-a-game" class="md-nav__link">
     Manually removing a player from a game
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#ending-the-game" class="md-nav__link">
-    Ending the game
   </a>
   
 </li>
@@ -579,8 +572,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#obtaining-teleport-data-from-the-server" class="md-nav__link">
-    Obtaining teleport data from the server
+  <a href="#obtaining-game-data" class="md-nav__link">
+    Obtaining game data
   </a>
   
 </li>
@@ -595,13 +588,6 @@
           <li class="md-nav__item">
   <a href="#manually-removing-a-player-from-a-game" class="md-nav__link">
     Manually removing a player from a game
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#ending-the-game" class="md-nav__link">
-    Ending the game
   </a>
   
 </li>
@@ -711,45 +697,31 @@ Note: This function is more efficient on memory updates if all of the users are 
 <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetIsGameServer</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
 <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetPlayerRange</span><span class="p">(</span><span class="s2">&quot;Map 1&quot;</span><span class="p">,</span> <span class="n">NumberRange</span><span class="p">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 </code></pre></div></p>
-<h3 id="obtaining-teleport-data-from-the-server">Obtaining teleport data from the server</h3>
-<p>Data about the match is sent over the players' teleport data. This prevents additional calls to the memory store which means queues can run faster. I recommend doing this right in player join, but you could theoretically do it at any time you'd like.
+<h3 id="obtaining-game-data">Obtaining game data</h3>
+<p>Data about the match is kept in the memory store. This prevents players from messing with teleport data. I recommend doing this right in player join, but you could theoretically do it at any time you'd like. However, I do recommend that you only do this call once as to prevent additional calls to memory. Ideally you should call it once and then cache it.
 <div class="highlight"><pre><span></span><code><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerAdded</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-  <span class="kd">local</span> <span class="n">joinData</span> <span class="o">=</span> <span class="n">player</span><span class="p">:</span><span class="n">GetJoinData</span><span class="p">()</span>
-  <span class="kr">if</span> <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span> <span class="o">==</span> <span class="kc">nil</span> <span class="ow">and</span> <span class="n">joinData</span> <span class="kr">then</span>
-    <span class="c1">-- Global variables are not recommended in a lot of cases.</span>
-    <span class="c1">-- However, here it would be nice to have access to them,</span>
-    <span class="c1">-- regardless of scope. Mainly because this server instance</span>
-    <span class="c1">-- will be destroyed when the game is over so you needn&#39;t</span>
-    <span class="c1">-- worry about this causing long-standing memory leaks.</span>
-    <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span> <span class="o">=</span> <span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">gameCode</span>
-    <span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span> <span class="o">=</span> <span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">ratingType</span>
-  <span class="kr">end</span>
+  <span class="kd">local</span> <span class="n">gameData</span> <span class="o">=</span> <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetGameData</span><span class="p">()</span>
+  <span class="c1">-- do whatever</span>
 <span class="kr">end</span><span class="p">)</span>
 </code></pre></div></p>
 <h3 id="starting-the-game">Starting the game</h3>
 <p>Starting the game is important because it tells the queue manager that the game is started, you can also pass a boolean value that determines whether or not the game is joinable still. By default the game will not be joinable if no value is passed.
 <div class="highlight"><pre><span></span><code><span class="kr">function</span> <span class="nf">Start</span><span class="p">()</span>
   <span class="c1">-- Start the game, but allow new joiners</span>
-  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">StartGame</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">,</span> <span class="kc">true</span><span class="p">)</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">StartGame</span><span class="p">(</span><span class="n">gameData</span><span class="p">.</span><span class="n">gameCode</span><span class="p">,</span> <span class="kc">true</span><span class="p">)</span>
 <span class="kr">end</span>
 </code></pre></div></p>
 <h3 id="manually-removing-a-player-from-a-game">Manually removing a player from a game</h3>
 <p>You may manually remove players from games when they leave to open up spots for new players in games. You can do that with the following script. Note: for this to work properly, the player range in the hub server and instance server must match.
 <div class="highlight"><pre><span></span><code><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerRemoving</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-    <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayerFromGame</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
-<span class="kr">end</span><span class="p">)</span>
-</code></pre></div></p>
-<h3 id="ending-the-game">Ending the game</h3>
-<p>This step is <strong>extremely important</strong> and significantly reduces memory footprint of games. If you don't do this they will reside in memory until it's cleared. You must include these 3 lines of code. The only reason I don't implement it into the base system is because you may want to run actions before you remove a game.
-<div class="highlight"><pre><span></span><code><span class="n">game</span><span class="p">:</span><span class="n">BindToClose</span><span class="p">(</span><span class="kr">function</span><span class="p">()</span>
-  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemoveGame</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
+    <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayerFromGame</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">gameData</span><span class="p">.</span><span class="n">gameCode</span><span class="p">)</span>
 <span class="kr">end</span><span class="p">)</span>
 </code></pre></div></p>
 <h3 id="updating-rating">Updating rating</h3>
 <p>As noted previously, Matchmaking Service has a built in rating system. If you want to use it, you'll have to manually invoke the <code>UpdateRatings</code> function. If you don't invoke this function, the players' rating will never change and it'll be essentially the same as having no rating at all. </p>
 <p>Updating rating <strong>must be done before BindToClose</strong>. This means that you will need your own end game functionality. This script is an example of one way you may choose to implement this functionality:
 <div class="highlight"><pre><span></span><code><span class="kr">function</span> <span class="nf">EndGame</span><span class="p">(</span><span class="n">winner</span><span class="p">)</span>
-  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="n">team1</span><span class="p">,</span> <span class="n">team2</span><span class="p">,</span> <span class="n">team3</span><span class="p">})</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">gameData</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="n">team1</span><span class="p">,</span> <span class="n">team2</span><span class="p">,</span> <span class="n">team3</span><span class="p">})</span>
   <span class="kr">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="kr">in</span> <span class="nb">ipairs</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">())</span> <span class="kr">do</span>
     <span class="c1">-- You can teleport them back to the hub here, I just kick them</span>
     <span class="n">v</span><span class="p">:</span><span class="n">Kick</span><span class="p">()</span>
@@ -757,9 +729,9 @@ Note: This function is more efficient on memory updates if all of the users are 
 <span class="kr">end</span>
 </code></pre></div></p>
 <p>The line we'll be focusing on is as follows:
-<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="n">team1</span><span class="p">,</span> <span class="n">team2</span><span class="p">,</span> <span class="n">team3</span><span class="p">})</span>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">gameData</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">},</span> <span class="p">{</span><span class="n">team1</span><span class="p">,</span> <span class="n">team2</span><span class="p">,</span> <span class="n">team3</span><span class="p">})</span>
 </code></pre></div>
-- <code>_G.ratingType</code> is the rating type they queued for. This is passed in teleport data
+- <code>gameData.ratingType</code> is the rating type they queued for. This is passed in teleport data
 - <code>{2, 1, 3}</code> is the positional placements of each team (order is important, <code>rankings[1]</code> is paired to <code>teams[1]</code>). Lower is better. <code>1</code> means first place, <code>2</code> is second and so on. This supports any number of rankings, but it must match the number of teams.
 -  <code>{team1, team2, team3}</code> are the teams themselves. Each team is a table of players on that team (even if there is only 1 player, it must be in a table). The order is important as they are paired to the same index as their ranking.
 <br /><br /><br /></p>
@@ -792,12 +764,13 @@ Note: This function is more efficient on memory updates if all of the users are 
 <span class="c1">-- Tell the service this is a game server</span>
 <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetIsGameServer</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
 
+<span class="kd">local</span> <span class="n">gameData</span> <span class="o">=</span> <span class="kc">nil</span>
 <span class="kd">local</span> <span class="n">t1</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="kd">local</span> <span class="n">t2</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="c1">-- Basic start function</span>
 <span class="kr">function</span> <span class="nf">Start</span><span class="p">()</span>
   <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Started&quot;</span><span class="p">)</span>
-  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">StartGame</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">StartGame</span><span class="p">(</span><span class="n">gameData</span><span class="p">.</span><span class="n">gameCode</span><span class="p">)</span>
   <span class="c1">-- Simple teams for a 1v1.</span>
   <span class="kd">local</span> <span class="n">p</span> <span class="o">=</span> <span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">()</span>
   <span class="nb">table.insert</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -806,7 +779,7 @@ Note: This function is more efficient on memory updates if all of the users are 
 
 <span class="c1">-- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!</span>
 <span class="kr">function</span> <span class="nf">EndGame</span><span class="p">(</span><span class="n">winner</span><span class="p">)</span>
-  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="kr">if</span> <span class="n">winner</span> <span class="o">==</span> <span class="mi">1</span> <span class="kr">then</span> <span class="mi">1</span> <span class="kr">else</span> <span class="mi">2</span><span class="p">,</span> <span class="kr">if</span> <span class="n">winner</span> <span class="o">==</span> <span class="mi">2</span> <span class="kr">then</span> <span class="mi">1</span><span class="p">,</span> <span class="kr">else</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">})</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">UpdateRatings</span><span class="p">(</span><span class="n">gameData</span><span class="p">.</span><span class="n">ratingType</span><span class="p">,</span> <span class="p">{</span><span class="kr">if</span> <span class="n">winner</span> <span class="o">==</span> <span class="mi">1</span> <span class="kr">then</span> <span class="mi">1</span> <span class="kr">else</span> <span class="mi">2</span><span class="p">,</span> <span class="kr">if</span> <span class="n">winner</span> <span class="o">==</span> <span class="mi">2</span> <span class="kr">then</span> <span class="mi">1</span><span class="p">,</span> <span class="kr">else</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">})</span>
   <span class="kr">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="kr">in</span> <span class="nb">ipairs</span><span class="p">(</span><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">())</span> <span class="kr">do</span>
     <span class="c1">-- You can teleport them back to the hub here, I just kick them</span>
     <span class="n">v</span><span class="p">:</span><span class="n">Kick</span><span class="p">()</span>
@@ -814,11 +787,8 @@ Note: This function is more efficient on memory updates if all of the users are 
 <span class="kr">end</span>
 
 <span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerAdded</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-  <span class="kd">local</span> <span class="n">joinData</span> <span class="o">=</span> <span class="n">player</span><span class="p">:</span><span class="n">GetJoinData</span><span class="p">()</span>
-  <span class="kr">if</span> <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span> <span class="o">==</span> <span class="kc">nil</span> <span class="ow">and</span> <span class="n">joinData</span> <span class="kr">then</span>
-    <span class="c1">-- Global so its accessible from other scripts if it needs to be.</span>
-    <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span> <span class="o">=</span> <span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">gameCode</span>
-    <span class="n">_G</span><span class="p">.</span><span class="n">ratingType</span> <span class="o">=</span> <span class="n">joinData</span><span class="p">.</span><span class="n">TeleportData</span><span class="p">.</span><span class="n">ratingType</span>
+  <span class="kr">if</span> <span class="ow">not</span> <span class="n">gameData</span> <span class="kr">then</span>
+    <span class="n">gameData</span> <span class="o">=</span> <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetGameData</span><span class="p">()</span>
   <span class="kr">end</span>
   <span class="kr">if</span> <span class="o">#</span><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">:</span><span class="n">GetPlayers</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="kr">then</span>
     <span class="n">Start</span><span class="p">()</span>
@@ -826,12 +796,7 @@ Note: This function is more efficient on memory updates if all of the users are 
 <span class="kr">end</span><span class="p">)</span>
 
 <span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerRemoving</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayerFromGame</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
-<span class="kr">end</span><span class="p">)</span>
-
-<span class="c1">-- THIS IS EXTREMELY IMPORTANT</span>
-<span class="n">game</span><span class="p">:</span><span class="n">BindToClose</span><span class="p">(</span><span class="kr">function</span><span class="p">()</span>
-  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemoveGame</span><span class="p">(</span><span class="n">_G</span><span class="p">.</span><span class="n">gameId</span><span class="p">)</span>
+  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayerFromGame</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">gameData</span><span class="p">.</span><span class="n">gameCode</span><span class="p">)</span>
 <span class="kr">end</span><span class="p">)</span>
 </code></pre></div></p>
 <h2 id="conclusion">Conclusion</h2>
