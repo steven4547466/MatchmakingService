@@ -241,6 +241,62 @@ Sets the number of seconds to delay teleporting after finding a game. If you wan
 MatchmakingService:SetFoundGameDelay(newValue)
 ```
 
+## Getting the Current Game's Code
+Gets the current game's code. This only works on game servers!
+
+```lua
+MatchmakingService:GetCurrentGameCode()
+```
+
+!!! info "Returns"
+    | Type | Description |
+    | ---- | ----------- |
+    | string | The game code of the current game |
+
+## Getting Game Data
+Gets a running game's data. This includes its code, ratingType, and any general game data you applied through the ApplyGeneralTeleportData function. This will not return custom player data, for that use GetUserData(player).
+
+| Parameter Name | Type | Description | Default Value |
+| -------------- | ---- | ----------- | ------------- |
+| code | string | The game's code | `MatchmakingService:GetCurrentGameCode()` |
+
+```lua
+MatchmakingService:GetGameData(code)
+```
+
+!!! info "Returns"
+    | Type | Description |
+    | ---- | ----------- |
+    | table | The game's data, if there is any |
+
+!!! info "gameData"
+    This game data should not be confused with the game data returned by `GetRunningGame`. This data has the following format, and includes custom data:
+    ```lua
+    {
+        ["gameCode"] = string
+        ["ratingType"] = string
+        -- This table includes the data set by `ApplyGeneralTeleportData`. 
+        -- If you `return {["key"]="value"}` in `ApplyGeneralTeleportData`, 
+        -- then this table will include `["key"] = "value"` as well.
+    }
+    ```
+
+## Getting User Data
+Gets a user's custom data for the game they are currently in. This will return nil if they're not in a game, or if you haven't applied any custom data.
+
+| Parameter Name | Type | Description | Default Value |
+| -------------- | ---- | ----------- | ------------- |
+| player | Player | The player to get the data of | |
+
+```lua
+MatchmakingService:GetUserData(player)
+```
+
+!!! info "Returns"
+    | Type | Description |
+    | ---- | ----------- |
+    | Variant | The data set by `ApplyCustomTeleportData` for this player |
+
 ## Obtaining a Rating Value from an OpenSkill Object
 Turns an OpenSkill object into a single rating number.
 
@@ -604,15 +660,11 @@ MatchmakingService:SetJoinable(gameId, joinable)
     | ---- | ----------- |
     | boolean | A boolean indicating if there was no error (true if there was no error) |
 
-## Remove a Game from Memory
-Removes a game from memory.
-
-| Parameter Name | Type | Description | Default Value |
-| -------------- | ---- | ----------- | ------------- |
-| gameId | string | The game to remove |  |
+## Remove the Current Game from Memory
+Removes the current game from memory. This is called by MMS automatically since v2. You should only call this to remove a game, but keep the server running.
 
 ```lua
-MatchmakingService:RemoveGame(gameId)
+MatchmakingService:RemoveGame()
 ```
 
 !!! info "Returns"

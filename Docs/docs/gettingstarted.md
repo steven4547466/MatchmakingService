@@ -84,20 +84,12 @@ MatchmakingService:SetIsGameServer(true)
 MatchmakingService:SetPlayerRange("Map 1", NumberRange.new(2, 2))
 ```
 
-### Obtaining teleport data from the server
-Data about the match is sent over the players' teleport data. This prevents additional calls to the memory store which means queues can run faster. I recommend doing this right in player join, but you could theoretically do it at any time you'd like.
+### Obtaining game data
+Data about the match is kept in the memory store. This prevents players from messing with teleport data. I recommend doing this right in player join, but you could theoretically do it at any time you'd like. However, I do recommend that you only do this call once as to prevent additional calls to memory. Ideally you should call it once and then cache it.
 ```lua
 game.Players.PlayerAdded:Connect(function(player)
-  local joinData = player:GetJoinData()
-  if _G.gameId == nil and joinData then
-    -- Global variables are not recommended in a lot of cases.
-    -- However, here it would be nice to have access to them,
-    -- regardless of scope. Mainly because this server instance
-    -- will be destroyed when the game is over so you needn't
-    -- worry about this causing long-standing memory leaks.
-    _G.gameId = joinData.TeleportData.gameCode
-    _G.ratingType = joinData.TeleportData.ratingType
-  end
+  local gameData = MatchmakingService:GetGameData()
+  -- do whatever
 end)
 ```
 
@@ -106,7 +98,7 @@ Starting the game is important because it tells the queue manager that the game 
 ```lua
 function Start()
   -- Start the game, but allow new joiners
-  MatchmakingService:StartGame(_G.gameId, true)
+  MatchmakingService:StartGame(gameData.gameCode, true)
 end
 ```
 
@@ -114,15 +106,7 @@ end
 You may manually remove players from games when they leave to open up spots for new players in games. You can do that with the following script. Note: for this to work properly, the player range in the hub server and instance server must match.
 ```lua
 game.Players.PlayerRemoving:Connect(function(player)
-	MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
-end)
-```
-
-### Ending the game
-This step is **extremely important** and significantly reduces memory footprint of games. If you don't do this they will reside in memory until it's cleared. You must include these 3 lines of code. The only reason I don't implement it into the base system is because you may want to run actions before you remove a game.
-```lua
-game:BindToClose(function()
-  MatchmakingService:RemoveGame(_G.gameId)
+	MatchmakingService:RemovePlayerFromGame(player, gameData.gameCode)
 end)
 ```
 
@@ -132,7 +116,7 @@ As noted previously, Matchmaking Service has a built in rating system. If you wa
 Updating rating **must be done before BindToClose**. This means that you will need your own end game functionality. This script is an example of one way you may choose to implement this functionality:
 ```lua
 function EndGame(winner)
-  MatchmakingService:UpdateRatings(_G.ratingType, {2, 1, 3}, {team1, team2, team3})
+  MatchmakingService:UpdateRatings(gameData.ratingType, {2, 1, 3}, {team1, team2, team3})
   for i, v in ipairs(game.Players:GetPlayers()) do
     -- You can teleport them back to the hub here, I just kick them
     v:Kick()
@@ -142,9 +126,9 @@ end
 
 The line we'll be focusing on is as follows:
 ```lua
-MatchmakingService:UpdateRatings(_G.ratingType, {2, 1, 3}, {team1, team2, team3})
+MatchmakingService:UpdateRatings(gameData.ratingType, {2, 1, 3}, {team1, team2, team3})
 ```
-- `_G.ratingType` is the rating type they queued for. This is passed in teleport data
+- `gameData.ratingType` is the rating type they queued for. This is passed in teleport data
 - `{2, 1, 3}` is the positional placements of each team (order is important, `rankings[1]` is paired to `teams[1]`). Lower is better. `1` means first place, `2` is second and so on. This supports any number of rankings, but it must match the number of teams.
 -  `{team1, team2, team3}` are the teams themselves. Each team is a table of players on that team (even if there is only 1 player, it must be in a table). The order is important as they are paired to the same index as their ranking.
 <br /><br /><br />
@@ -182,12 +166,13 @@ MatchmakingService:SetPlayerRange("Map 1", NumberRange.new(2, 2))
 -- Tell the service this is a game server
 MatchmakingService:SetIsGameServer(true)
 
+local gameData = nil
 local t1 = {}
 local t2 = {}
 -- Basic start function
 function Start()
   print("Started")
-  MatchmakingService:StartGame(_G.gameId)
+  MatchmakingService:StartGame(gameData.gameCode)
   -- Simple teams for a 1v1.
   local p = game.Players:GetPlayers()
   table.insert(t1, p[1])
@@ -196,7 +181,7 @@ end
 
 -- YOU MUST CALL UpdateRatings BEFORE THE GAME IS CLOSED. YOU CANNOT PUT THIS IN BindToClose!
 function EndGame(winner)
-  MatchmakingService:UpdateRatings(_G.ratingType, {if winner == 1 then 1 else 2, if winner == 2 then 1, else 2}, {t1, t2})
+  MatchmakingService:UpdateRatings(gameData.ratingType, {if winner == 1 then 1 else 2, if winner == 2 then 1, else 2}, {t1, t2})
   for i, v in ipairs(game.Players:GetPlayers()) do
     -- You can teleport them back to the hub here, I just kick them
     v:Kick()
@@ -204,11 +189,8 @@ function EndGame(winner)
 end
 
 game.Players.PlayerAdded:Connect(function(player)
-  local joinData = player:GetJoinData()
-  if _G.gameId == nil and joinData then
-    -- Global so its accessible from other scripts if it needs to be.
-    _G.gameId = joinData.TeleportData.gameCode
-    _G.ratingType = joinData.TeleportData.ratingType
+  if not gameData then
+    gameData = MatchmakingService:GetGameData()
   end
   if #game.Players:GetPlayers() >= 2 then
     Start()
@@ -216,12 +198,7 @@ game.Players.PlayerAdded:Connect(function(player)
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-  MatchmakingService:RemovePlayerFromGame(player, _G.gameId)
-end)
-
--- THIS IS EXTREMELY IMPORTANT
-game:BindToClose(function()
-  MatchmakingService:RemoveGame(_G.gameId)
+  MatchmakingService:RemovePlayerFromGame(player, gameData.gameCode)
 end)
 ```
 

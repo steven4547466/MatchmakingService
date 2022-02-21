@@ -21,6 +21,7 @@ When using `GetSingleton()`, you can pass an options table. One of these options
 Current allowed values:
 
 - "v1"
+- "v2"
 
 Example:
 `local MatchmakingService = require(7567983240).GetSingleton({["MajorVersion"]="v1"})`
