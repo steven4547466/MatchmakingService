@@ -19,10 +19,11 @@ local Signal = require(script.Signal)
 local mainMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
 local runningGamesMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_RUNNING_GAMES")
 local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
+local teleportDataMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_TELEPORT_DATA")
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "1.3.2";
+  Version = "2.0.0";
   Versions = {
     ["v1"] = 8470858629;
   };
@@ -719,12 +720,60 @@ function MatchmakingService.new(options)
             data.gameData = Service.ApplyGeneralTeleportData(getFromMemory(mainMemory, code, 3))
           end
 
-          TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil, data)
+          teleportDataMemory:SetAsync(code, data, 600)
+
+          TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil)
         end
       end
     end
   end)
   return Service
+end
+
+--- Gets a running game's data. This includes its code, ratingType,
+--  and any general game data you applied through the ApplyGeneralTeleportData function.
+--  This will not return custom player data, for that use GetUserData(player).
+-- @param code The game's code.
+-- @return The game's data, if there is any.
+function MatchmakingService:GetGameData(code)
+  local toReturn = {}
+  local data = teleportDataMemory:GetAsync(code)
+  if not data then return nil end
+
+  toReturn.gameCode = data.gameCode
+  toReturn.ratingType = data.ratingType
+
+  if data.gameData then
+    for k, v in pairs(data.gameData) do
+      toReturn[k] = v
+    end
+  end
+  
+  return toReturn
+end
+
+--- Gets a user's custom data for the game they are currently in.
+--  This will return nil if they're not in a game, or if you haven't
+--  applied any custom data.
+-- @param player The player id to get the data of.
+-- @return The player's custom teleport data.
+function MatchmakingService:GetUserDataId(player)
+  local playerData = MatchmakingService:GetPlayerInfoId(player)
+  if not playerData or not playerData.curGame then return nil end
+
+  local gameData = teleportDataMemory:GetAsync(playerData.curGame)
+  if not gameData or not gameData.customData then return nil end
+
+  return gameData.customData[player]
+end
+
+--- Gets a user's custom data for the game they are currently in.
+--  This will return nil if they're not in a game, or if you haven't
+--  applied any custom data.
+-- @param player The player to get the data of.
+-- @return The player's custom teleport data.
+function MatchmakingService:GetUserData(player)
+  return MatchmakingService:GetUserDataId(player.UserId)
 end
 
 --- Turns an OpenSkill object into a single rating number.
