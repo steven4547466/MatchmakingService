@@ -1,5 +1,19 @@
 Changelog
 
+Version 2.0.0
+Changes (breaking):
+* [Removal] Removed all teleport data.
+* [Addition] Added `MatchmakingService:GetCurrentGameCode()`. This will get the code of the current game, if it is a game server, nil otherwise.
+* [Addition] Added `MatchmakingService:GetGameData(code)`. This replaces the teleport data for game data. This will include the game's code, rating type and any custom data you apply with `ApplyGeneralTeleportData`. You can call this without `code`, if so MMS will use the use `GetCurrentGameCode()`.
+* [Addition] Added `MatchmakingService:GetUserDataId(player)` (and `MatchmakingService:GetUserData(player)`, accepts player rather than player id). This replaces teleport data for players. Use this to get any data you apply with `ApplyCustomTeleportData`.
+* [Change] `RemoveGame(gameId)` is now called automatically on game close and will no longer accept a `gameId` parameter. This shouldn't be called anymore, as MMS will handle it for you.
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Custom user data is now applied when teleporting to existing games.
+
 Version 1.3.2
 Changes (breaking):
 * None
