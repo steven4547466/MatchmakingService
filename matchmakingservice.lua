@@ -518,6 +518,8 @@ function MatchmakingService.new(options)
             if values ~= nil and #values > 0 then
               local plrs = {}
 
+              local data = teleportDataMemory:GetAsync(g.key)
+
               for _, v in ipairs(values) do
                 table.insert(plrs, v[1])
                 Service:SetPlayerInfoId(v[1], g.key, mem.ratingType, parties ~= nil and parties[v] or {}, mem.map, now + (Service.FoundGameDelay*1000))
@@ -526,6 +528,14 @@ function MatchmakingService.new(options)
               Service:AddPlayersToGameId(plrs, g.key)
 
               Service:RemovePlayersFromQueueId(tableSelect(values, 1))
+
+              for _, v in ipairs(plrs) do
+                if Service.ApplyCustomTeleportData ~= nil then
+                  data.customData[v] = Service.ApplyCustomTeleportData(Players:GetPlayerByUserId(v), getFromMemory(mainMemory, g.key, 3))
+                end	
+              end
+
+              teleportDataMemory:SetAsync(g.key, data, 600)
             end
           end
         end
@@ -640,7 +650,13 @@ function MatchmakingService.new(options)
                 append(playersAdded, userIds)
 
                 -- Reserve a server and tell all servers the player is ready to join
-                local reservedCode = not RunService:IsStudio() and TeleportService:ReserveServer(Service.GamePlaceIds[map]) or "TEST"
+                local reservedCode, serverId
+                if RunService:IsStudio() then
+                  reservedCode = "TEST"
+                  serverId = "TEST"
+                else
+                  reservedCode, serverId = TeleportService:ReserveServer(Service.GamePlaceIds[map])
+                end
                 local gameData = {
                   ["full"] = #values == Service.PlayerRanges[map].Max;
                   ["skillLevel"] = tonumber(skillLevel);
@@ -662,6 +678,14 @@ function MatchmakingService.new(options)
                   print("Error adding new game:")
                   warn(err)
                 else
+                  success, err = pcall(function()
+                    mainMemory:SetAsync(serverId, reservedCode, 86400)
+                  end)
+                  if not success then
+                    print("Error adding new game:")
+                    warn(err)
+                    continue
+                  end
                   print("Added game")
                   for _, v in ipairs(userIds) do
                     Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {}, map, now + (Service.FoundGameDelay*1000))
@@ -730,6 +754,15 @@ function MatchmakingService.new(options)
   return Service
 end
 
+--- Gets the current game's code. This only works on game servers!
+-- @return The game's code, or nil if it isn't a game server.
+function MatchmakingService:GetCurrentGameCode()
+  if not self.IsGameServer or not game.PrivateServerId then
+    return nil
+  end
+  return mainMemory:GetAsync(game.PrivateServerId)
+end
+
 --- Gets a running game's data. This includes its code, ratingType,
 --  and any general game data you applied through the ApplyGeneralTeleportData function.
 --  This will not return custom player data, for that use GetUserData(player).
@@ -737,6 +770,10 @@ end
 -- @return The game's data, if there is any.
 function MatchmakingService:GetGameData(code)
   local toReturn = {}
+  if not code then
+    if not self.IsGameServer then return nil end
+    code = self:GetCurrentGameCode()
+  end
   local data = teleportDataMemory:GetAsync(code)
   if not data then return nil end
 
@@ -748,7 +785,7 @@ function MatchmakingService:GetGameData(code)
       toReturn[k] = v
     end
   end
-  
+
   return toReturn
 end
 
@@ -762,9 +799,10 @@ function MatchmakingService:GetUserDataId(player)
   if not playerData or not playerData.curGame then return nil end
 
   local gameData = teleportDataMemory:GetAsync(playerData.curGame)
-  if not gameData or not gameData.customData then return nil end
 
-  return gameData.customData[player]
+  if not gameData or not gameData.customData then return nil end
+  
+  return gameData.customData[tostring(player)]
 end
 
 --- Gets a user's custom data for the game they are currently in.
@@ -1741,14 +1779,25 @@ function MatchmakingService:SetJoinable(gameId, joinable)
   return true
 end
 
---- Removes a game from memory.
--- @param gameId The game to remove.
+--- Removes this game from memory. Does not work on non-game servers.
 -- @return true if there was no error.
-function MatchmakingService:RemoveGame(gameId)
+function MatchmakingService:RemoveGame()
+  if not self.IsGameServer then return end
+  local gameId = self:GetCurrentGameCode()
   local gameData = getFromMemory(runningGamesMemory, gameId, 3)
   local success, errorMessage = pcall(function()
     runningGamesMemory:RemoveAsync(gameId)
   end)
+
+  if not success then
+    print("Unable to update Running Games (Remove game):")
+    warn(errorMessage)
+  end
+
+  success, errorMessage = pcall(function()
+    mainMemory:RemoveAsync(game.PrivateServerId)
+  end)
+
   if not success then
     print("Unable to update Running Games (Remove game):")
     warn(errorMessage)
@@ -1802,6 +1851,11 @@ game:BindToClose(function()
       mainMemory:RemoveAsync("MainJobId")
     end
   end)
+
+  local singleton = MatchmakingService.GetSingleton()
+  if singleton.IsGameServer then
+    singleton:RemoveGame()
+  end
 end)
 
 return MatchmakingService
