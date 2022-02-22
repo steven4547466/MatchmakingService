@@ -99,8 +99,8 @@ end
 To retrieve it **on the instance server** where players are teleported to, you'll need to do something like this:
 ```lua
 game.Players.PlayerAdded:Connect(function(player)
-	local joinData = player:GetJoinData()
-    print(joinData.TeleportData.customData[tostring(player.UserId)])
+	local playerData = MatchmakingService:GetUserData(player)
+    print(playerData)
 end)
 ```
 The user id is passed as a string (this is out of our control, it is converted to a string when passed), so you must use `tostring` on `player.UserId` to properly get their data.
@@ -122,8 +122,8 @@ end
 To retrieve it **on the instance server** where players are teleported to, you'll need to do something like this:
 ```lua
 game.Players.PlayerAdded:Connect(function(player)
-	local joinData = player:GetJoinData() -- Teleport data is linked to players, so every player will have this data.
-    print(joinData.TeleportData.gameData)
+	local gameData = MatchmakingService:GetGameData() -- gets the current game's data, includes custom data
+    print(gameData)
 end)
 ```
 The user id is passed as a string (this is out of our control, it is converted to a string when passed), so you must use `tostring` on `player.UserId` to properly get their data.
