@@ -1191,7 +1191,7 @@ The user id is passed as a string (this is out of our control, it is converted t
 </code></pre></div></p>
 <p>To retrieve it <strong>on the instance server</strong> where players are teleported to, you'll need to do something like this:
 <div class="highlight"><pre><span></span><code><span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerAdded</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-    <span class="kd">local</span> <span class="n">gameData</span> <span class="o">=</span> <span class="err">`</span><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetGameData</span><span class="p">()</span><span class="err">`</span> <span class="c1">-- gets the current game&#39;s data, includes custom data</span>
+    <span class="kd">local</span> <span class="n">gameData</span> <span class="o">=</span> <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetGameData</span><span class="p">()</span> <span class="c1">-- gets the current game&#39;s data, includes custom data</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">gameData</span><span class="p">)</span>
 <span class="kr">end</span><span class="p">)</span>
 </code></pre></div>
