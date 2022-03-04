@@ -97,4 +97,4 @@ You can find up-to-date documentation [here](https://steven4547466.github.io/Mat
 - Party parity
 
 # Updates
-I will be available to add new features and bug fixes. There will be a beta branch on the [github](https://github.com/steven4547466/MatchmakingService) for testing these new features.
+I'm pretty busy with my game right now. Updates, unless they're fixing major issues, will be slow for this module. I have some big ambitions for this module in the future for version 3, though!
