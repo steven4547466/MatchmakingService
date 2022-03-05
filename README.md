@@ -2,7 +2,7 @@
 # MatchmakingService
 
 # Preface
-Current Version: V2.0.0
+Current Version: V2.0.1
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 [Check out these games that use the service](https://github.com/steven4547466/MatchmakingService/blob/master/GamesThatUseMatchmakingService.md)
