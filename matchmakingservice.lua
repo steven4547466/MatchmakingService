@@ -23,7 +23,7 @@ local teleportDataMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_T
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "2.0.0";
+  Version = "2.0.1";
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
@@ -689,7 +689,7 @@ function MatchmakingService.new(options)
                   end
                   print("Added game")
                   for _, v in ipairs(userIds) do
-                    Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[v] or {}, map, now + (Service.FoundGameDelay*1000))
+                    Service:SetPlayerInfoId(v, reservedCode, ratingType, parties ~= nil and parties[tostring(v)] or {}, map, now + (Service.FoundGameDelay*1000))
                   end
                   --Service:RemoveExpansions(ratingType, skillLevel)
                   Service:RemovePlayersFromQueueId(userIds)
@@ -802,7 +802,7 @@ function MatchmakingService:GetUserDataId(player)
   local gameData = teleportDataMemory:GetAsync(playerData.curGame)
 
   if not gameData or not gameData.customData then return nil end
-  
+
   return gameData.customData[tostring(player)]
 end
 
@@ -1229,7 +1229,15 @@ end
 -- @return A table of player id's of players in the party including this player.
 function MatchmakingService:GetPlayerPartyId(player)
   local parties = getFromMemory(mainMemory, "QueuedParties", 3)
-  if parties == nil or parties[player] == nil then return nil end
+  if parties == nil or parties[player] == nil then 
+    local playerInfo = self:GetPlayerInfo(player)
+    print(playerInfo)
+    for k, v in pairs(playerInfo) do
+      print(k, v)
+    end
+    if playerInfo then return playerInfo.party end
+    return nil
+  end
   return parties[player]
 end
 
