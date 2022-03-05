@@ -1,4 +1,13 @@
 Changelog
+Version 2.0.1
+Changes (breaking):
+* [Update] Updated [OpenSkill](https://devforum.roblox.com/t/openskill-a-skill-based-rating-system-for-matchmaking/1571168) to version 1.2.0.
+
+Changes (non-breaking):
+* None
+
+Fixes:
+* [Fix] Fixed `GetPlayerParty` for users that have found a game.
 
 Version 2.0.0
 Changes (breaking):
