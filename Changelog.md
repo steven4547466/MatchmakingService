@@ -1,4 +1,14 @@
 Changelog
+Version 2.0.2
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+*  None
+
+Fixes:
+* [Fix] Fixed `SetPlayerRating` from calling a function that no longer exists.
+
 Version 2.0.1
 Changes (breaking):
 * None

@@ -23,7 +23,7 @@ local teleportDataMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_T
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "2.0.1";
+  Version = "2.0.2";
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
@@ -270,8 +270,6 @@ function MatchmakingService.GetSingleton(options)
 
           table.clear(PLAYERSADDEDTHISWAVE)
         end
-
-
       end
     end)
   end
@@ -867,7 +865,7 @@ end
 -- @param ratingType The rating type to set.
 -- @param rating The new OpenSkill object.
 function MatchmakingService:SetPlayerRating(player, ratingType, rating)
-  self:SetPlayerSkillId(player.UserId, ratingType, rating)
+  self:SetPlayerRatingId(player.UserId, ratingType, rating)
 end
 
 --- Clears the player info.
