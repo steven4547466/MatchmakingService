@@ -1,4 +1,14 @@
 Changelog
+Version 2.0.3
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+*  None
+
+Fixes:
+* [Fix] Attempted a fix for an issue that would cause an error when teleporting players to existing games with no custom teleport data.
+
 Version 2.0.2
 Changes (breaking):
 * None
