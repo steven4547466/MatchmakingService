@@ -23,7 +23,7 @@ local teleportDataMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_T
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "2.0.2";
+  Version = "2.0.3";
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
@@ -517,7 +517,7 @@ function MatchmakingService.new(options)
             if values ~= nil and #values > 0 then
               local plrs = {}
 
-              local data = teleportDataMemory:GetAsync(g.key)
+              local data = teleportDataMemory:GetAsync(g.key) or {}
 
               for _, v in ipairs(values) do
                 table.insert(plrs, v[1])
@@ -534,7 +534,7 @@ function MatchmakingService.new(options)
                 end	
               end
 
-              teleportDataMemory:SetAsync(g.key, data, 600)
+              teleportDataMemory:SetAsync(g.key, data, 1200)
             end
           end
         end
@@ -743,7 +743,7 @@ function MatchmakingService.new(options)
             data.gameData = Service.ApplyGeneralTeleportData(getFromMemory(mainMemory, code, 3))
           end
 
-          teleportDataMemory:SetAsync(code, data, 600)
+          teleportDataMemory:SetAsync(code, data, 1200)
 
           TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil)
         end
