@@ -225,27 +225,27 @@ type Singleton = {
 
 	GetCurrentGameCode: (self: {}) -> (number?);
 	GetGameData: (self: {}, code: string) -> ({any?}?);
-	
+
 	--GetUserDataId: (self: {}, player: number) -> ({any?}?);
 	GetUserData: (self: {}, player: Player) -> ({any?}?);
-	
+
 	ToRatingNumber: (self:{}, openSkillObject: any) -> (number);
 	--GetPlayerRatingId: (self: {}, player: number, ratingType: string) -> ({mu: number, sigma: number}?);
 	GetPlayerRating: (self: {}, player: Player, ratingType: string) -> ({mu: number, sigma: number}?);
 	--SetPlayerRatingId: (self: {}, player: number, ratingType: string, rating: {mu: number, sigma: number}) -> ();
 	SetPlayerRating: (self: {}, player: Player, ratingType: string, rating: {mu: number, sigma: number}) -> ();
-	
+
 	--ClearPlayerInfoId: (self: {}, playerId: number) -> ();
 	ClearPlayerInfo: (self: {}, player: Player) -> ();
 	--SetPlayerInfoId: (self: {}, player: number, code: string, ratingType: string, party: {number}, map: string, teleportAfter: number) -> ();
 	SetPlayerInfo: (self: {}, player: Player, code: string, ratingType: string, party: {number}, map: string, teleportAfter: number) -> ();
 	--GetPlayerInfoId: (self: {}, player: number) -> (PlayerInfo);
 	GetPlayerInfo: (self: {}, player: Player) -> (PlayerInfo);
-	
+
 	GetAllRunningGames: (self:{}) ->({any});
 	GetRunningGames: (self:{}, max: number, filter: (any) -> (boolean)) -> ({any});	
 	GetRunningGame: (self: {}, code: string) ->({any}?);
-	
+
 	GetQueue: (self:{}, map: string) -> ({[string]: {[any]: {any}}}?);
 	--QueuePlayerId: (self: {}, player: number, ratingType: string, map: string) -> (boolean);	
 	QueuePlayer: (self: {}, player: Player, ratingType: string, map: string) -> (boolean);	
@@ -257,7 +257,7 @@ type Singleton = {
 	RemovePlayerFromQueue: (self: {}, player: Player) -> (boolean?);
 	--RemovePlayersFromQueueId: (self: {}, players: {number}) -> (boolean?);	
 	RemovePlayersFromQueue: (self: {}, players: {Player}) -> (boolean?);	
-	
+
 	--AddPlayerToGameId: (self: {}, player: number, gameId: string, updateJoinable: boolean) -> (boolean?);	
 	AddPlayerToGame: (self: {}, player: Player, gameId: string, updateJoinable: boolean) -> (boolean?);
 	--AddPlayersToGameId: (self: {}, players: {number}, gameId: string, updateJoinable: boolean) -> (boolean?);
@@ -266,10 +266,10 @@ type Singleton = {
 	RemovePlayerFromGame: (self: {}, player: Player, gameId: string, updateJoinable: boolean) -> (boolean?);
 	--RemovePlayersFromGameId: (self: {}, players: {number}, gameId: string, updateJoinable: boolean) -> (boolean?);
 	RemovePlayersFromGame: (self: {}, players: {Player}, gameId: string, updateJoinable: boolean) -> (boolean?);
-	
+
 	--UpdateRatingsId: (self: {}, ratingType: string, ranks: {number}, teams: {{number}}) -> (boolean?);
 	UpdateRatings: (self: {}, ratingType: string, ranks: {number}, teams: {{Player}}) -> (boolean?);
-	
+
 	SetJoinable: (self: {}, gameId: string, joinable: boolean) -> (boolean?);
 	RemoveGame: (self: {}) -> (boolean?);
 	StartGame: (self: {}, gameId: string, joinable: boolean) -> (boolean?);	
