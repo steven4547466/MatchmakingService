@@ -23,7 +23,7 @@ local teleportDataMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_T
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "2.0.3";
+  Version = "2.0.4";
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
@@ -224,6 +224,9 @@ function MatchmakingService.GetSingleton(options)
   print("Retrieving MatchmakingService ("..MatchmakingService.Version..") Singleton.")
   if MatchmakingService.Singleton == nil then
     Players.PlayerRemoving:Connect(function(player)
+      if MatchmakingService.Singleton.IsGameServer then
+        MatchmakingService.Singleton:RemovePlayerFromGameId(player.UserId, MatchmakingService.Singleton:GetCurrentGameCode(), MatchmakingService.Singleton.UpdateJoinableOnLeave)
+      end
       MatchmakingService.Singleton:RemovePlayerFromQueueId(player.UserId)
     end)
     MatchmakingService.Singleton = MatchmakingService.new(options)
@@ -305,8 +308,10 @@ end
 --- Sets whether or not this is a game server.
 -- Disables match finding coroutine if it is.
 -- @param newValue A boolean that indicates whether or not this server is a game server.
-function MatchmakingService:SetIsGameServer(newValue)
+-- @param updateJoinableOnLeave A boolean that indicates whether or not to update the joinable status when a player leaves.
+function MatchmakingService:SetIsGameServer(newValue, updateJoinableOnLeave)
   self.IsGameServer = newValue
+  self.UpdateJoinableOnLeave = updateJoinableOnLeave
 end
 
 --- Sets the starting mean of OpenSkill objects.
@@ -376,6 +381,7 @@ function MatchmakingService.new(options)
   Service.PlayerRanges = {}
   Service.GamePlaceIds = {}
   Service.IsGameServer = false
+  Service.UpdateJoinableOnLeave = false
   Service.MaxPartySkillGap = 50
   Service.PlayerAddedToQueue = Signal:Create()
   Service.PlayerRemovedFromQueue = Signal:Create()
@@ -925,24 +931,27 @@ function MatchmakingService:GetPlayerInfo(player)
 end
 
 --- Counts how many players are in the queues.
--- @return A dictionary of {ratingType: count} and the full count.
---function MatchmakingService:GetQueueCounts()
---	local counts = {}
---	local queuedSkillLevels = getFromMemory(memory, "QueuedSkillLevels", 3)
---	if queuedSkillLevels == nil then return {} end
---	for ratingType, skillLevelQueue in pairs(queuedSkillLevels) do
---		counts[ratingType] = 0
---		local queue = getFromMemory(memoryQueue, ratingType, 3)
---		for i, skillLevelTable in ipairs(skillLevelQueue)  do
---			if queue == nil then continue end
---			queue = queue[tostring(skillLevelTable[1])]
---			counts[ratingType] += #queue
---		end
---	end
---	return counts, reduce(counts, function(acc, cur)
---		return acc + cur
---	end)
---end
+-- @return A dictionary of {map: {ratingType: count}} and the full count.
+function MatchmakingService:GetQueueCounts()
+  local counts = {}
+  local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
+  if queuedMaps == nil then return end
+
+  for i, map in ipairs(queuedMaps) do
+    counts[map] = {}
+    local mapQueue = self:GetQueue(map)
+    if mapQueue == nil then continue end
+    for ratingType, skillLevelAndQueue in pairs(mapQueue) do
+      counts[map][ratingType] = 0
+      for skillLevel, queue in pairs(skillLevelAndQueue) do
+        counts[map][ratingType] += #queue
+      end
+    end
+  end
+  return counts, reduce(counts, function(acc, cur)
+    return acc + reduce(cur, function(acc2, cur2) return acc2 + cur2 end)
+  end)
+end
 
 --- Gets all running games from memory
 -- @return An array of {key: gameCode, value: gameData} dictionaries

@@ -172,9 +172,10 @@ Sets whether or not this is a game server.
 | Parameter Name | Type | Description | Default Value |
 | -------------- | ---- | ----------- | ------------- |
 | newValue | boolean | A boolean that indicates whether or not this server is a game server |  |
+| updateJoinableOnLeave | boolean | A boolean that indicates whether or not to update the joinable status when a player leaves |  |
 
 ```lua
-MatchmakingService:SetIsGameServer(newValue)
+MatchmakingService:SetIsGameServer(newValue, updateJoinableOnLeave)
 ```
 
 ## Setting the Starting Ranking Mean
@@ -341,7 +342,7 @@ Sets a player's skill.
 
 | Parameter Name | Type | Description | Default Value |
 | -------------- | ---- | ----------- | ------------- |
-| player | Player | The player to get the OpenSkill object of |  |
+| player | Player | The player to set the OpenSkill object of |  |
 | ratingType | string | The rating type to get |  |
 | rating | OpenSkill object | The new OpenSkill object |  |
 
@@ -463,10 +464,18 @@ Gets a table of user ids, ratingTypes, and skillLevels in a specific queue.
 MatchmakingService:GetQueue(map)
 ```
 
+## Getting Queue Counts
+Counts the number of players in each queue and returns a table and number of all of them added together.
+
+```lua
+MatchmakingService:GetQueueCounts()
+```
+
 !!! info "Returns"
     | Type | Description |
     | ---- | ----------- |
-    | table | A dictionary of `{ratingType: {skillLevel: queue}}` where `ratingType` is the rating type, `skillLevel` is the skill level pool (a rounded rating), and `queue` is a table of user ids |
+    | table | A dictionary of `{map: {ratingType: count}}` where `map` is the name of the map they queued for, `ratingType` is the ratingType they queue for, and `count` is the number of users in that queue |
+    | number | The total of all queue counts added together |
 
 ## Queueing a Single Player
 Queues a player.

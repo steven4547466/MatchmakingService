@@ -196,10 +196,6 @@ game.Players.PlayerAdded:Connect(function(player)
     Start()
   end
 end)
-
-game.Players.PlayerRemoving:Connect(function(player)
-  MatchmakingService:RemovePlayerFromGame(player, gameData.gameCode)
-end)
 ```
 
 ## Conclusion

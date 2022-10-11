@@ -1,4 +1,5 @@
 Check out these games that use MatchmakingService! If you want to get your game listed here just send me a link!
+(This is not an exhaustive list. Games are not required to credit using the service, this is just devs that have sent me their game.)
 
 [![Rollout](https://t2.rbxcdn.com/642e16f061b3d42ea7b68857eb55837c)](https://www.roblox.com/games/7561658990/BETA-Rollout)
 
