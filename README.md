@@ -2,7 +2,7 @@
 # MatchmakingService
 
 # Preface
-Current Version: V2.0.3
+Current Version: V2.0.4
 [Github](https://github.com/steven4547466/MatchmakingService). [Asset](https://www.roblox.com/library/7567983240/MatchmakingService). [Uncopylocked hub/receiver game](https://www.roblox.com/games/7563843268/MatchmakingService).
 
 [Check out these games that use the service](https://github.com/steven4547466/MatchmakingService/blob/master/GamesThatUseMatchmakingService.md)
@@ -72,10 +72,6 @@ game.Players.PlayerAdded:Connect(function(player)
     Start()
   end
 end)
-
-game.Players.PlayerRemoving:Connect(function(player)
-  MatchmakingService:RemovePlayerFromGame(player, gameData.gameCode)
-end)
 ```
 
 #### Small note before we start
@@ -95,6 +91,3 @@ You can find up-to-date documentation [here](https://steven4547466.github.io/Mat
 - Switch to MemoryQueues if/when we get more ways to manage it
 - Fully random access management that doesn't use a central server
 - Party parity
-
-# Updates
-I'm pretty busy with my game right now. Updates, unless they're fixing major issues, will be slow for this module. I have some big ambitions for this module in the future for version 3, though!
