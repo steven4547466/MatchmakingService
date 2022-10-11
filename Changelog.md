@@ -1,10 +1,23 @@
 Changelog
+Version 2.0.4
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Change] `RemovePlayerFromGame` no longer needs to be called manually. If the game is a game server, this will be handled automatically.
+* [Change] `SetIsGameServer` now accepts a second parameter `updateJoinableOnLeave` that denotes whether to update the joinable value when a player leaves. This is false by default.
+* [Addition] Reintroduced `GetQueueCounts`.
+* [Addition] Added typing to methods to allow for auto-complete ([#19](https://github.com/steven4547466/MatchmakingService/pull/19)). Thank you @Dannyftm for this.
+
+Fixes:
+* None
+
 Version 2.0.3
 Changes (breaking):
 * None
 
 Changes (non-breaking):
-*  None
+* None
 
 Fixes:
 * [Fix] Attempted a fix for an issue that would cause an error when teleporting players to existing games with no custom teleport data.
