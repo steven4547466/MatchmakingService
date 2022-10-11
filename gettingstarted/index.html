@@ -794,10 +794,6 @@ Note: This function is more efficient on memory updates if all of the users are 
     <span class="n">Start</span><span class="p">()</span>
   <span class="kr">end</span>
 <span class="kr">end</span><span class="p">)</span>
-
-<span class="n">game</span><span class="p">.</span><span class="n">Players</span><span class="p">.</span><span class="n">PlayerRemoving</span><span class="p">:</span><span class="n">Connect</span><span class="p">(</span><span class="kr">function</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-  <span class="n">MatchmakingService</span><span class="p">:</span><span class="n">RemovePlayerFromGame</span><span class="p">(</span><span class="n">player</span><span class="p">,</span> <span class="n">gameData</span><span class="p">.</span><span class="n">gameCode</span><span class="p">)</span>
-<span class="kr">end</span><span class="p">)</span>
 </code></pre></div></p>
 <h2 id="conclusion">Conclusion</h2>
 <p>As you can see, with under 50 lines of code, you can have fully functional cross-server match making. This is just the tip of the iceberg with Matchmaking Service as well. For more in-depth documentation see the <a href="../maindocs/">main docs</a>. If you encounter any issues don't hesitate to <a href="https://github.com/steven4547466/MatchmakingService/issues/new">open an issue</a>. If you need assistance, feel free to <a href="https://devforum.roblox.com/u/steven4547466/summary">contact me</a> on dev forum.</p>

@@ -529,6 +529,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#getting-queue-counts" class="md-nav__link">
+    Getting Queue Counts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#queueing-a-single-player" class="md-nav__link">
     Queueing a Single Player
   </a>
@@ -862,6 +869,13 @@
         <li class="md-nav__item">
   <a href="#getting-the-queue" class="md-nav__link">
     Getting the Queue
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-queue-counts" class="md-nav__link">
+    Getting Queue Counts
   </a>
   
 </li>
@@ -1299,9 +1313,15 @@ The user id is passed as a string (this is out of our control, it is converted t
 <td>A boolean that indicates whether or not this server is a game server</td>
 <td></td>
 </tr>
+<tr>
+<td>updateJoinableOnLeave</td>
+<td>boolean</td>
+<td>A boolean that indicates whether or not to update the joinable status when a player leaves</td>
+<td></td>
+</tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetIsGameServer</span><span class="p">(</span><span class="n">newValue</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">SetIsGameServer</span><span class="p">(</span><span class="n">newValue</span><span class="p">,</span> <span class="n">updateJoinableOnLeave</span><span class="p">)</span>
 </code></pre></div>
 
 <h2 id="setting-the-starting-ranking-mean">Setting the Starting Ranking Mean</h2>
@@ -1654,7 +1674,7 @@ The user id is passed as a string (this is out of our control, it is converted t
 <tr>
 <td>player</td>
 <td>Player</td>
-<td>The player to get the OpenSkill object of</td>
+<td>The player to set the OpenSkill object of</td>
 <td></td>
 </tr>
 <tr>
@@ -1936,6 +1956,11 @@ The user id is passed as a string (this is out of our control, it is converted t
 <div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetQueue</span><span class="p">(</span><span class="n">map</span><span class="p">)</span>
 </code></pre></div>
 
+<h2 id="getting-queue-counts">Getting Queue Counts</h2>
+<p>Counts the number of players in each queue and returns a table and number of all of them added together.</p>
+<div class="highlight"><pre><span></span><code><span class="n">MatchmakingService</span><span class="p">:</span><span class="n">GetQueueCounts</span><span class="p">()</span>
+</code></pre></div>
+
 <div class="admonition info">
 <p class="admonition-title">Returns</p>
 <table>
@@ -1948,7 +1973,11 @@ The user id is passed as a string (this is out of our control, it is converted t
 <tbody>
 <tr>
 <td>table</td>
-<td>A dictionary of <code>{ratingType: {skillLevel: queue}}</code> where <code>ratingType</code> is the rating type, <code>skillLevel</code> is the skill level pool (a rounded rating), and <code>queue</code> is a table of user ids</td>
+<td>A dictionary of <code>{map: {ratingType: count}}</code> where <code>map</code> is the name of the map they queued for, <code>ratingType</code> is the ratingType they queue for, and <code>count</code> is the number of users in that queue</td>
+</tr>
+<tr>
+<td>number</td>
+<td>The total of all queue counts added together</td>
 </tr>
 </tbody>
 </table>
