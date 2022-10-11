@@ -242,6 +242,8 @@ type Singleton = {
   --GetPlayerInfoId: (self: {}, player: number) -> (PlayerInfo);
   GetPlayerInfo: (self: {}, player: Player) -> (PlayerInfo);
 
+  GetQueueCounts: (self:{}) ->({any}, number);
+
   GetAllRunningGames: (self:{}) ->({any});
   GetRunningGames: (self:{}, max: number, filter: (any) -> (boolean)) -> ({any});	
   GetRunningGame: (self: {}, code: string) ->({any}?);
