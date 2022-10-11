@@ -146,7 +146,7 @@ function getFromMemory(m, k, retries)
   return response
 end
 
-function updateQueue(map, ratingType, stringRoundedRating)
+function updateQueue(map: string, ratingType, stringRoundedRating)
   local now = DateTime.now().UnixTimestampMillis
   local success, errorMessage
 
@@ -211,7 +211,71 @@ end
 -- @param options.DisableExpansions - Whether or not to disable queue expansions.
 -- @param options.DisableGlobalEvents - Whether or not to disable global events.
 -- @return MatchmakingService - The matchmaking service singleton.
-function MatchmakingService.GetSingleton(options)
+type Singleton = {
+  AddGamePlace: (self: {}, name: string, placeId: number) -> ();
+  SetMatchmakingInterval: (self: {}, newInterval: number) -> ();
+  SetPlayerRange: (self: {}, map: string, newPlayerRange: NumberRange) -> ();
+  SetIsGameServer: (self: {}, newValue: boolean, updateJoinableOnLeave: boolean) -> ();
+  SetStartingMean: (self: {}, newStartingMean: number) -> ();
+  SetStartingStandardDeviation: (self: {}, newStartingStandardDeviation: number) -> ();
+  SetMaxPartySkillGap: (self: {}, newMaxGap: number) -> ();
+  SetSecondsBetweenExpansion: (self: {}, newValue: number) -> ();
+  SetFoundGameDelay: (self: {}, newValue: number) -> ();
+  Clear: (self: {}) -> ();
+
+  GetCurrentGameCode: (self: {}) -> (number?);
+  GetGameData: (self: {}, code: string) -> ({any?}?);
+
+  --GetUserDataId: (self: {}, player: number) -> ({any?}?);
+  GetUserData: (self: {}, player: Player) -> ({any?}?);
+
+  ToRatingNumber: (self:{}, openSkillObject: any) -> (number);
+  --GetPlayerRatingId: (self: {}, player: number, ratingType: string) -> ({mu: number, sigma: number}?);
+  GetPlayerRating: (self: {}, player: Player, ratingType: string) -> ({mu: number, sigma: number}?);
+  --SetPlayerRatingId: (self: {}, player: number, ratingType: string, rating: {mu: number, sigma: number}) -> ();
+  SetPlayerRating: (self: {}, player: Player, ratingType: string, rating: {mu: number, sigma: number}) -> ();
+
+  --ClearPlayerInfoId: (self: {}, playerId: number) -> ();
+  ClearPlayerInfo: (self: {}, player: Player) -> ();
+  --SetPlayerInfoId: (self: {}, player: number, code: string, ratingType: string, party: {number}, map: string, teleportAfter: number) -> ();
+  SetPlayerInfo: (self: {}, player: Player, code: string, ratingType: string, party: {number}, map: string, teleportAfter: number) -> ();
+  --GetPlayerInfoId: (self: {}, player: number) -> (PlayerInfo);
+  GetPlayerInfo: (self: {}, player: Player) -> (PlayerInfo);
+
+  GetAllRunningGames: (self:{}) ->({any});
+  GetRunningGames: (self:{}, max: number, filter: (any) -> (boolean)) -> ({any});	
+  GetRunningGame: (self: {}, code: string) ->({any}?);
+
+  GetQueue: (self:{}, map: string) -> ({[string]: {[any]: {any}}}?);
+  --QueuePlayerId: (self: {}, player: number, ratingType: string, map: string) -> (boolean);	
+  QueuePlayer: (self: {}, player: Player, ratingType: string, map: string) -> (boolean);	
+  --QueuePartyId: (self: {}, players: {number}, ratingType: string, map: string) -> (boolean);
+  QueueParty: (self: {}, players: {Player}, ratingType: string, map: string) -> (boolean);
+  --GetPlayerPartyId: (self: {}, player: number) -> ({number}?);
+  GetPlayerParty: (self: {}, player: Player) -> ({number}?);
+  --RemovePlayerFromQueueId: (self: {}, player: number) -> (boolean?);
+  RemovePlayerFromQueue: (self: {}, player: Player) -> (boolean?);
+  --RemovePlayersFromQueueId: (self: {}, players: {number}) -> (boolean?);	
+  RemovePlayersFromQueue: (self: {}, players: {Player}) -> (boolean?);	
+
+  --AddPlayerToGameId: (self: {}, player: number, gameId: string, updateJoinable: boolean) -> (boolean?);	
+  AddPlayerToGame: (self: {}, player: Player, gameId: string, updateJoinable: boolean) -> (boolean?);
+  --AddPlayersToGameId: (self: {}, players: {number}, gameId: string, updateJoinable: boolean) -> (boolean?);
+  AddPlayersToGame: (self: {}, players: {Player}, gameId: string, updateJoinable: boolean) -> (boolean?);
+  --RemovePlayerFromGameId: (self: {}, player: number, gameId: string, updateJoinable: boolean) -> (boolean?);
+  RemovePlayerFromGame: (self: {}, player: Player, gameId: string, updateJoinable: boolean) -> (boolean?);
+  --RemovePlayersFromGameId: (self: {}, players: {number}, gameId: string, updateJoinable: boolean) -> (boolean?);
+  RemovePlayersFromGame: (self: {}, players: {Player}, gameId: string, updateJoinable: boolean) -> (boolean?);
+
+  --UpdateRatingsId: (self: {}, ratingType: string, ranks: {number}, teams: {{number}}) -> (boolean?);
+  UpdateRatings: (self: {}, ratingType: string, ranks: {number}, teams: {{Player}}) -> (boolean?);
+
+  SetJoinable: (self: {}, gameId: string, joinable: boolean) -> (boolean?);
+  RemoveGame: (self: {}) -> (boolean?);
+  StartGame: (self: {}, gameId: string, joinable: boolean) -> (boolean?);	
+}
+
+function MatchmakingService.GetSingleton(options: {	MajorVersion: string | nil;	DisableRatingSystem: boolean | nil; DisableExpansions: boolean | nil;	DisableGlobalEvents: boolean | nil;} | nil): Singleton
   if options and options.MajorVersion ~= nil then
     local versionToGet = options.MajorVersion
     options.MajorVersion = nil
@@ -281,14 +345,14 @@ end
 
 --- Sets the matchmaking interval.
 -- @param newInterval The new matchmaking interval.
-function MatchmakingService:SetMatchmakingInterval(newInterval)
+function MatchmakingService:SetMatchmakingInterval(newInterval: number)
   self.MatchmakingInterval = newInterval
 end
 
 --- Sets the min/max players.
 -- @param map The map the player range applies to.
 -- @param newPlayerRange The NumberRange with the min and max players.
-function MatchmakingService:SetPlayerRange(map, newPlayerRange)
+function MatchmakingService:SetPlayerRange(map: string, newPlayerRange: NumberRange)
   if newPlayerRange.Max > 100 then
     warn("Maximum players has a cap of 100.")
   end
@@ -298,7 +362,7 @@ end
 --- Add a new game place.
 -- @param name The name of the map.
 -- @param id The place id to teleport to.
-function MatchmakingService:AddGamePlace(name, id)
+function MatchmakingService:AddGamePlace(name: string, id: number)
   self.GamePlaceIds[name] = id
   if not self.PlayerRanges[name] then
     self.PlayerRanges[name] = NumberRange.new(6, 10)
@@ -309,7 +373,7 @@ end
 -- Disables match finding coroutine if it is.
 -- @param newValue A boolean that indicates whether or not this server is a game server.
 -- @param updateJoinableOnLeave A boolean that indicates whether or not to update the joinable status when a player leaves.
-function MatchmakingService:SetIsGameServer(newValue, updateJoinableOnLeave)
+function MatchmakingService:SetIsGameServer(newValue: boolean, updateJoinableOnLeave: boolean)
   self.IsGameServer = newValue
   self.UpdateJoinableOnLeave = updateJoinableOnLeave
 end
@@ -317,20 +381,20 @@ end
 --- Sets the starting mean of OpenSkill objects.
 -- Do not modify this unless you know what you're doing.
 -- @param newStartingMean The new starting mean.
-function MatchmakingService:SetStartingMean(newStartingMean)
+function MatchmakingService:SetStartingMean(newStartingMean: number)
   self.StartingMean = newStartingMean
 end
 
 --- Sets the starting standard deviation of OpenSkill objects.
 -- Do not modify this unless you know what you're doing.
 -- @param newStartingStandardDeviation The new starting standing deviation.
-function MatchmakingService:SetStartingStandardDeviation(newStartingStandardDeviation)
+function MatchmakingService:SetStartingStandardDeviation(newStartingStandardDeviation: number)
   self.StartingStandardDeviation = newStartingStandardDeviation
 end
 
 --- Sets the max gap in rating between party members.
 -- @param newMaxGap The new max gap between party members.
-function MatchmakingService:SetMaxPartySkillGap(newMaxGap)
+function MatchmakingService:SetMaxPartySkillGap(newMaxGap: number)
   self.MaxPartySkillGap = newMaxGap
 end
 
@@ -338,13 +402,13 @@ end
 -- An expansion is 10 rounded skill level in each direction.
 -- If a player is skill level 25, they get rounded to 30
 -- @param newValue The new value, in seconds, of seconds between each queue expansion.
-function MatchmakingService:SetSecondsBetweenExpansion(newValue)
+function MatchmakingService:SetSecondsBetweenExpansion(newValue: number)
   self.SecondsPerExpansion = newValue
 end
 
 --- Sets the delay, in seconds, for players before being put into the teleport queue.
 -- @param newValue The new value, in seconds, of the delay
-function MatchmakingService:SetFoundGameDelay(newValue)
+function MatchmakingService:SetFoundGameDelay(newValue: number)
   self.FoundGameDelay = newValue
 end
 
@@ -373,7 +437,7 @@ function MatchmakingService:Clear()
   end
 end
 
-function MatchmakingService.new(options)
+function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRatingSystem: boolean | nil; DisableExpansions: boolean | nil;	DisableGlobalEvents: boolean | nil;} | nil)
   local Service = {}
   setmetatable(Service, MatchmakingService)
   Service.Options = options or {}
@@ -588,8 +652,8 @@ function MatchmakingService.new(options)
                 for i = 1, expansions do
 
                   -- Skill difference is 10 per expansion in both directions
-                  local skillUp = tostring(tonumber(skillLevel)+10*i)
-                  local skillDown = tostring(tonumber(skillLevel)-10*i)
+                  local skillUp = tostring((tonumber(skillLevel) :: number)+10*i)
+                  local skillDown = tostring((tonumber(skillLevel) :: number)-10*i)
                   local queueUp = nil
                   local queueDown = nil
 
@@ -761,7 +825,7 @@ end
 
 --- Gets the current game's code. This only works on game servers!
 -- @return The game's code, or nil if it isn't a game server.
-function MatchmakingService:GetCurrentGameCode()
+function MatchmakingService:GetCurrentGameCode(): string?
   if not self.IsGameServer or not game.PrivateServerId then
     return nil
   end
@@ -773,7 +837,7 @@ end
 --  This will not return custom player data, for that use GetUserData(player).
 -- @param code The game's code.
 -- @return The game's data, if there is any.
-function MatchmakingService:GetGameData(code)
+function MatchmakingService:GetGameData(code: string): {any?}?
   local toReturn = {}
   if not code then
     if not self.IsGameServer then return nil end
@@ -799,7 +863,7 @@ end
 --  applied any custom data.
 -- @param player The player id to get the data of.
 -- @return The player's custom teleport data.
-function MatchmakingService:GetUserDataId(player)
+function MatchmakingService:GetUserDataId(player: number): {any?}?
   local playerData = MatchmakingService:GetPlayerInfoId(player)
   if not playerData or not playerData.curGame then return nil end
 
@@ -815,14 +879,14 @@ end
 --  applied any custom data.
 -- @param player The player to get the data of.
 -- @return The player's custom teleport data.
-function MatchmakingService:GetUserData(player)
+function MatchmakingService:GetUserData(player: Player): {any?}?
   return MatchmakingService:GetUserDataId(player.UserId)
 end
 
 --- Turns an OpenSkill object into a single rating number.
 -- @param openSkillObject The open skill object.
 -- @return The single number representation of the object.
-function MatchmakingService:ToRatingNumber(openSkillObject)
+function MatchmakingService:ToRatingNumber(openSkillObject): number
   return OpenSkill.Ordinal(openSkillObject)
 end
 
@@ -832,7 +896,7 @@ end
 -- @param player The player id to get the OpenSkill object of.
 -- @param ratingType The rating type to get.
 -- @return The OpenSkill object (which is just 2 numbers).
-function MatchmakingService:GetPlayerRatingId(player, ratingType)
+function MatchmakingService:GetPlayerRatingId(player: number, ratingType: string): {mu: number, sigma: number}?
   if self.Options.DisableRatingSystem then return nil end
   local skill = SkillDatastore:GetAsync(ratingType.."__"..tostring(player))
   if not skill then
@@ -849,7 +913,7 @@ end
 -- @param player The player to get the OpenSkill object of.
 -- @param ratingType The rating type to get.
 -- @return The OpenSkill object (which is just 2 numbers).
-function MatchmakingService:GetPlayerRating(player, ratingType)
+function MatchmakingService:GetPlayerRating(player: Player, ratingType: string): {mu: number, sigma: number}?
   return self:GetPlayerRatingId(player.UserId, ratingType)
 end
 
@@ -859,7 +923,7 @@ end
 -- @param player The player to set the rating of.
 -- @param ratingType The rating type to set.
 -- @param rating The new OpenSkill object.
-function MatchmakingService:SetPlayerRatingId(player, ratingType, rating)
+function MatchmakingService:SetPlayerRatingId(player: number, ratingType: string, rating: {mu: number, sigma: number})
   if self.Options.DisableRatingSystem then return nil end
   SkillDatastore:SetAsync(ratingType.."__"..tostring(player), rating, {player})
 end
@@ -870,21 +934,30 @@ end
 -- @param player The player to set the rating of.
 -- @param ratingType The rating type to set.
 -- @param rating The new OpenSkill object.
-function MatchmakingService:SetPlayerRating(player, ratingType, rating)
+function MatchmakingService:SetPlayerRating(player: Player, ratingType: string, rating: {mu: number, sigma: number})
   self:SetPlayerRatingId(player.UserId, ratingType, rating)
 end
 
 --- Clears the player info.
 -- @param playerId The player id to clear.
-function MatchmakingService:ClearPlayerInfoId(playerId)
+function MatchmakingService:ClearPlayerInfoId(playerId: number)
   mainMemory:RemoveAsync(playerId)
 end
 
 --- Clears the player info.
 -- @param player The player to clear.
-function MatchmakingService:ClearPlayerInfo(player)
+function MatchmakingService:ClearPlayerInfo(player: Player)
   self:ClearPlayerInfoId(player.UserId)
 end
+
+type PlayerInfo = {
+  curGame: string;
+  teleported: boolean;
+  ratingType: string;
+  party: {number};
+  map: string;
+  teleportAfter: number;
+}
 
 --- Sets the player info.
 -- @param player The player id to update.
@@ -893,7 +966,7 @@ end
 -- @param party The player's party (table of user ids including the player).
 -- @param map The player's queued map, if any.
 -- @param teleportAfter The time after which the player will be teleported.
-function MatchmakingService:SetPlayerInfoId(player, code, ratingType, party, map, teleportAfter)
+function MatchmakingService:SetPlayerInfoId(player: number, code: string, ratingType: string, party: {number}, map: string, teleportAfter: number)
   if self.Options.DisableRatingSystem then ratingType = "MMS_RatingDisabled" end
   mainMemory:SetAsync(player, {
     curGame = code,
@@ -912,21 +985,21 @@ end
 -- @param party The player's party (table of user ids including the player).
 -- @param map The player's queued map, if any.
 -- @param teleportAfter The time after which the player will be teleported.
-function MatchmakingService:SetPlayerInfo(player, code, ratingType, party, map, teleportAfter)
+function MatchmakingService:SetPlayerInfo(player: Player, code: string, ratingType: string, party: {number}, map: string, teleportAfter: number)
   self:SetPlayerInfoId(player.UserId, code, ratingType, party, map, teleportAfter)
 end
 
 --- Gets the player info.
--- @param player The player to get.
+-- @param player The player id to get.
 -- @return The player info.
-function MatchmakingService:GetPlayerInfoId(player)
+function MatchmakingService:GetPlayerInfoId(player: number): PlayerInfo
   return getFromMemory(mainMemory, player, 3)
 end
 
 --- Gets the player info.
 -- @param player The player to get.
 -- @return The player info.
-function MatchmakingService:GetPlayerInfo(player)
+function MatchmakingService:GetPlayerInfo(player: Player)
   return self:GetPlayerInfoId(player.UserId)
 end
 
@@ -955,7 +1028,7 @@ end
 
 --- Gets all running games from memory
 -- @return An array of {key: gameCode, value: gameData} dictionaries
-function MatchmakingService:GetAllRunningGames()
+function MatchmakingService:GetAllRunningGames(): {any}
   local bound = nil
   local toReturn = {}
   while true do
@@ -981,7 +1054,7 @@ end
 -- @param max The maximum number of games to get
 -- @param filter A filter function which is passed the game data. Should return true if passed
 -- @return An array of {key: gameCode, value: gameData} dictionaries
-function MatchmakingService:GetRunningGames(max, filter)
+function MatchmakingService:GetRunningGames(max: number, filter: (any) -> (boolean)): {any}
   local bound = nil
   local shouldBreak = false
   local toReturn = {}
@@ -1019,7 +1092,7 @@ end
 --- Gets a running game from memory by its code.
 -- @param code The unique code of the game.
 -- @return The game data, or nil if there is no data.
-function MatchmakingService:GetRunningGame(code)
+function MatchmakingService:GetRunningGame(code: string): {any}?
   local gameData = getFromMemory(runningGamesMemory, code, 2)
   if typeof(gameData) == "table" then return gameData else return nil end
 end
@@ -1027,7 +1100,7 @@ end
 --- Gets a table of user ids, ratingTypes, and skillLevels in a specific queue.
 -- @param map The map to get the queue of.
 -- @return A dictionary of {ratingType: {skillLevel: queue}} where rating type is the rating type, skill level is the skill level pool (a rounded rating) and queue is a table of user ids.
-function MatchmakingService:GetQueue(map)
+function MatchmakingService:GetQueue(map: string): {[string]: {[any]: {any}}}?
   local queuedRatingTypes = getFromMemory(memoryQueue, map.."__QueuedRatingTypes", 3)
   if queuedRatingTypes == nil then return nil end
   local queue = {}
@@ -1045,7 +1118,7 @@ end
 -- @param ratingType The rating type to use.
 -- @param map The map to queue them on.
 -- @return A boolean that is true if the player was queued.
-function MatchmakingService:QueuePlayerId(player, ratingType, map)
+function MatchmakingService:QueuePlayerId(player: number, ratingType: string, map: string): boolean
   local now = DateTime.now().UnixTimestampMillis
   local deserializedRating = nil
   local roundedRating = 0
@@ -1110,7 +1183,7 @@ end
 -- @param ratingType The rating type to use.
 -- @param map The map to queue them on.
 -- @return A boolean that is true if the player was queued.
-function MatchmakingService:QueuePlayer(player, ratingType, map)
+function MatchmakingService:QueuePlayer(player: Player, ratingType: string, map: string): boolean
   return self:QueuePlayerId(player.UserId, ratingType, map)
 end
 
@@ -1119,7 +1192,7 @@ end
 -- @param ratingType The rating type to use.
 -- @param map The map to queue them on.
 -- @return A boolean that is true if the party was queued.
-function MatchmakingService:QueuePartyId(players, ratingType, map)
+function MatchmakingService:QueuePartyId(players: {number}, ratingType: string, map: string): boolean
   local now = DateTime.now().UnixTimestampMillis
   local ratingValues = nil
   local avg = 0
@@ -1227,14 +1300,14 @@ end
 -- @param ratingType The rating type to use.
 -- @param map The map to queue them on.
 -- @return A boolean that is true if the party was queued.
-function MatchmakingService:QueueParty(players, ratingType, map)
+function MatchmakingService:QueueParty(players: {Player}, ratingType: string, map: string): boolean
   return self:QueuePartyId(tableSelect(players, "UserId"), ratingType, map)
 end
 
 --- Gets a player's party.
 -- @param player The player id to get the party of.
 -- @return A table of player id's of players in the party including this player.
-function MatchmakingService:GetPlayerPartyId(player)
+function MatchmakingService:GetPlayerPartyId(player: number): {number}?
   local parties = getFromMemory(mainMemory, "QueuedParties", 3)
   if parties == nil or parties[player] == nil then 
     local playerInfo = self:GetPlayerInfo(player)
@@ -1251,7 +1324,7 @@ end
 --- Gets a player's party.
 -- @param player The player to get the party of.
 -- @return A table of player id's of players in the party including this player.
-function MatchmakingService:GetPlayerParty(player)
+function MatchmakingService:GetPlayerParty(player: Player): {number}?
   return self:GetPlayerPartyId(player)
 end
 
@@ -1259,7 +1332,7 @@ end
 --- Removes a specific player id from the queue.
 -- @param player The player id to remove from queue.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayerFromQueueId(player)
+function MatchmakingService:RemovePlayerFromQueueId(player: number): boolean?
   local toRemove = {}
   local hasErrors = false
   local success, errorMessage
@@ -1403,7 +1476,7 @@ end
 --- Removes a specific player from the queue.
 -- @param player The player to remove from queue.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayerFromQueue(player)
+function MatchmakingService:RemovePlayerFromQueue(player: Player): boolean?
   return self:RemovePlayerFromQueueId(player.UserId)
 end
 
@@ -1411,7 +1484,7 @@ end
 --- Removes a table of player ids from the queue.
 -- @param players The player ids to remove from queue.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayersFromQueueId(players)
+function MatchmakingService:RemovePlayersFromQueueId(players: {number}): boolean?
   local toRemove = {}
   local hasErrors = false
   local success, errorMessage
@@ -1572,7 +1645,7 @@ end
 --- Removes a table of players from the queue.
 -- @param players The players to remove from queue.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayersFromQueue(players)
+function MatchmakingService:RemovePlayersFromQueue(players: {Player}): boolean?
   return self:RemovePlayersFromQueueId(tableSelect(players, "UserId"))
 end
 
@@ -1581,7 +1654,7 @@ end
 -- @param gameId The id of the game to add the player to.
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
-function MatchmakingService:AddPlayerToGameId(player, gameId, updateJoinable)
+function MatchmakingService:AddPlayerToGameId(player: number, gameId: string, updateJoinable: boolean): boolean?
   if updateJoinable == nil then updateJoinable = true end
   local success, errorMessage = pcall(function()
     runningGamesMemory:UpdateAsync(gameId, function(old)
@@ -1607,7 +1680,7 @@ end
 -- @param gameId The id of the game to add the player to.
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
-function MatchmakingService:AddPlayerToGame(player, gameId, updateJoinable)
+function MatchmakingService:AddPlayerToGame(player: Player, gameId: string, updateJoinable: boolean): boolean?
   return self:AddPlayerToGameId(player.UserId, gameId, updateJoinable)
 end
 
@@ -1616,7 +1689,7 @@ end
 -- @param gameId The id of the game to add the players to.
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
-function MatchmakingService:AddPlayersToGameId(players, gameId, updateJoinable)
+function MatchmakingService:AddPlayersToGameId(players: {number}, gameId: string, updateJoinable: boolean): boolean?
   local success, errorMessage = pcall(function()
     runningGamesMemory:UpdateAsync(gameId, function(old)
       if old ~= nil then
@@ -1643,7 +1716,7 @@ end
 -- @param gameId The id of the game to add the players to.
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
-function MatchmakingService:AddPlayersToGame(players, gameId, updateJoinable)
+function MatchmakingService:AddPlayersToGame(players: {Player}, gameId: string, updateJoinable: boolean): boolean?
   return self:AddPlayersToGameId(tableSelect(players, "UserId"), gameId, updateJoinable)
 end
 
@@ -1652,7 +1725,7 @@ end
 -- @param gameId The id of the game to remove the player from.
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayerFromGameId(player, gameId, updateJoinable)
+function MatchmakingService:RemovePlayerFromGameId(player: number, gameId: string, updateJoinable: boolean): boolean?
   local success, errorMessage = pcall(function()
     runningGamesMemory:UpdateAsync(gameId, function(old)
       if old ~= nil then
@@ -1682,7 +1755,7 @@ end
 -- @param gameId The id of the game to remove the player from.
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayerFromGame(player, gameId, updateJoinable)
+function MatchmakingService:RemovePlayerFromGame(player: Player, gameId: string, updateJoinable: boolean): boolean?
   return self:RemovePlayerFromGameId(player.UserId, gameId, updateJoinable)
 end
 
@@ -1691,7 +1764,7 @@ end
 -- @param gameId The id of the game to remove the player from.
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayersFromGameId(players, gameId, updateJoinable)
+function MatchmakingService:RemovePlayersFromGameId(players: {number}, gameId: string, updateJoinable: boolean): boolean?
   local success, errorMessage = pcall(function()
     runningGamesMemory:UpdateAsync(gameId, function(old)
       if old ~= nil then
@@ -1721,8 +1794,8 @@ end
 -- @param gameId The id of the game to remove the player from.
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayersFromGame(players, gameId, updateJoinable)
-  self:RemovePlayersFromGameId(tableSelect(players, "UserId"), gameId, updateJoinable)
+function MatchmakingService:RemovePlayersFromGame(players: {Player}, gameId: string, updateJoinable: boolean): boolean?
+  return self:RemovePlayersFromGameId(tableSelect(players, "UserId"), gameId, updateJoinable)
 end
 
 --- Update player ratings after a game is over.
@@ -1730,7 +1803,7 @@ end
 -- @param ranks The ranks of the teams. #scores should be the same as the #teams.
 -- @param teams The teams. A table of tables which contain player ids.
 -- @return true if there was no error.
-function MatchmakingService:UpdateRatingsId(ratingType, ranks, teams)
+function MatchmakingService:UpdateRatingsId(ratingType: string, ranks: {number}, teams: {{number}}): boolean?
   if self.Options.DisableRatingSystem then return nil end
   local success, errorMessage = pcall(function()
     local ratings = {}
@@ -1764,7 +1837,7 @@ end
 -- @param ranks The ranks of the teams. #scores should be the same as the #teams.
 -- @param teams The teams. A table of tables which contain players.
 -- @return true if there was no error.
-function MatchmakingService:UpdateRatings(ratingType, ranks, teams)
+function MatchmakingService:UpdateRatings(ratingType: string, ranks: {number}, teams: {{Player}}): boolean?
   local teamsIds = {}
   for i, team in ipairs(teams) do
     table.insert(teamsIds, tableSelect(team, "UserId"))
@@ -1776,7 +1849,7 @@ end
 -- @param gameId The id of the game to update.
 -- @param joinable Whether or not the game will be joinable.
 -- @return true if there was no error.
-function MatchmakingService:SetJoinable(gameId, joinable)
+function MatchmakingService:SetJoinable(gameId: string, joinable: boolean): boolean?
   local success, errorMessage = pcall(function()
     runningGamesMemory:UpdateAsync(gameId, function(old)
       if old ~= nil then
@@ -1797,7 +1870,7 @@ end
 
 --- Removes this game from memory. Does not work on non-game servers.
 -- @return true if there was no error.
-function MatchmakingService:RemoveGame()
+function MatchmakingService:RemoveGame(): boolean?
   if not self.IsGameServer then return end
   local gameId = self:GetCurrentGameCode()
   local gameData = getFromMemory(runningGamesMemory, gameId, 3)
@@ -1832,7 +1905,7 @@ end
 -- @param gameId The game to start.
 -- @param joinable Whether or not the game is still joinable.
 -- @return true if there was no error.
-function MatchmakingService:StartGame(gameId, joinable)
+function MatchmakingService:StartGame(gameId: string, joinable: boolean): boolean?
   if joinable == nil then joinable = false end
   local success, errorMessage = pcall(function()
     runningGamesMemory:UpdateAsync(gameId, function(old)
