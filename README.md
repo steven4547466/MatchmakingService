@@ -15,7 +15,7 @@ MatchmakingService is a way to easily make games that involve matchmaking. It ut
 (On your hub server where players queue from)
 ```lua
 -- Obtain the service
-local  MatchmakingService = require(7567983240).GetSingleton()
+local MatchmakingService = require(7567983240).GetSingleton()
 
 -- Set the game place
 MatchmakingService:AddGamePlace("Map 1", 7584483307)
