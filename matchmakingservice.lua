@@ -1005,7 +1005,7 @@ end
 
 --- Counts how many players are in the queues.
 -- @return A dictionary of {map: {ratingType: count}} and the full count.
-function MatchmakingService:GetQueueCounts()
+function MatchmakingService:GetQueueCounts(): ({any}, number)
   local counts = {}
   local queuedMaps = getFromMemory(memoryQueue, "QueuedMaps", 3)
   if queuedMaps == nil then return end
