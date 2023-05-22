@@ -442,7 +442,7 @@ Gets a single running game from memory.
 
 | Parameter Name | Type | Description | Default Value |
 | -------------- | ---- | ----------- | ------------- |
-| code | string | The unique code of the game |  |
+| code | string | The unique code of the game | nil  |
 
 ```lua
 MatchmakingService:GetRunningGame(code)
