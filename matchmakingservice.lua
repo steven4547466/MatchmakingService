@@ -23,7 +23,7 @@ local teleportDataMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_T
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "2.0.5";
+  Version = "2.1.0";
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
