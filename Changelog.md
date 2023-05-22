@@ -7,7 +7,8 @@ Changes (non-breaking):
 * [Change] `GetRunningGame`'s argument `code` is now optional. If not provided, the code will be the current code of the server, if it's a game server.
 
 Fixes:
-* [Fix] Updated `MessagingService` implementation to reflect Roblox's updates to how data is sent and fixes from user [misternicekai](https://devforum.roblox.com/u/misternicekai).
+* [Fix] Updated `MessagingService` implementation to reflect Roblox's updates to how data is sent and fixes from user [misternicekai](https://devforum.roblox.com/u/misternicekai). I did make this change on my end many months ago, but I unfortunately seemed to have forgotten to commit it.
+* [Fix] Fixed [issue #22](https://github.com/steven4547466/MatchmakingService/issues/22).
 
 Version 2.0.4
 Changes (breaking):
