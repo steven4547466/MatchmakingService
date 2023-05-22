@@ -23,7 +23,7 @@ local teleportDataMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_T
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "2.0.4";
+  Version = "2.0.5";
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
@@ -310,17 +310,16 @@ function MatchmakingService.GetSingleton(options: {	MajorVersion: string | nil;	
       end
 
       if options == nil or not options.DisableGlobalEvents then
-        MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(players)
-          for _, v in ipairs(players) do
-            if Players:GetPlayerByUserId(v) ~= nil then continue end
-
+        MessagingService:SubscribeAsync("MatchmakingServicePlayersAddedToQueue", function(message)					
+          for _, v in ipairs(message["Data"]) do
+            if Players:GetPlayerByUserId(v[1]) ~= nil then continue end
             MatchmakingService.Singleton.PlayerAddedToQueue:Fire(v[1], v[2], v[3], v[4])
           end
         end)
 
-        MessagingService:SubscribeAsync("MatchmakingServicePlayersRemovedFromQueue", function(players)
-          for _, v in ipairs(players) do
-            if Players:GetPlayerByUserId(v) ~= nil then continue end
+        MessagingService:SubscribeAsync("MatchmakingServicePlayersRemovedFromQueue", function(message)
+          for _, v in ipairs(message["Data"]) do
+            if Players:GetPlayerByUserId(v[1]) ~= nil then continue end
             MatchmakingService.Singleton.PlayerRemovedFromQueue:Fire(v[1], v[2], v[3], v[4])
           end
         end)
@@ -1095,6 +1094,10 @@ end
 -- @param code The unique code of the game.
 -- @return The game data, or nil if there is no data.
 function MatchmakingService:GetRunningGame(code: string): {any}?
+  if not code then
+    if not self.IsGameServer then return nil end
+    code = self:GetCurrentGameCode()
+  end
   local gameData = getFromMemory(runningGamesMemory, code, 2)
   if typeof(gameData) == "table" then return gameData else return nil end
 end
