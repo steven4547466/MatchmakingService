@@ -1,4 +1,14 @@
 Changelog
+Version 2.0.5
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Change] `GetRunningGame`'s argument `code` is now optional. If not provided, the code will be the current code of the server, if it's a game server.
+
+Fixes:
+* [Fix] Updated `MessagingService` implementation to reflect Roblox's updates to how data is sent and fixes from user [misternicekai](https://devforum.roblox.com/u/misternicekai).
+
 Version 2.0.4
 Changes (breaking):
 * None
