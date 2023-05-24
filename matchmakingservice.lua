@@ -422,7 +422,11 @@ function MatchmakingService:Clear()
   print("Clearing memory")
   local runningGames = MatchmakingService:GetAllRunningGames()
   for _, v in ipairs(runningGames) do
-    joinableGamesMemory:RemoveAsync(v.key)
+    if v.value.joinable then
+      joinableGamesMemory:RemoveAsync(v.key)
+    else
+      nonJoinableGamesMemory:RemoveAsync(v.key)
+    end
   end
   mainMemory:RemoveAsync("QueuedSkillLevels")
   mainMemory:RemoveAsync("MainJobId")
@@ -603,13 +607,14 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
 
               Service:RemovePlayersFromQueueId(tableSelect(values, 1))
 
-              for _, v in ipairs(plrs) do
-                if Service.ApplyCustomTeleportData ~= nil then
-                  data.customData[v] = Service.ApplyCustomTeleportData(Players:GetPlayerByUserId(v), getFromMemory(mainMemory, g.key, 3))
+              if Service.ApplyCustomTeleportData ~= nil then
+                local gameData = Service.GetRunningGame(g.key)
+                for _, v in ipairs(plrs) do                
+                  data.customData[v] = Service.ApplyCustomTeleportData(Players:GetPlayerByUserId(v), gameData)
                 end	
               end
 
-              teleportDataMemory:SetAsync(g.key, data, 1200)
+              teleportDataMemory:SetAsync(g.key, data, 86400)
             end
           end
         end
@@ -743,9 +748,15 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
                 }
                 local success, err
                 success, err = pcall(function()
-                  joinableGamesMemory:UpdateAsync(reservedCode, function()
-                    return gameData
-                  end, 86400)
+                  if gameData.joinable then
+                    joinableGamesMemory:UpdateAsync(reservedCode, function()
+                      return gameData
+                    end, 86400)
+                  else
+                    nonJoinableGamesMemory:UpdateAsync(reservedCode, function()
+                      return gameData
+                    end, 86400)
+                  end
                 end)
 
                 if not success then
@@ -805,24 +816,23 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
       end
 
       for code, players in pairs(playersToTeleport) do
-        if code ~= "TEST" then
-          local data = {gameCode=code, ratingType=playersToRatings[players[1].UserId], customData={}}
+        local data = {gameCode=code, ratingType=playersToRatings[players[1].UserId], customData={}}
 
-          local gameData = getFromMemory(mainMemory, code, 3)
-          if Service.ApplyCustomTeleportData ~= nil then
-            for i, player in ipairs(players) do
-              data.customData[player.UserId] = Service.ApplyCustomTeleportData(player, gameData)
-            end
+        local gameData = gameCodesToData[code]
+
+        if Service.ApplyCustomTeleportData ~= nil then
+          for i, player in ipairs(players) do
+            data.customData[player.UserId] = Service.ApplyCustomTeleportData(player, gameData)
           end
-
-          if Service.ApplyGeneralTeleportData ~= nil then
-            data.gameData = Service.ApplyGeneralTeleportData(gameData)
-          end
-
-          teleportDataMemory:SetAsync(code, data, 1200)
-
-          TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil)
         end
+
+        if Service.ApplyGeneralTeleportData ~= nil then
+          data.gameData = Service.ApplyGeneralTeleportData(gameData)
+        end
+
+        teleportDataMemory:SetAsync(code, data, 86400)
+
+        if code ~= "TEST" then TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil) end
       end
     end
   end)
@@ -1210,7 +1220,7 @@ function MatchmakingService:GetRunningGame(code: string): {any}?
     if not self.IsGameServer then return nil end
     code = self:GetCurrentGameCode()
   end
-  local gameData = getFromMemory(joinableGamesMemory, code, 2)
+  local gameData = getFromMemory(joinableGamesMemory, code, 2) or getFromMemory(nonJoinableGamesMemory, code, 2)
   if typeof(gameData) == "table" then return gameData else return nil end
 end
 
@@ -2087,7 +2097,7 @@ function MatchmakingService:StartGame(gameId: string, joinable: boolean): boolea
           else
             warn("Unable to update Running Games (Start game): No running games found in memory")
           end
-  
+
           return nil
         end
       end, 86400)
@@ -2133,7 +2143,7 @@ if not RunService:IsStudio() then
         mainMemory:RemoveAsync("MainJobId")
       end
     end)
-  
+
     local singleton = MatchmakingService.GetSingleton()
     if singleton.IsGameServer then
       singleton:RemoveGame()
