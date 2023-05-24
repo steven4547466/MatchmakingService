@@ -17,13 +17,18 @@ local OpenSkill = require(script.OpenSkill)
 local Signal = require(script.Signal)
 
 local mainMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE")
-local runningGamesMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_RUNNING_GAMES")
+local joinableGamesMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_JOINABLE_GAMES")
+local nonJoinableGamesMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_NONJOINABLE_GAMES")
 local memoryQueue = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_QUEUE")
 local teleportDataMemory = MemoryStoreService:GetSortedMap("MATCHMAKINGSERVICE_TELEPORT_DATA")
 
+-- GAME SERVER VARIABLES
+local _gameData = nil 
+local _gameId = nil
+
 local MatchmakingService = {
   Singleton = nil;
-  Version = "2.1.0";
+  Version = "3.0.0-beta.1";
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
@@ -245,7 +250,6 @@ type Singleton = {
   GetQueueCounts: (self:{}) ->({any}, number);
 
   GetAllRunningGames: (self:{}) ->({any});
-  GetRunningGames: (self:{}, max: number, filter: (any) -> (boolean)) -> ({any});	
   GetRunningGame: (self: {}, code: string) ->({any}?);
 
   GetQueue: (self:{}, map: string) -> ({[string]: {[any]: {any}}}?);
@@ -325,7 +329,7 @@ function MatchmakingService.GetSingleton(options: {	MajorVersion: string | nil;	
         end)
 
         while not CLOSED do
-          task.wait(5) -- ~12 messages a minute.
+          task.wait(5)
           if #PLAYERSADDED > 0 then
             MessagingService:PublishAsync("MatchmakingServicePlayersAddedToQueue", PLAYERSADDED)
             table.clear(PLAYERSADDED)
@@ -418,7 +422,7 @@ function MatchmakingService:Clear()
   print("Clearing memory")
   local runningGames = MatchmakingService:GetAllRunningGames()
   for _, v in ipairs(runningGames) do
-    runningGamesMemory:RemoveAsync(v.key)
+    joinableGamesMemory:RemoveAsync(v.key)
   end
   mainMemory:RemoveAsync("QueuedSkillLevels")
   mainMemory:RemoveAsync("MainJobId")
@@ -491,10 +495,10 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
       elseif mainJobId[1] == game.JobId then
         -- Check all games for open slots
         local parties = getFromMemory(mainMemory, "QueuedParties", 3)
-        local runningGames = Service:GetAllRunningGames()
+        local runningGames = Service:GetJoinableGames()
         for _, g in ipairs(runningGames) do
           local mem = g.value
-          -- Only try to add players to joinable games
+          -- Only try to add players to joinable games (sanity check)
           if mem.joinable then
 
             -- Get the queue for this map, if there is no one left in the queue, skip it
@@ -739,7 +743,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
                 }
                 local success, err
                 success, err = pcall(function()
-                  runningGamesMemory:UpdateAsync(reservedCode, function()
+                  joinableGamesMemory:UpdateAsync(reservedCode, function()
                     return gameData
                   end, 86400)
                 end)
@@ -804,14 +808,15 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
         if code ~= "TEST" then
           local data = {gameCode=code, ratingType=playersToRatings[players[1].UserId], customData={}}
 
+          local gameData = getFromMemory(mainMemory, code, 3)
           if Service.ApplyCustomTeleportData ~= nil then
             for i, player in ipairs(players) do
-              data.customData[player.UserId] = Service.ApplyCustomTeleportData(player, getFromMemory(mainMemory, code, 3))
+              data.customData[player.UserId] = Service.ApplyCustomTeleportData(player, gameData)
             end
           end
 
           if Service.ApplyGeneralTeleportData ~= nil then
-            data.gameData = Service.ApplyGeneralTeleportData(getFromMemory(mainMemory, code, 3))
+            data.gameData = Service.ApplyGeneralTeleportData(gameData)
           end
 
           teleportDataMemory:SetAsync(code, data, 1200)
@@ -830,7 +835,10 @@ function MatchmakingService:GetCurrentGameCode(): string?
   if not self.IsGameServer or not game.PrivateServerId then
     return nil
   end
-  return mainMemory:GetAsync(game.PrivateServerId)
+  if not _gameId then
+    _gameId = mainMemory:GetAsync(game.PrivateServerId)
+  end
+  return _gameId
 end
 
 --- Gets a running game's data. This includes its code, ratingType,
@@ -1027,13 +1035,13 @@ function MatchmakingService:GetQueueCounts(): ({any}, number)
   end)
 end
 
---- Gets all running games from memory
+--- Gets joinable games from memory
 -- @return An array of {key: gameCode, value: gameData} dictionaries
-function MatchmakingService:GetAllRunningGames(): {any}
+function MatchmakingService:GetJoinableGames(): {any}
   local bound = nil
   local toReturn = {}
   while true do
-    local runningGames = runningGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, 200, bound)
+    local runningGames = joinableGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, 200, bound)
     if #runningGames == 0 then
       break
     end
@@ -1051,16 +1059,120 @@ function MatchmakingService:GetAllRunningGames(): {any}
   return toReturn
 end
 
---- Gets running games from memory
+--- Gets non-joinable games from memory
+-- @return An array of {key: gameCode, value: gameData} dictionaries
+function MatchmakingService:GetNonJoinableGames(): {any}
+  local bound = nil
+  local toReturn = {}
+  while true do
+    local runningGames = nonJoinableGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, 200, bound)
+    if #runningGames == 0 then
+      break
+    end
+    bound = runningGames[#runningGames].key
+
+    for _, v in ipairs(runningGames) do
+      table.insert(toReturn, v)
+    end
+
+    if #runningGames < 200 then
+      break
+    end
+  end
+
+  return toReturn
+end
+
+
+--- Gets all running games from memory
+-- @return An array of {key: gameCode, value: gameData} dictionaries
+function MatchmakingService:GetAllRunningGames(): {any}
+  local bound = nil
+  local toReturn = {}
+  while true do
+    local runningGames = joinableGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, 200, bound)
+    if #runningGames == 0 then
+      break
+    end
+    bound = runningGames[#runningGames].key
+
+    for _, v in ipairs(runningGames) do
+      table.insert(toReturn, v)
+    end
+
+    if #runningGames < 200 then
+      break
+    end
+  end
+
+  while true do
+    local runningGames = nonJoinableGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, 200, bound)
+    if #runningGames == 0 then
+      break
+    end
+    bound = runningGames[#runningGames].key
+
+    for _, v in ipairs(runningGames) do
+      table.insert(toReturn, v)
+    end
+
+    if #runningGames < 200 then
+      break
+    end
+  end
+
+  return toReturn
+end
+
+--- Gets joinable games from memory with a filter
 -- @param max The maximum number of games to get
 -- @param filter A filter function which is passed the game data. Should return true if passed
 -- @return An array of {key: gameCode, value: gameData} dictionaries
-function MatchmakingService:GetRunningGames(max: number, filter: (any) -> (boolean)): {any}
+function MatchmakingService:GetJoinableGamesFiltered(max: number, filter: (any) -> (boolean)): {any}
   local bound = nil
   local shouldBreak = false
   local toReturn = {}
   repeat
-    local runningGames = runningGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, if max > 200 then 200 else max, bound)
+    local runningGames = joinableGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, if max > 200 then 200 else max, bound)
+    if #runningGames == 0 then
+      break
+    end
+    bound = runningGames[#runningGames].key
+
+    if (max <= 200 and #runningGames <= max) or (max > 200 and #runningGames < 200) then
+      shouldBreak = true
+    end
+
+    if filter then
+      for i = #runningGames, 1, -1 do
+        if not filter(runningGames[i].value) then
+          table.remove(runningGames, i)
+        end
+      end
+    end
+
+    for _, v in ipairs(runningGames) do
+      table.insert(toReturn, v)
+      if #toReturn == max then
+        shouldBreak = true
+        break
+      end
+    end
+  until #toReturn == max or shouldBreak
+
+  return toReturn
+end
+
+--- Gets non-joinable games from memory with a filter
+-- @param max The maximum number of games to get
+-- @param filter A filter function which is passed the game data. Should return true if passed
+-- @return An array of {key: gameCode, value: gameData} dictionaries
+function MatchmakingService:GetNonJoinableGamesFiltered(max: number, filter: (any) -> (boolean)): {any}
+  local bound = nil
+  local shouldBreak = false
+  local toReturn = {}
+  repeat
+    local runningGames = nonJoinableGamesMemory:GetRangeAsync(Enum.SortDirection.Ascending, if max > 200 then 200 else max, bound)
     if #runningGames == 0 then
       break
     end
@@ -1098,7 +1210,7 @@ function MatchmakingService:GetRunningGame(code: string): {any}?
     if not self.IsGameServer then return nil end
     code = self:GetCurrentGameCode()
   end
-  local gameData = getFromMemory(runningGamesMemory, code, 2)
+  local gameData = getFromMemory(joinableGamesMemory, code, 2)
   if typeof(gameData) == "table" then return gameData else return nil end
 end
 
@@ -1485,7 +1597,6 @@ function MatchmakingService:RemovePlayerFromQueue(player: Player): boolean?
   return self:RemovePlayerFromQueueId(player.UserId)
 end
 
-
 --- Removes a table of player ids from the queue.
 -- @param players The player ids to remove from queue.
 -- @return true if there was no error.
@@ -1661,8 +1772,9 @@ end
 -- @return true if there was no error.
 function MatchmakingService:AddPlayerToGameId(player: number, gameId: string, updateJoinable: boolean): boolean?
   if updateJoinable == nil then updateJoinable = true end
+  local hasErrors = false
   local success, errorMessage = pcall(function()
-    runningGamesMemory:UpdateAsync(gameId, function(old)
+    joinableGamesMemory:UpdateAsync(gameId, function(old)
       if old ~= nil then
         table.insert(old.players, player)
         old.full = #old.players == self.PlayerRanges[old.map].Max
@@ -1674,10 +1786,11 @@ function MatchmakingService:AddPlayerToGameId(player: number, gameId: string, up
     end, 86400)
   end)
   if not success then
+    hasErrors = true
     print("Unable to update Running Games (Add player to game:")
     warn(errorMessage)
   end
-  return true
+  return not hasErrors
 end
 
 --- Adds a player to a specific existing game.
@@ -1695,8 +1808,9 @@ end
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:AddPlayersToGameId(players: {number}, gameId: string, updateJoinable: boolean): boolean?
+  local hasErrors = false
   local success, errorMessage = pcall(function()
-    runningGamesMemory:UpdateAsync(gameId, function(old)
+    joinableGamesMemory:UpdateAsync(gameId, function(old)
       if old ~= nil then
         for _, v in ipairs(players) do
           table.insert(old.players, v)
@@ -1710,10 +1824,11 @@ function MatchmakingService:AddPlayersToGameId(players: {number}, gameId: string
     end, 86400)
   end) 
   if not success then
+    hasErrors = true
     print("Unable to update Running Games (Add players to game):")
     warn(errorMessage)
   end
-  return true
+  return not hasErrors
 end
 
 --- Adds a table of players to a specific existing game.
@@ -1731,8 +1846,9 @@ end
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayerFromGameId(player: number, gameId: string, updateJoinable: boolean): boolean?
+  local hasErrors = false
   local success, errorMessage = pcall(function()
-    runningGamesMemory:UpdateAsync(gameId, function(old)
+    joinableGamesMemory:UpdateAsync(gameId, function(old)
       if old ~= nil then
         local index = table.find(old.players, player)
         if index ~= nil then 
@@ -1749,10 +1865,11 @@ function MatchmakingService:RemovePlayerFromGameId(player: number, gameId: strin
     end, 86400)
   end)
   if not success then
+    hasErrors = true
     print("Unable to update Running Games (Remove player from game):")
     warn(errorMessage)
   end
-  return true
+  return not hasErrors
 end
 
 --- Removes a specific player from an existing game.
@@ -1770,8 +1887,9 @@ end
 -- @param updateJoinable Whether or not to update the joinable status of the game.
 -- @return true if there was no error.
 function MatchmakingService:RemovePlayersFromGameId(players: {number}, gameId: string, updateJoinable: boolean): boolean?
+  local hasErrors = false
   local success, errorMessage = pcall(function()
-    runningGamesMemory:UpdateAsync(gameId, function(old)
+    joinableGamesMemory:UpdateAsync(gameId, function(old)
       if old ~= nil then
         for _, v in ipairs(players) do
           local index = table.find(old.players, v)
@@ -1788,10 +1906,11 @@ function MatchmakingService:RemovePlayersFromGameId(players: {number}, gameId: s
   end)
 
   if not success then
+    hasErrors = true
     print("Unable to update Running Games (Remove players from game):")
     warn(errorMessage)
   end
-  return true
+  return not hasErrors
 end
 
 --- Removes multiple players from an existing game.
@@ -1810,6 +1929,7 @@ end
 -- @return true if there was no error.
 function MatchmakingService:UpdateRatingsId(ratingType: string, ranks: {number}, teams: {{number}}): boolean?
   if self.Options.DisableRatingSystem then return nil end
+  local hasErrors = false
   local success, errorMessage = pcall(function()
     local ratings = {}
     for i, team in ipairs(teams) do
@@ -1831,10 +1951,11 @@ function MatchmakingService:UpdateRatingsId(ratingType: string, ranks: {number},
 
   end)
   if not success then
+    hasErrors = true
     print("Unable to update Ratings:")
     warn(errorMessage)
   end
-  return true
+  return not hasErrors
 end
 
 --- Update player ratings after a game is over.
@@ -1850,40 +1971,78 @@ function MatchmakingService:UpdateRatings(ratingType: string, ranks: {number}, t
   return self:UpdateRatingsId(ratingType, ranks, teamsIds)
 end
 
---- Sets the joinable status of a game.
+--- Sets the joinable status of a game. This will remove it from memory if false.
 -- @param gameId The id of the game to update.
 -- @param joinable Whether or not the game will be joinable.
 -- @return true if there was no error.
 function MatchmakingService:SetJoinable(gameId: string, joinable: boolean): boolean?
-  local success, errorMessage = pcall(function()
-    runningGamesMemory:UpdateAsync(gameId, function(old)
-      if old ~= nil then
-        old.joinable = joinable
-        return old
-      else
-        return nil
-      end
-    end, 86400)
-  end)
+  if not self.IsGameServer then return end
 
-  if not success then
-    print("Unable to update Running Games (Update Joinable):")
-    warn(errorMessage)
+  local hasErrors = false
+
+  if not joinable then
+    local gameId = self:GetCurrentGameCode()
+    _gameData = getFromMemory(joinableGamesMemory, gameId, 3) or _gameData
+    _gameData.joinable = false
+    local success, errorMessage = pcall(function()
+      joinableGamesMemory:RemoveAsync(gameId)
+    end)
+
+    if not success then
+      hasErrors = true
+      print("Unable to update Running Games (Update joinable false):")
+      warn(errorMessage)
+    end
+
+    success, errorMessage = pcall(function()
+      nonJoinableGamesMemory:SetAsync(gameId, _gameData, 86400)
+    end)
+
+    if not success then
+      hasErrors = true
+      print("Unable to update Running Games (Update joinable false 2):")
+      warn(errorMessage)
+    end
+  else
+    _gameData.joinable = true
+
+    local success, errorMessage = pcall(function()
+      nonJoinableGamesMemory:RemoveAsync(gameId)
+    end)
+
+    if not success then
+      hasErrors = true
+      print("Unable to update Running Games (Update joinable true):")
+      warn(errorMessage)
+    end
+
+    success, errorMessage = pcall(function()
+      joinableGamesMemory:SetAsync(_gameId, _gameData, 86400)
+    end)
+
+    if not success then
+      hasErrors = true
+      print("Unable to update Running Games (Update joinable true 2):")
+      warn(errorMessage)
+    end
   end
-  return true
+
+  return not hasErrors
 end
 
 --- Removes this game from memory. Does not work on non-game servers.
 -- @return true if there was no error.
 function MatchmakingService:RemoveGame(): boolean?
   if not self.IsGameServer then return end
+  local hasErrors = false
   local gameId = self:GetCurrentGameCode()
-  local gameData = getFromMemory(runningGamesMemory, gameId, 3)
+  local gameData = _gameData or getFromMemory(joinableGamesMemory, gameId, 3)
   local success, errorMessage = pcall(function()
-    runningGamesMemory:RemoveAsync(gameId)
+    joinableGamesMemory:RemoveAsync(gameId)
   end)
 
   if not success then
+    hasErrors = true
     print("Unable to update Running Games (Remove game):")
     warn(errorMessage)
   end
@@ -1893,6 +2052,7 @@ function MatchmakingService:RemoveGame(): boolean?
   end)
 
   if not success then
+    hasErrors = true
     print("Unable to update Running Games (Remove game):")
     warn(errorMessage)
   end
@@ -1903,7 +2063,7 @@ function MatchmakingService:RemoveGame(): boolean?
     end
   end
 
-  return true
+  return not hasErrors
 end
 
 --- Starts a game.
@@ -1912,29 +2072,56 @@ end
 -- @return true if there was no error.
 function MatchmakingService:StartGame(gameId: string, joinable: boolean): boolean?
   if joinable == nil then joinable = false end
+  if gameId == nil then gameId = self:GetCurrentGameCode() end
+  local hasErrors = false
   local success, errorMessage = pcall(function()
-    runningGamesMemory:UpdateAsync(gameId, function(old)
-      if old ~= nil then
-        old.started = true
-        old.joinable = joinable
-        return old
-      else
-        if old == nil then
-          warn("Unable to update Running Games (Start game): Invalid gameId.")
+    if joinable then
+      joinableGamesMemory:UpdateAsync(gameId, function(old)
+        if old ~= nil then
+          old.started = true
+          old.joinable = joinable
+          return old
         else
-          warn("Unable to update Running Games (Start game): No running games found in memory")
+          if old == nil then
+            warn("Unable to update Running Games (Start game): Invalid gameId.")
+          else
+            warn("Unable to update Running Games (Start game): No running games found in memory")
+          end
+  
+          return nil
         end
+      end, 86400)
+    else
+      _gameData = getFromMemory(joinableGamesMemory, gameId, 3) or _gameData
+      _gameData.joinable = false
+      local success, errorMessage = pcall(function()
+        joinableGamesMemory:RemoveAsync(gameId)
+      end)
 
-        return nil
+      if not success then
+        hasErrors = true
+        print("Unable to update Running Games (Start game joinable false):")
+        warn(errorMessage)
       end
-    end, 86400)
+
+      success, errorMessage = pcall(function()
+        nonJoinableGamesMemory:SetAsync(gameId, _gameData, 86400)
+      end)
+
+      if not success then
+        hasErrors = true
+        print("Unable to update Running Games (Start game joinable false 2):")
+        warn(errorMessage)
+      end
+    end
   end)
 
   if not success then
+    hasErrors = true
     print("Unable to update Running Games (Start game):")
     warn(errorMessage)
   end
-  return true
+  return not hasErrors
 end
 
 if not RunService:IsStudio() then
