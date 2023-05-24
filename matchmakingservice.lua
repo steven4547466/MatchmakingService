@@ -1132,26 +1132,30 @@ function MatchmakingService:GetPlayerInfo(player: Player)
 end
 
 --- Counts how many players are in the queues.
--- @return A dictionary of {map: {ratingType: count}} and the full count.
+-- @return A dictionary of {map: {ratingType: {role: count}}} and the full count.
 function MatchmakingService:GetQueueCounts(): ({any}, number)
   local counts = {}
   local queuedMaps = getFromMemory(MemoryQueue, "QueuedMaps", 3)
   if queuedMaps == nil then return end
+
+  local totalCount = 0
 
   for i, map in ipairs(queuedMaps) do
     counts[map] = {}
     local mapQueue = self:GetQueue(map)
     if mapQueue == nil then continue end
     for ratingType, skillLevelAndQueue in pairs(mapQueue) do
-      counts[map][ratingType] = 0
-      for skillLevel, queue in pairs(skillLevelAndQueue) do
-        counts[map][ratingType] += #queue
+      counts[map][ratingType] = {}
+      for skillLevel, roleQueue in pairs(skillLevelAndQueue) do
+        for role, queue in pairs(roleQueue) do
+          local c = #queue
+          counts[map][ratingType][role] = c
+          totalCount += c
+        end
       end
     end
   end
-  return counts, reduce(counts, function(acc, cur)
-    return acc + reduce(cur, function(acc2, cur2) return acc2 + cur2 end)
-  end)
+  return counts, totalCount
 end
 
 --- Gets joinable games from memory
