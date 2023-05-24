@@ -32,6 +32,7 @@ local MatchmakingService = {
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
+    ["v3"] = 13533090734;
   };
 }
 
@@ -289,7 +290,8 @@ function MatchmakingService.GetSingleton(options: {	MajorVersion: string | nil;	
     if id == nil then
       warn("Major version " .. tostring(options.MajorVersion) .. " not found.")
     end
-    return require(id).GetSingleton(options)
+    MatchmakingService.Singleton = require(id).GetSingleton(options)
+    return MatchmakingService.Singleton
   end
   print("Retrieving MatchmakingService ("..MatchmakingService.Version..") Singleton.")
   if MatchmakingService.Singleton == nil then
@@ -791,6 +793,10 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
       local playersToMaps = {}
       local gameCodesToData = {}
       for _, v  in ipairs(Players:GetPlayers()) do
+        if not v:GetAttribute("MMS_QUEUED") then
+          continue 
+        end
+
         local playerData = Service:GetPlayerInfoId(v.UserId)
         if playerData ~= nil and now >= playerData.teleportAfter then
           if not playerData.teleported and playerData.curGame ~= nil then                        
@@ -1284,6 +1290,11 @@ function MatchmakingService:QueuePlayerId(player: number, ratingType: string, ma
   if s and not self.Options.DisableGlobalEvents then
     self.PlayerAddedToQueue:Fire(player, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating)
 
+    local playerObj = Players:GetPlayerByUserId(player)
+    if playerObj then
+      playerObj:SetAttribute("MMS_QUEUED", true)
+    end
+
     if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
       local index = find(PLAYERSADDED, function(x)
         return x[1] == player
@@ -1399,6 +1410,12 @@ function MatchmakingService:QueuePartyId(players: {number}, ratingType: string, 
 
   for _, v in ipairs(players) do
     self.PlayerAddedToQueue:Fire(v, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating)
+
+    local playerObj = Players:GetPlayerByUserId(v)
+    if playerObj then
+      playerObj:SetAttribute("MMS_QUEUED", true)
+    end
+
     if not self.Options.DisableGlobalEvents then
       if table.find(PLAYERSADDEDTHISWAVE, v) == nil then
         local index = find(PLAYERSADDED, function(x)
@@ -1494,6 +1511,11 @@ function MatchmakingService:RemovePlayerFromQueueId(player: number): boolean?
               end
 
               self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
+
+              local playerObj = Players:GetPlayerByUserId(player)
+              if playerObj then
+                playerObj:SetAttribute("MMS_QUEUED", false)
+              end
 
               if not self.Options.DisableGlobalEvents then
                 if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
@@ -1659,6 +1681,12 @@ function MatchmakingService:RemovePlayersFromQueueId(players: {number}): boolean
           if index == nil then return nil end
           table.remove(old, index)
           self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel))
+
+          local playerObj = Players:GetPlayerByUserId(player)
+          if playerObj then
+            playerObj:SetAttribute("MMS_QUEUED", false)
+          end
+
           if not self.Options.DisableGlobalEvents then
             if table.find(PLAYERSADDEDTHISWAVE, player) == nil then
               local index = find(PLAYERSREMOVED, function(x)
