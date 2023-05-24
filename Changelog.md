@@ -1,4 +1,14 @@
 Changelog
+Version 3.0.0-beta.2
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Addition] Added signal `GameCreated(gameData, serverId, reservedCode)` which is fired when a server for a game is reserved. This only works in the game which is currently handling the matchmaking loop (otherwise known as the main job).
+
+Fixes:
+* None
+
 Version 3.0.0-beta.1
 Changes (breaking):
 * [Removal] Removed `GetRunningGames()`.
