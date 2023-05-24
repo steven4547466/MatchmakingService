@@ -1,15 +1,26 @@
 Changelog
 Version 3.0.0-beta.1
 Changes (breaking):
-* [Removal] Removed `GetRunningGames()`
-* [Addition] Added `GetJoinableGames()`
-* [Addition] Added `GetNonJoinableGames()`
+* [Removal] Removed `GetRunningGames()`.
+* [Change] `SetJoinable()` will now move a running game from the joinable memory to the non-joinable memory to preserve rate limit while matchmaking.
+* [Change] `StartGame()` will move games from joinable to non-joinable memory if `joinable` is false.
+* [Optimization] The matchmaking loop will now only get joinable games, ignoring all non-joinable games to free up rate limit units.
 
 Changes (non-breaking):
-* [Change] `GetRunningGame`'s argument `code` is now optional. If not provided, the code will be the current code of the server, if it's a game server.
+* [Addition] Added `GetJoinableGames()`.
+* [Addition] Added `GetNonJoinableGames()`.
+* [Addition] Added `GetJoinableGamesFiltered()`
+* [Addition] Added `GetNonJoinableGamesFiltered()`
+* [Change] `GetAllRunningGames()` will return both joinable and non-joinable games.
+* [Change] `StartGame()`'s `gameId` parameter is now optional. If `nil`, it will default to the current game id.
+* [Optimization] Players queued will be given the `MMS_QUEUED` attribute. If `true`, MatchmakingService will check their data to see if they've joined a game.
+* [Optimization] Rather than getting the data from memory in every loop, teleport game data is cached outside the loop.
+* [Optimization] `GetCurrentGameCode()` now caches its value so it only gets it from memory once rather than every call.
 
 Fixes:
-* [Fix] Fixed both `ApplyCustomTeleportData`'s and `ApplyGeneralTeleportData`'s game data argument
+* [Fix] Fixed both `ApplyCustomTeleportData`'s and `ApplyGeneralTeleportData`'s game data argument.
+* [Fix] Fixed the return value on many methods that would always return `true` regardless of errors.
+* [Fix] `require`ing the script with a `MajorVersion` option will now set the singleton to the one returned from that version's `GetSingleton` properly.
 
 Version 2.1.0
 Changes (breaking):
