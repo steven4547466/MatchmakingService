@@ -5,6 +5,7 @@ Changes (breaking):
 
 Changes (non-breaking):
 * [Addition] Added signal `GameCreated(gameData, serverId, reservedCode)` which is fired when a server for a game is reserved. This only works in the game which is currently handling the matchmaking loop (otherwise known as the main job).
+* [Addition] Added the `RunningGamesJoinable` property with the corresponding method `SetRunningGamesJoinable()`. Defaults to `true`, if `false`, the matchmaking loop will skip running games and not use any memory queue rate limit units on them. This means that when a game is created by the serivce, it will never be joinable to the service, even if you manually set it to joinable. If you use this, it is recommended to set the minimum and maximum players to the same value so that only full games will be made since they are no longer able to be joined afterwards.
 
 Fixes:
 * None

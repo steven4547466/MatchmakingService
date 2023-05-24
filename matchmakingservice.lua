@@ -420,6 +420,12 @@ function MatchmakingService:SetFoundGameDelay(newValue: number)
   self.FoundGameDelay = newValue
 end
 
+--- Sets whether running games are joinable or not. If disabled, players will not be able to join running games and the matchmaking loop will completely skip running games.
+-- @param newValue A boolean that indicates whether or not running games are joinable.
+function MatchmakingService:SetRunningGamesJoinable(newValue: boolean)
+  self.RunningGamesJoinable = newValue
+end
+
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
   print("Clearing memory")
@@ -467,6 +473,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
   Service.ApplyCustomTeleportData = nil
   Service.ApplyGeneralTeleportData = nil
   Service.SecondsPerExpansion = 10
+  Service.RunningGamesJoinable = true
 
   -- Clears the store in studio 
   if RunService:IsStudio() then 
@@ -503,122 +510,125 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
       elseif mainJobId[1] == game.JobId then
         -- Check all games for open slots
         local parties = getFromMemory(MainMemory, "QueuedParties", 3)
-        local runningGames = Service:GetJoinableGames()
-        for _, g in ipairs(runningGames) do
-          local mem = g.value
-          -- Only try to add players to joinable games (sanity check)
-          if mem.joinable then
+        
+        if Service.RunningGamesJoinable then
+          local runningGames = Service:GetJoinableGames()
+          for _, g in ipairs(runningGames) do
+            local mem = g.value
+            -- Only try to add players to joinable games (sanity check)
+            if mem.joinable then
 
-            -- Get the queue for this map, if there is no one left in the queue, skip it
-            local q = Service:GetQueue(mem.map)
-            if q == nil then 
-              MemoryQueue:UpdateAsync("QueuedMaps", function(old)
-                if old == nil then return nil end
-                local index = table.find(old, mem.map)
-                if index == nil then return nil end
-                table.remove(old, index)
-                return old
-              end, 86400)
-              continue
-            end
+              -- Get the queue for this map, if there is no one left in the queue, skip it
+              local q = Service:GetQueue(mem.map)
+              if q == nil then 
+                MemoryQueue:UpdateAsync("QueuedMaps", function(old)
+                  if old == nil then return nil end
+                  local index = table.find(old, mem.map)
+                  if index == nil then return nil end
+                  table.remove(old, index)
+                  return old
+                end, 86400)
+                continue
+              end
 
-            -- Get the queue for this rating type, if there is no one left in the queue, skip it
-            local queue = q[mem.ratingType]
-            if queue == nil then continue end
+              -- Get the queue for this rating type, if there is no one left in the queue, skip it
+              local queue = q[mem.ratingType]
+              if queue == nil then continue end
 
-            -- Finally get the queue for the skill level
-            queue = queue[tostring(mem.skillLevel)]
+              -- Finally get the queue for the skill level
+              queue = queue[tostring(mem.skillLevel)]
 
-            -- Get the number of expansions
-            local expansions = if not Service.Options.DisableExpansions then math.floor((now-mem.createTime)/(Service.SecondsPerExpansion*1000)) else 0
+              -- Get the number of expansions
+              local expansions = if not Service.Options.DisableExpansions then math.floor((now-mem.createTime)/(Service.SecondsPerExpansion*1000)) else 0
 
-            -- If there is no one queued at this skill level, and there are no expansions, skip it
-            if queue == nil and expansions == 0 then continue end
+              -- If there is no one queued at this skill level, and there are no expansions, skip it
+              if queue == nil and expansions == 0 then continue end
 
-            -- Get the first values of the queue up to until the game is full
-            local values = first(queue or {}, Service.PlayerRanges[mem.map].Max - #mem.players)
+              -- Get the first values of the queue up to until the game is full
+              local values = first(queue or {}, Service.PlayerRanges[mem.map].Max - #mem.players)
 
-            if not values or #values == 0 then continue end
+              if not values or #values == 0 then continue end
 
-            -- Check for, and apply, expansions
-            if #values < Service.PlayerRanges[mem.map].Max - #mem.players then
-              for i = 1, expansions do
+              -- Check for, and apply, expansions
+              if #values < Service.PlayerRanges[mem.map].Max - #mem.players then
+                for i = 1, expansions do
 
-                -- Skill difference is 10 per expansion in both directions
-                local skillUp = tostring(mem.skillLevel+10*i)
-                local skillDown = tostring(mem.skillLevel-10*i)
-                local queueUp = nil
-                local queueDown = nil
+                  -- Skill difference is 10 per expansion in both directions
+                  local skillUp = tostring(mem.skillLevel+10*i)
+                  local skillDown = tostring(mem.skillLevel-10*i)
+                  local queueUp = nil
+                  local queueDown = nil
 
-                -- Get the queue at the rating type again
-                queueUp = q[mem.ratingType]
-                queueDown = q[mem.ratingType]
+                  -- Get the queue at the rating type again
+                  queueUp = q[mem.ratingType]
+                  queueDown = q[mem.ratingType]
 
-                -- If there is anyone queued at the rating type, get the queue at the expanded skill level
-                if queueUp ~= nil then
-                  queueUp = queueUp[skillUp]
-                  queueDown = queueDown[skillDown]
-                end
-
-                -- Append these players to the end of the queue
-                append(values, queueUp)
-                append(values, queueDown)
-
-                -- Remove values that go past our necessary amount of players
-                if #values > Service.PlayerRanges[mem.map].Max - #mem.players then
-                  for i = #values, Service.PlayerRanges[mem.map].Max - #mem.players, -1 do
-                    table.remove(values, i)
+                  -- If there is anyone queued at the rating type, get the queue at the expanded skill level
+                  if queueUp ~= nil then
+                    queueUp = queueUp[skillUp]
+                    queueDown = queueDown[skillDown]
                   end
-                  break
+
+                  -- Append these players to the end of the queue
+                  append(values, queueUp)
+                  append(values, queueDown)
+
+                  -- Remove values that go past our necessary amount of players
+                  if #values > Service.PlayerRanges[mem.map].Max - #mem.players then
+                    for i = #values, Service.PlayerRanges[mem.map].Max - #mem.players, -1 do
+                      table.remove(values, i)
+                    end
+                    break
+                  end
                 end
               end
-            end
 
-            -- If there is anyone, add them to the game
-            if values ~= nil then
+              -- If there is anyone, add them to the game
+              if values ~= nil then
 
-              -- Remove all newly queued players
-              for j = #values, 1, -1 do
-                if values[j][2] >= now - Service.MatchmakingInterval*1000 then
-                  table.remove(values, j)
+                -- Remove all newly queued players
+                for j = #values, 1, -1 do
+                  if values[j][2] >= now - Service.MatchmakingInterval*1000 then
+                    table.remove(values, j)
+                  end
+                end
+
+                -- Remove parties that won't fit into the game and skip them
+                local acc = #values
+                while not checkForParties(values) do
+                  local f = first(queue, Service.PlayerRanges[mem.map].Max - #mem.players, acc + 1)
+                  if f == nil or #f == 0 then
+                    break
+                  end
+                  acc += #f
+                  append(values, f)
                 end
               end
 
-              -- Remove parties that won't fit into the game and skip them
-              local acc = #values
-              while not checkForParties(values) do
-                local f = first(queue, Service.PlayerRanges[mem.map].Max - #mem.players, acc + 1)
-                if f == nil or #f == 0 then
-                  break
+              -- If there are any players left, add them to the game
+              if values ~= nil and #values > 0 then
+                local plrs = {}
+
+                local data = TeleportDataMemory:GetAsync(g.key) or {}
+
+                for _, v in ipairs(values) do
+                  table.insert(plrs, v[1])
+                  Service:SetPlayerInfoId(v[1], g.key, mem.ratingType, parties ~= nil and parties[v] or {}, mem.map, now + (Service.FoundGameDelay*1000))
                 end
-                acc += #f
-                append(values, f)
+
+                Service:AddPlayersToGameId(plrs, g.key)
+
+                Service:RemovePlayersFromQueueId(tableSelect(values, 1))
+
+                if Service.ApplyCustomTeleportData ~= nil then
+                  local gameData = Service.GetRunningGame(g.key)
+                  for _, v in ipairs(plrs) do                
+                    data.customData[v] = Service.ApplyCustomTeleportData(Players:GetPlayerByUserId(v), gameData)
+                  end	
+                end
+
+                TeleportDataMemory:SetAsync(g.key, data, 86400)
               end
-            end
-
-            -- If there are any players left, add them to the game
-            if values ~= nil and #values > 0 then
-              local plrs = {}
-
-              local data = TeleportDataMemory:GetAsync(g.key) or {}
-
-              for _, v in ipairs(values) do
-                table.insert(plrs, v[1])
-                Service:SetPlayerInfoId(v[1], g.key, mem.ratingType, parties ~= nil and parties[v] or {}, mem.map, now + (Service.FoundGameDelay*1000))
-              end
-
-              Service:AddPlayersToGameId(plrs, g.key)
-
-              Service:RemovePlayersFromQueueId(tableSelect(values, 1))
-
-              if Service.ApplyCustomTeleportData ~= nil then
-                local gameData = Service.GetRunningGame(g.key)
-                for _, v in ipairs(plrs) do                
-                  data.customData[v] = Service.ApplyCustomTeleportData(Players:GetPlayerByUserId(v), gameData)
-                end	
-              end
-
-              TeleportDataMemory:SetAsync(g.key, data, 86400)
             end
           end
         end
@@ -745,7 +755,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
                   ["skillLevel"] = tonumber(skillLevel);
                   ["players"] = userIds;
                   ["started"] = false;
-                  ["joinable"] = #values ~= Service.PlayerRanges[map].Max;
+                  ["joinable"] = Service.RunningGamesJoinable and #values ~= Service.PlayerRanges[map].Max;
                   ["ratingType"] = ratingType;
                   ["map"] = map;
                   ["createTime"] = now;
