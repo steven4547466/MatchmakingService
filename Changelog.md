@@ -1,4 +1,16 @@
 Changelog
+Version 3.0.0-beta.1
+Changes (breaking):
+* [Removal] Removed `GetRunningGames()`
+* [Addition] Added `GetJoinableGames()`
+* [Addition] Added `GetNonJoinableGames()`
+
+Changes (non-breaking):
+* [Change] `GetRunningGame`'s argument `code` is now optional. If not provided, the code will be the current code of the server, if it's a game server.
+
+Fixes:
+* [Fix] Fixed both `ApplyCustomTeleportData`'s and `ApplyGeneralTeleportData`'s game data argument
+
 Version 2.1.0
 Changes (breaking):
 * None

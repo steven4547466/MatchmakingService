@@ -2019,7 +2019,7 @@ function MatchmakingService:SetJoinable(gameId: string, joinable: boolean): bool
   local hasErrors = false
 
   if not joinable then
-    local gameId = self:GetCurrentGameCode()
+    gameId = gameId or self:GetCurrentGameCode()
     _gameData = getFromMemory(joinableGamesMemory, gameId, 3) or _gameData
     _gameData.joinable = false
     local success, errorMessage = pcall(function()
