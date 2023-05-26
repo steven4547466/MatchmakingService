@@ -1,4 +1,17 @@
 Changelog
+Version 3.0.0-beta.3
+Changes (breaking):
+* None
+
+Changes (non-breaking):
+* [Change] `RemovePlayerFromQueueId`, `RemovePlayerFromQueue`, `RemovePlayersFromQueueId`, and `RemovePlayersFromQueue` now have another parameter called `updateAttribute`, this will default to true. The only proper use for this is to remove players from the queue but still have the service check if they found a game. Used internally to remove players from the queue after they found a game, but still teleport them.
+* [Change] `Clear` will now print how many times the memory stores were used, effectively telling you how much of your rate limit you used.
+* [Change] Added various logs which will be removed on release.
+
+Fixes:
+* [Fix] Fixed the `MMS_QUEUED` attribute being removed after finding a game, which caused players to never be teleported.
+* [Fix] `AddPlayersToGameId` will now default the role to `MMS_NO_ROLE` properly.
+
 Version 3.0.0-beta.2
 Changes (breaking):
 * [Addition] Added a new role system to allow developers to assign players roles while in queue. This would allow them to queue on different teams. For example, in dead by daylight, you can queue as killer or survivor. This new system allows you to mimic that.
@@ -17,6 +30,7 @@ Changes (breaking):
 ```
 * * `SetPlayerRange` is unchanged, but is now only applicable if the `role` parameter is not used when queuing
 * [Change] `QueuePlayerId`, `QueuePlayer`, `QueuePartyId`, `QueueParty`, `AddPlayerToGame`, `AddPlayerToGameId`, `AddPlayersToGame`, and `AddPlayersToGameId` now accept a `role` parameter. If not provided, then it will use the old system without roles, but the backend adds a role called `MMS_NO_ROLE` for the sake of convenience in the queue.
+* [Change] `GetQueueCounts` structure has changed to `{map: {ratingType: {role: count}}}`.
 
 Changes (non-breaking):
 * [Addition] Added signal `GameCreated(gameData, serverId, reservedCode)` which is fired when a server for a game is reserved. This only works in the game which is currently handling the matchmaking loop (otherwise known as the main job).

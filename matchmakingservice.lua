@@ -29,7 +29,7 @@ local _gameId = nil
 
 local MatchmakingService = {
   Singleton = nil;
-  Version = "3.0.0-beta.2";
+  Version = "3.0.0-beta.3";
   Versions = {
     ["v1"] = 8470858629;
     ["v2"] = 8898097654;
@@ -156,6 +156,10 @@ end
 function updateQueue(map: string, ratingType, stringRoundedRating, role)
   local now = DateTime.now().UnixTimestampMillis
   local success, errorMessage
+
+  if role == nil then
+    role = "MMS_NO_ROLE"
+  end
 
   success, errorMessage = pcall(function()
     MemoryQueue:UpdateAsync("QueuedMaps", function(old)
@@ -383,11 +387,11 @@ type MapRoles = { [string]: RoleRange }
 -- @param map The map the player range applies to.
 -- @param newMapRoles The MapRoles to apply
 function MatchmakingService:SetMapRoles(map: string, newMapRoles: MapRoles)
-	if newMapRoles.Max > 100 then
-		warn("Maximum players has a cap of 100.")
-	end
-	
-	self.PlayerRanges[map] = newMapRoles
+  if newMapRoles.Max > 100 then
+    warn("Maximum players has a cap of 100.")
+  end
+
+  self.PlayerRanges[map] = newMapRoles
 end
 
 --- Add a new game place.
@@ -452,30 +456,41 @@ end
 --- Clears all memory aside from player data.
 function MatchmakingService:Clear()
   print("Clearing memory")
+  local times = 0
   local runningGames = MatchmakingService:GetAllRunningGames()
+  times += #runningGames
   for _, v in ipairs(runningGames) do
     if v.value.joinable then
+      times += 1
       JoinableGamesMemory:RemoveAsync(v.key)
     else
+      times += 1
       NonJoinableGamesMemory:RemoveAsync(v.key)
     end
   end
   MainMemory:RemoveAsync("QueuedSkillLevels")
   MainMemory:RemoveAsync("MainJobId")
+  times += 2
   local queuedMaps = getFromMemory(MemoryQueue, "QueuedMaps", 3)
-  if queuedMaps == nil then return end
+  times += 3
+  if queuedMaps == nil then return print("Total requests: " .. tostring(times)) end
   MemoryQueue:RemoveAsync("QueuedMaps")
+  times += 1
 
   for i, map in ipairs(queuedMaps) do
     local mapQueue = self:GetQueue(map)
+    times += 1
     MemoryQueue:RemoveAsync(map.."__QueuedRatingTypes")
     if mapQueue == nil then continue end
     for ratingType, skillLevelAndQueue in pairs(mapQueue) do
       for skillLevel, queue in pairs(skillLevelAndQueue) do
+        times += 1
         MemoryQueue:RemoveAsync(map.."__"..ratingType.."__"..skillLevel)
       end
     end
   end
+  
+  print("Total requests: " .. tostring(times))
 end
 
 function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRatingSystem: boolean | nil; DisableExpansions: boolean | nil;	DisableGlobalEvents: boolean | nil;} | nil)
@@ -533,13 +548,16 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
       elseif mainJobId[1] == game.JobId then
         -- Check all games for open slots
         local parties = getFromMemory(MainMemory, "QueuedParties", 3)
-        
+
         if Service.RunningGamesJoinable then
           local runningGames = Service:GetJoinableGames()
           for _, g in ipairs(runningGames) do
             local mem = g.value
             -- Only try to add players to joinable games (sanity check)
             if mem.joinable then
+
+              print("Checking running game")
+              print(mem)
 
               -- Get the queue for this map, if there is no one left in the queue, skip it
               local q = Service:GetQueue(mem.map)
@@ -569,7 +587,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
               for _, role in ipairs(rolesToCheck) do
                 -- Finally get the queue for the skill level and role, if there is no one left in the queue, skip it
                 local _queue = queue[tostring(mem.skillLevel)]
-                
+
                 if _queue == nil then continue end
                 _queue = _queue[role]
 
@@ -605,7 +623,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
                       if queueUp[skillUp] ~= nil then
                         queueUp = queueUp[skillUp][role]
                       end
-                      
+
                       if queueDown[skillDown] ~= nil then
                         queueDown = queueDown[skillDown][role]
                       end
@@ -649,6 +667,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
 
                 -- If there are any players left, add them to the game
                 if values ~= nil and #values > 0 then
+                  print("Adding to existing game")
                   local plrs = {}
 
                   local data = TeleportDataMemory:GetAsync(g.key) or {}
@@ -660,7 +679,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
 
                   Service:AddPlayersToGameId(plrs, g.key, role)
 
-                  Service:RemovePlayersFromQueueId(tableSelect(values, 1))
+                  Service:RemovePlayersFromQueueId(tableSelect(values, 1), false)
 
                   if Service.ApplyCustomTeleportData ~= nil then
                     local gameData = Service.GetRunningGame(g.key)
@@ -710,6 +729,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
 
               -- For every role queued...
               for role, queue in pairs (roleQueue) do
+                print(queue)
                 -- Get up to the maximum number of players for this map and role from the queue
                 local values = first(queue, Service.PlayerRanges[map][role].Max)
 
@@ -806,6 +826,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
               end
 
               if enoughToMakeGame then
+                print("WE GOT ENOUGH TO MAKE GAME!!!")
                 -- Reserve a server and tell all servers the player is ready to join
                 local reservedCode, serverId
                 if RunService:IsStudio() then
@@ -825,6 +846,8 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
                   ["map"] = map;
                   ["createTime"] = now;
                 }
+
+                print("GAME DATA CREATED")
 
                 for role, range in pairs(Service.PlayerRanges[map]) do
                   gameData.full[role] = toCreateAGame[role] and #toCreateAGame[role] >= range.Max
@@ -848,15 +871,19 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
                 local success, err
                 success, err = pcall(function()
                   if gameData.joinable then
+                    print("Adding to joinable")
                     JoinableGamesMemory:UpdateAsync(reservedCode, function()
                       return gameData
                     end, 86400)
                   else
+                    print("Adding to non-joinable")
                     NonJoinableGamesMemory:UpdateAsync(reservedCode, function()
                       return gameData
                     end, 86400)
                   end
                 end)
+
+                print("GAME DATA ADDED")
 
                 if not success then
                   print("Error adding new game:")
@@ -880,7 +907,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
                     end
                   end
                   --Service:RemoveExpansions(ratingType, skillLevel)
-                  Service:RemovePlayersFromQueueId(userIds)
+                  Service:RemovePlayersFromQueueId(userIds, false)
                 end
               end
 
@@ -1400,7 +1427,8 @@ function MatchmakingService:QueuePlayerId(player: number, ratingType: string, ma
 
   updateQueue(map, ratingType, stringRoundedRating, role)
 
-  local s = find(new, function(v) return v[1] == player end) ~= nil
+  
+  local s = new ~= nil and find(new[role], function(v) return v[1] == player end) ~= nil
 
   if s and not self.Options.DisableGlobalEvents then
     self.PlayerAddedToQueue:Fire(player, map, ratingType, if self.Options.DisableRatingSystem then nil else roundedRating, role)
@@ -1527,7 +1555,8 @@ function MatchmakingService:QueuePartyId(players: {number}, ratingType: string, 
   updateQueue(map, ratingType, stringRoundedRating)
 
   for _, v in ipairs(players) do
-    if find(new, function(t) return t[1] == v end) == nil then
+    if find(new[role], function(t) return t[1] == v end) == nil then
+      self:RemovePlayersFromQueueId(players)
       return false, v, "Player not added to queue"
     end
   end
@@ -1600,10 +1629,14 @@ end
 --- Removes a specific player id from the queue.
 -- @param player The player id to remove from queue.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayerFromQueueId(player: number): boolean?
+function MatchmakingService:RemovePlayerFromQueueId(player: number, updateAttribute: boolean): boolean?
   local toRemove = {}
   local hasErrors = false
   local success, errorMessage
+
+  if updateAttribute == nil then
+    updateAttribute = true
+  end
 
   local queuedMaps = getFromMemory(MemoryQueue, "QueuedMaps", 3)
 
@@ -1640,9 +1673,11 @@ function MatchmakingService:RemovePlayerFromQueueId(player: number): boolean?
 
                 self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel), role)
 
-                local playerObj = Players:GetPlayerByUserId(player)
-                if playerObj then
-                  playerObj:SetAttribute("MMS_QUEUED", false)
+                if updateAttribute then
+                  local playerObj = Players:GetPlayerByUserId(player)
+                  if playerObj then
+                    playerObj:SetAttribute("MMS_QUEUED", false)
+                  end
                 end
 
                 if not self.Options.DisableGlobalEvents then
@@ -1754,17 +1789,21 @@ end
 --- Removes a specific player from the queue.
 -- @param player The player to remove from queue.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayerFromQueue(player: Player): boolean?
-  return self:RemovePlayerFromQueueId(player.UserId)
+function MatchmakingService:RemovePlayerFromQueue(player: Player, updateAttribute: boolean): boolean?
+  return self:RemovePlayerFromQueueId(player.UserId, updateAttribute)
 end
 
 --- Removes a table of player ids from the queue.
 -- @param players The player ids to remove from queue.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayersFromQueueId(players: {number}): boolean?
+function MatchmakingService:RemovePlayersFromQueueId(players: {number}, updateAttribute: boolean): boolean?
   local toRemove = {}
   local hasErrors = false
   local success, errorMessage
+
+  if updateAttribute == nil then
+    updateAttribute = true
+  end
 
   local queuedMaps = getFromMemory(MemoryQueue, "QueuedMaps", 3)
 
@@ -1817,9 +1856,11 @@ function MatchmakingService:RemovePlayersFromQueueId(players: {number}): boolean
             end
             self.PlayerRemovedFromQueue:Fire(player, map, ratingType, tonumber(skillLevel), role)
 
-            local playerObj = Players:GetPlayerByUserId(player)
-            if playerObj then
-              playerObj:SetAttribute("MMS_QUEUED", false)
+            if updateAttribute then
+              local playerObj = Players:GetPlayerByUserId(player)
+              if playerObj then
+                playerObj:SetAttribute("MMS_QUEUED", false)
+              end
             end
 
             if not self.Options.DisableGlobalEvents then
@@ -1937,8 +1978,8 @@ end
 --- Removes a table of players from the queue.
 -- @param players The players to remove from queue.
 -- @return true if there was no error.
-function MatchmakingService:RemovePlayersFromQueue(players: {Player}): boolean?
-  return self:RemovePlayersFromQueueId(tableSelect(players, "UserId"))
+function MatchmakingService:RemovePlayersFromQueue(players: {Player}, updateAttribute: boolean): boolean?
+  return self:RemovePlayersFromQueueId(tableSelect(players, "UserId"), updateAttribute)
 end
 
 --- Adds a player id to a specific existing game.
@@ -2004,7 +2045,7 @@ function MatchmakingService:AddPlayerToGameId(player: number, gameId: string, up
       warn(errorMessage)
     end
   end
-  
+
   return not hasErrors
 end
 
@@ -2025,6 +2066,9 @@ end
 function MatchmakingService:AddPlayersToGameId(players: {number}, gameId: string, updateJoinable: boolean, role: string): boolean?
   local hasErrors = false
   local removeFromJoinable = false 
+  if role == nil then
+    role = "MMS_NO_ROLE"
+  end
   local _gameData = nil
   local success, errorMessage = pcall(function()
     JoinableGamesMemory:UpdateAsync(gameId, function(old)
