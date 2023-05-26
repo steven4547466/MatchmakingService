@@ -387,8 +387,10 @@ type MapRoles = { [string]: RoleRange }
 -- @param map The map the player range applies to.
 -- @param newMapRoles The MapRoles to apply
 function MatchmakingService:SetMapRoles(map: string, newMapRoles: MapRoles)
-  if newMapRoles.Max > 100 then
-    warn("Maximum players has a cap of 100.")
+  for _, role in newMapRoles do
+    if role.Max > 100 then
+      warn("Maximum players has a cap of 100.")
+    end
   end
 
   self.PlayerRanges[map] = newMapRoles
@@ -489,7 +491,7 @@ function MatchmakingService:Clear()
       end
     end
   end
-  
+
   print("Total requests: " .. tostring(times))
 end
 
@@ -827,6 +829,7 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
 
               if enoughToMakeGame then
                 print("WE GOT ENOUGH TO MAKE GAME!!!")
+                print(toCreateAGame)
                 -- Reserve a server and tell all servers the player is ready to join
                 local reservedCode, serverId
                 if RunService:IsStudio() then
@@ -950,6 +953,9 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
           end
         end
       end
+      
+      print("Players to teleport:")
+      print(playersToTeleport)
 
       for code, players in pairs(playersToTeleport) do
         local data = {gameCode=code, ratingType=playersToRatings[players[1].UserId], customData={}}
@@ -968,6 +974,8 @@ function MatchmakingService.new(options: {	MajorVersion: string | nil;	DisableRa
 
         TeleportDataMemory:SetAsync(code, data, 86400)
 
+        print("Teleporting:")
+        print(players)
         if code ~= "TEST" then TeleportService:TeleportToPrivateServer(Service.GamePlaceIds[playersToMaps[players[1].UserId]], code, players, nil) end
       end
     end
@@ -1427,7 +1435,7 @@ function MatchmakingService:QueuePlayerId(player: number, ratingType: string, ma
 
   updateQueue(map, ratingType, stringRoundedRating, role)
 
-  
+
   local s = new ~= nil and find(new[role], function(v) return v[1] == player end) ~= nil
 
   if s and not self.Options.DisableGlobalEvents then
