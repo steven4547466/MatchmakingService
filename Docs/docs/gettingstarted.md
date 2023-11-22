@@ -76,7 +76,7 @@ Note: This function is more efficient on memory updates if all of the users are 
 ## Instance server logic
 Instance servers are also simple. This section will go over the most basic instance server implementation and everything that is required to make it work.
 
-### Denoating a server as a game instance
+### Denoting a server as a game instance
 It's important to denote a server as a game instance as this removes the ability for it to become the central server, and removes logic that may impact game performance. **You should set the player range to match that of the hub server** You can choose to set the field directly, but I recommend that you use the built in method in case anything changes in the future:
 ```lua
 local MatchmakingService = require(7567983240).GetSingleton()

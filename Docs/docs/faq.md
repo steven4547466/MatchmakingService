@@ -7,7 +7,7 @@ MMS does not handle party creation for you. All MMS does is ensure players queue
 
 What does \_\_\_\_\_\_ error mean?
 
-Most of the time, I wouldn't know without doing some experimenting. However, there is an error which you may run into which I have no control over. When you see `MainModule:line: Request Failed.` that means that the Memory Store rejected the request, which usually means it's experiencing disruptions. Make sure to check the [ropblox status](http://status.roblox.com/) to see if there's a service disruption.
+Most of the time, I wouldn't know without doing some experimenting. However, there is an error which you may run into which I have no control over. When you see `MainModule:line: Request Failed.` that means that the Memory Store rejected the request, which usually means it's experiencing disruptions. Make sure to check the [roblox status](http://status.roblox.com/) to see if there's a service disruption.
 
 Other errors that you may see:
 
